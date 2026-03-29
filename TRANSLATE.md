@@ -146,8 +146,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go-at-heroku.md`
 - [x] `blog/go-at-io-frequently-asked-questions.md`
 - [x] `blog/go-becomes-more-stable.md`
-- [ ] `blog/go-brand.md`
-- [ ] `blog/go-brand/Go-Logo/copyright.txt`
+- [x] `blog/go-brand.md`
+- [x] `blog/go-brand/Go-Logo/copyright.txt`
 - [ ] `blog/go-cloud.md`
 - [ ] `blog/go-cloud2019.md`
 - [x] `blog/go-concurrency-patterns-timing-out-and.md`
