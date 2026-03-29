@@ -139,34 +139,34 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/gif-decoder-exercise-in-go-interfaces.md`
 - [x] `blog/gif-decoder.md`
 - [x] `blog/go-11-is-released.md`
-- [ ] `blog/go-and-google-app-engine.md`
-- [ ] `blog/go-and-google-cloud-platform.md`
-- [ ] `blog/go-app-engine-sdk-155-released.md`
+- [x] `blog/go-and-google-app-engine.md`
+- [x] `blog/go-and-google-cloud-platform.md`
+- [x] `blog/go-app-engine-sdk-155-released.md`
 - [x] `blog/go-at-google-io-2011-videos.md`
-- [ ] `blog/go-at-heroku.md`
-- [ ] `blog/go-at-io-frequently-asked-questions.md`
-- [ ] `blog/go-becomes-more-stable.md`
+- [x] `blog/go-at-heroku.md`
+- [x] `blog/go-at-io-frequently-asked-questions.md`
+- [x] `blog/go-becomes-more-stable.md`
 - [ ] `blog/go-brand.md`
 - [ ] `blog/go-brand/Go-Logo/copyright.txt`
 - [ ] `blog/go-cloud.md`
 - [ ] `blog/go-cloud2019.md`
-- [ ] `blog/go-concurrency-patterns-timing-out-and.md`
+- [x] `blog/go-concurrency-patterns-timing-out-and.md`
 - [ ] `blog/go-developer-network.md`
-- [ ] `blog/go-fmt-your-code.md`
+- [x] `blog/go-fmt-your-code.md`
 - [ ] `blog/go-fonts.md`
-- [ ] `blog/go-for-app-engine-is-now-generally.md`
-- [ ] `blog/go-image-package.md`
-- [ ] `blog/go-imagedraw-package.md`
-- [ ] `blog/go-maps-in-action.md`
-- [ ] `blog/go-one-year-ago-today.md`
-- [ ] `blog/go-programming-language-turns-two.md`
-- [ ] `blog/go-programming-session-video-from.md`
-- [ ] `blog/go-slices-usage-and-internals.md`
-- [ ] `blog/go-turns-three.md`
-- [ ] `blog/go-updates-in-app-engine-171.md`
-- [ ] `blog/go-videos-from-google-io-2012.md`
-- [ ] `blog/go-whats-new-in-march-2010.md`
-- [ ] `blog/go-wins-2010-bossie-award.md`
+- [x] `blog/go-for-app-engine-is-now-generally.md`
+- [x] `blog/go-image-package.md`
+- [x] `blog/go-imagedraw-package.md`
+- [x] `blog/go-maps-in-action.md`
+- [x] `blog/go-one-year-ago-today.md`
+- [x] `blog/go-programming-language-turns-two.md`
+- [x] `blog/go-programming-session-video-from.md`
+- [x] `blog/go-slices-usage-and-internals.md`
+- [x] `blog/go-turns-three.md`
+- [x] `blog/go-updates-in-app-engine-171.md`
+- [x] `blog/go-videos-from-google-io-2012.md`
+- [x] `blog/go-whats-new-in-march-2010.md`
+- [x] `blog/go-wins-2010-bossie-award.md`
 - [ ] `blog/go.dev.md`
 - [ ] `blog/go1-path.md`
 - [ ] `blog/go1-preview.md`
