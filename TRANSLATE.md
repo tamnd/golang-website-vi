@@ -198,21 +198,21 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go1.4.md`
 - [x] `blog/go1.5.md`
 - [x] `blog/go1.6.md`
-- [ ] `blog/go1.7-binary-size.md`
+- [x] `blog/go1.7-binary-size.md`
 - [x] `blog/go1.7.md`
 - [x] `blog/go1.8.md`
 - [x] `blog/go1.9.md`
 - [x] `blog/go1.md`
 - [ ] `blog/go116-module-changes.md`
 - [ ] `blog/go119runtime.md`
-- [ ] `blog/go12.md`
+- [x] `blog/go12.md`
 - [ ] `blog/go15gc.md`
 - [ ] `blog/go2-here-we-come.md`
 - [ ] `blog/go2-next-steps.md`
-- [ ] `blog/go2draft.md`
+- [x] `blog/go2draft.md`
 - [ ] `blog/gob.md`
-- [ ] `blog/gobs-of-data.md`
-- [ ] `blog/godoc-documenting-go-code.md`
+- [x] `blog/gobs-of-data.md`
+- [x] `blog/godoc-documenting-go-code.md`
 - [ ] `blog/godoc.md`
 - [ ] `blog/godoc.org-redirect.md`
 - [ ] `blog/gofix.md`
