@@ -210,11 +210,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go2-here-we-come.md`
 - [x] `blog/go2-next-steps.md`
 - [x] `blog/go2draft.md`
-- [ ] `blog/gob.md`
+- [x] `blog/gob.md`
 - [x] `blog/gobs-of-data.md`
 - [x] `blog/godoc-documenting-go-code.md`
-- [ ] `blog/godoc.md`
-- [ ] `blog/godoc.org-redirect.md`
+- [x] `blog/godoc.md`
+- [x] `blog/godoc.org-redirect.md`
 - [ ] `blog/gofix.md`
 - [ ] `blog/gofmt.md`
 - [ ] `blog/gonew.md`
