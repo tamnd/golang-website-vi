@@ -201,8 +201,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/go1.7-binary-size.md`
 - [x] `blog/go1.7.md`
 - [x] `blog/go1.8.md`
-- [ ] `blog/go1.9.md`
-- [ ] `blog/go1.md`
+- [x] `blog/go1.9.md`
+- [x] `blog/go1.md`
 - [ ] `blog/go116-module-changes.md`
 - [ ] `blog/go119runtime.md`
 - [ ] `blog/go12.md`
