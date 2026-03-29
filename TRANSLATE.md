@@ -203,12 +203,12 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go1.8.md`
 - [x] `blog/go1.9.md`
 - [x] `blog/go1.md`
-- [ ] `blog/go116-module-changes.md`
-- [ ] `blog/go119runtime.md`
+- [x] `blog/go116-module-changes.md`
+- [x] `blog/go119runtime.md`
 - [x] `blog/go12.md`
-- [ ] `blog/go15gc.md`
-- [ ] `blog/go2-here-we-come.md`
-- [ ] `blog/go2-next-steps.md`
+- [x] `blog/go15gc.md`
+- [x] `blog/go2-here-we-come.md`
+- [x] `blog/go2-next-steps.md`
 - [x] `blog/go2draft.md`
 - [ ] `blog/gob.md`
 - [x] `blog/gobs-of-data.md`
