@@ -215,7 +215,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/godoc-documenting-go-code.md`
 - [x] `blog/godoc.md`
 - [x] `blog/godoc.org-redirect.md`
-- [ ] `blog/gofix.md`
+- [x] `blog/gofix.md`
 - [ ] `blog/gofmt.md`
 - [ ] `blog/gonew.md`
 - [ ] `blog/gopher.md`
