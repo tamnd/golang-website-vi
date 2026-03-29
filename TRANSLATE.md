@@ -196,11 +196,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go1.26.md`
 - [x] `blog/go1.3.md`
 - [x] `blog/go1.4.md`
-- [ ] `blog/go1.5.md`
-- [ ] `blog/go1.6.md`
+- [x] `blog/go1.5.md`
+- [x] `blog/go1.6.md`
 - [ ] `blog/go1.7-binary-size.md`
-- [ ] `blog/go1.7.md`
-- [ ] `blog/go1.8.md`
+- [x] `blog/go1.7.md`
+- [x] `blog/go1.8.md`
 - [ ] `blog/go1.9.md`
 - [ ] `blog/go1.md`
 - [ ] `blog/go116-module-changes.md`
