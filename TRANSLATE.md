@@ -153,7 +153,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go-concurrency-patterns-timing-out-and.md`
 - [x] `blog/go-developer-network.md`
 - [x] `blog/go-fmt-your-code.md`
-- [ ] `blog/go-fonts.md`
+- [x] `blog/go-fonts.md`
 - [x] `blog/go-for-app-engine-is-now-generally.md`
 - [x] `blog/go-image-package.md`
 - [x] `blog/go-imagedraw-package.md`
