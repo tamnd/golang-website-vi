@@ -167,9 +167,9 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go-videos-from-google-io-2012.md`
 - [x] `blog/go-whats-new-in-march-2010.md`
 - [x] `blog/go-wins-2010-bossie-award.md`
-- [ ] `blog/go.dev.md`
-- [ ] `blog/go1-path.md`
-- [ ] `blog/go1-preview.md`
+- [x] `blog/go.dev.md`
+- [x] `blog/go1-path.md`
+- [x] `blog/go1-preview.md`
 - [ ] `blog/go1.1.md`
 - [ ] `blog/go1.10.md`
 - [ ] `blog/go1.11.md`
