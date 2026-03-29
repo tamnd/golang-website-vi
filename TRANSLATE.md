@@ -148,10 +148,10 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/go-becomes-more-stable.md`
 - [x] `blog/go-brand.md`
 - [x] `blog/go-brand/Go-Logo/copyright.txt`
-- [ ] `blog/go-cloud.md`
-- [ ] `blog/go-cloud2019.md`
+- [x] `blog/go-cloud.md`
+- [x] `blog/go-cloud2019.md`
 - [x] `blog/go-concurrency-patterns-timing-out-and.md`
-- [ ] `blog/go-developer-network.md`
+- [x] `blog/go-developer-network.md`
 - [x] `blog/go-fmt-your-code.md`
 - [ ] `blog/go-fonts.md`
 - [x] `blog/go-for-app-engine-is-now-generally.md`
