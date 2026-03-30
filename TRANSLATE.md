@@ -285,7 +285,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/path-security.md`
 - [x] `blog/pgo-preview.md`
 - [x] `blog/pgo.md`
-- [ ] `blog/pipelines.md`
+- [x] `blog/pipelines.md`
 - [ ] `blog/pkg.go.dev-2020.md`
 - [ ] `blog/pkgsite-redesign.md`
 - [ ] `blog/pkgsite-search-redesign.md`
