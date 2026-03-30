@@ -1,0 +1,383 @@
+Khi viết Go, hãy làm như Gopher làm
+Go Conference 2014 mùa thu
+30 Nov 2014
+
+Fumitoshi Ukai
+Google Software Engineer - Chrome Infra team
+ukai@google.com
+https://plus.google.com/+FumitoshiUkai
+@fumitoshi_ukai
+
+* Người phê duyệt khả năng đọc Go
+
+Một nhóm để xem xét khả năng đọc của Go.
+
+- giúp học Go theo phong cách chuẩn qua việc review code
+- review code của các dự án không phải là dự án chính của người review
+
+- [[http://blogger.ukai.org/2013/12/code-readability.html][Tôi tham gia nhóm khoảng một năm trước]] với 20% thời gian, và đã review ~200 CL
+- Hiện tại, tôi review tối đa 3 CL mỗi ngày, 12 CL mỗi tuần.
+
+.image readability/project.png
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]]
+
+* Kỹ năng Đọc là gì?
+
+Khả năng đọc viết của một ngôn ngữ lập trình.
+
+Kỹ năng đọc hoặc viết code theo phong cách *chuẩn*.
+
+Mỗi ngôn ngữ lập trình có phong cách ưa thích riêng.
+Trong C++, mỗi dự án chọn một phong cách ưa thích.
+
+- [[http://google-styleguide.googlecode.com/svn/trunk/cppguide.html][google]] ([[http://www.chromium.org/developers/coding-style][chromium]]), [[https://www.webkit.org/coding/coding-style.html][webkit]] ([[http://www.chromium.org/blink/coding-style][blink]])
+
+Đừng viết code Go theo cách bạn viết code C++/Java/Python.
+Hãy viết code Go theo cách các Gopher viết code.
+
+* Code Go nên ...
+
+- rõ ràng, súc tích.
+- cung cấp API đơn giản.
+- có comment chính xác.
+- có thể đọc được, code theo hướng từ trên xuống dưới.
+
+_"_Muốn_hiểu_gì_đó_trong_các_máy_chủ_của_Google?_Hãy_đọc_phần_triển_khai_bằng_Go!_"_
+
+.caption bởi một Googler
+
+.image readability/pkg.png
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]]
+
+
+* Các công cụ tốt
+
+[[/cmd/gofmt/][go fmt]] - định dạng chương trình Go.
+[[/cmd/vet][go vet]] - báo cáo code đáng ngờ
+[[https://github.com/golang/lint][golint]] - báo cáo lỗi phong cách lập trình.
+[[/blog/godoc-documenting-go-code][godoc]] - duyệt tài liệu
+
+# Go code is easy to read for tools too.
+
+* Công cụ chưa đủ
+
+# Developer doesn't read code the same as tools.
+# Programs(compiler, etc) will read code if its syntax is ok.
+# Tools are not enough, have false-positive/false-negative.
+# Needs human judgments.
+
+Code có thể đọc được == dễ nhận ra, ít gánh nặng cho não.
+Cả người viết lẫn người đọc đều cần kỹ năng đọc.
+Go rất đơn giản ([[/ref/spec][đặc tả ngôn ngữ]] khoảng 50 trang)
+
+.image readability/gophers5th.jpg
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]]
+
+* Đánh giá khả năng đọc
+
+- Có lỗi/bug không?
+- Cấu trúc?
+- Luồng code đơn giản?
+- API đơn giản?
+
+.image readability/gopher-ok-no.png
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]], and [[https://github.com/tenntenn/gopher-stickers/][tenntenn]]
+
+* lỗi/bug
+
+* kiểm tra lỗi
+
+code gốc
+
+.code readability/err_regexp_bad.go
+
+được sửa lại
+
+.code readability/err_regexp_good.go
+
+- Kiểm tra lỗi với [[/pkg/regexp/#MustCompile][regexp.MustCompile]].
+- Must chỉ nên được dùng trong [[/ref/spec#Package_initialization][khởi tạo]] (package `var` hoặc `init()`).
+
+- [[/ref/spec#String_literals][Chuỗi ký tự thô (Raw string literal)]] giúp dễ đọc regexp hơn.
+
+* kiểm tra lỗi: code gốc
+
+.code readability/err_close_write_bad.go
+
+* kiểm tra lỗi: được sửa lại
+
+.code readability/err_close_write_good.go
+
+- Kiểm tra lỗi của Close khi ghi.
+- Không cần dùng defer khi không cần thiết.
+
+* lỗi in-band: code gốc
+
+.code readability/in-band-error-client.go
+
+.code readability/in-band-error.go
+
+* giá trị trả về và lỗi: được sửa lại
+
+.code readability/val-and-error.go
+
+[[/doc/effective_go.html#multiple-returns][Trả về lỗi như error, không phải như một giá trị nào đó]]
+
+* thiết kế lỗi
+
+Nếu client không cần phân biệt các lỗi, ví dụ chỉ cần kiểm tra `err` `!=` `nil`.
+
+	fmt.Errorf("error in %s", val) or errors.New("error msg")
+
+Nếu client muốn phân biệt một số lỗi theo mã lỗi.
+
+	var (
+	  ErrInternal   = errors.New("foo: internal error")
+	  ErrBadRequest = errors.New("foo: bad request")
+	)
+
+Nếu bạn muốn đưa thông tin chi tiết vào lỗi.
+
+	type FooError struct { /* các trường thông tin lỗi */ }
+	func (e *FooError) Error() string { return /* thông báo lỗi */ }
+
+	&FooError{ /* thiết lập dữ liệu lỗi */ }
+
+Không dùng `panic`.
+Nhưng khi bạn dùng, chỉ dùng trong phạm vi package, và [[/doc/effective_go.html#recover][trả về lỗi bằng cách bắt nó với recover]].
+
+* lỗi nil
+
+.code readability/nil_error.go
+
+[[/doc/faq#nil_error][FAQ: Tại sao giá trị lỗi nil của tôi không bằng nil?]]
+
+[[/blog/laws-of-reflection][interface có 2 dữ liệu]] (kiểu và giá trị). Giá trị interface là nil == cả hai đều nil.
+
+* nhúng interface: code gốc
+
+.code readability/implement-interface-bad.go
+
+- `scan.Writer` là một interface.
+- `ColumnWriter` sẽ có các phương thức của interface `scan.Writer` (tức là `ColumnWriter` triển khai interface `scan.Writer`), nhưng ...
+
+* kiểm tra triển khai interface: được sửa lại
+
+.code readability/implement-interface-good.go
+
+- Tác giả ban đầu muốn kiểm tra xem `ColumnWriter` có [[/doc/effective_go.html#blank_implements][triển khai]] interface `scan.Writer` không.
+
+* nhúng interface
+
+Nếu một struct không có phương thức của interface một cách tường minh, interface được nhúng vào struct, và bạn chưa gán trường interface cho một giá trị cụ thể (tức là giá trị trường interface là nil), việc gọi phương thức sẽ panic.
+
+.code readability/nil_interface_en.go
+
+Điều này sẽ hữu ích trong test khi bạn chỉ muốn triển khai một tập con các phương thức trong interface lớn.
+
+* Cấu trúc dễ đọc
+
+* cấu trúc các trường trong struct: code gốc
+
+.code readability/struct-field-bad.go
+
+* cấu trúc các trường trong struct: được sửa lại
+
+.code readability/struct-field-good.go
+
+- Tổ chức các trường theo nhóm, với các dòng trống giữa chúng.
+- Đặt [[/pkg/sync/#Mutex][sync.Mutex]] ở đầu một khối các trường mà mutex bảo vệ.
+
+* Dòng dài
+
+.code readability/long-line-fold.go
+
+* Gộp thành một dòng
+
+.code readability/long-line-nofold.go
+
+- [[/s/comments#Line_Length][Không có giới hạn độ dài dòng cứng nhắc]]
+- tuy nhiên, chúng ta có thể làm ngắn hơn không?
+
+* Chọn tên súc tích
+
+[[/s/comments#Variable_Names][Chọn tên tốt trong ngữ cảnh]]
+
+- Tên dài không phải lúc nào cũng tốt hơn tên ngắn.
+
+Tên ngắn và chính xác.
+
+- [[/s/comments#Package_Names][SamplingServer trong package sampling là thừa]]. Đặt tên `Server`, client sẽ viết là `sampling.Server`.
+- Dùng [[/s/comments#Receiver_Names][một hoặc hai chữ cái cho tên receiver]].
+- Dùng tên ngắn cho tham số vì tên kiểu sẽ cung cấp một số thông tin.
+- Dùng tên mô tả cho các kiểu cơ bản.
+- Dùng tên ngắn cho biến cục bộ: ưu tiên `i` hơn `index`, `r` hơn `reader`.
+- Tên ngắn là ổn nếu hàm không dài.
+
+* Phiên bản một dòng được sửa lại
+
+.code readability/long-line-short.go
+
+* code từ trên xuống dưới
+
+* nhánh điều kiện
+
+- [[/s/comments#Indent_Error_Flow][Giữ đường dẫn code bình thường ở mức thụt vào tối thiểu.]]
+
+code gốc
+
+.code readability/if-else-bad.go
+
+được sửa lại
+
+.code readability/if-else-good.go
+
+* nhánh điều kiện (2): code gốc
+
+.code readability/resthandler.go
+
+* nhánh điều kiện (2): được sửa lại
+
+.code readability/resthandler-fix2.go
+
+- tách ra thành hàm.
+
+* nhánh điều kiện (3): code gốc
+
+.code readability/if-switch-bad.go
+
+* nhánh điều kiện (3): được sửa lại
+
+.code readability/if-switch-good.go
+
+- dùng [[/ref/spec#Switch_statements][switch]]
+
+* Code đơn giản hơn
+
+* time.Duration
+
+Dùng [[/pkg/time/#Duration][time.Duration]] ([[/pkg/flag/#Duration][flag.Duration]]) thay vì `int` hoặc `float` để biểu diễn khoảng thời gian.
+
+code gốc
+
+.code readability/time_duration_bad.go
+.code readability/time_duration_bad1.go
+.code readability/time_duration_bad2.go
+
+được sửa lại
+
+.code readability/time_duration_good.go
+
+- Đừng viết chuyển đổi kiểu không cần thiết.
+- Vì [[/blog/constants][hằng số không có kiểu]], không cần chuyển đổi 30 sang `time.Duration`.
+- Đừng viết comment không cần thiết.
+
+* sync.Mutex và sync.Cond: code gốc
+
+.code readability/close-cond-bad.go
+
+* chan: được sửa lại
+
+.code readability/close-cond-good.go
+
+- Bạn có thể dùng [[/ref/spec#Channel_types][chan]], thay vì [[/pkg/sync/#Mutex][sync.Mutex]] và [[/pkg/sync/#Cond][sync.Cond]].
+
+* reflect: code gốc
+
+.code readability/reflect-bad.go
+
+* không dùng reflect: được sửa lại
+
+.code readability/reflect-good.go
+
+- Đừng dùng [[/pkg/reflect/][reflect]], nếu bạn biết kiểu tại thời điểm biên dịch.
+
+* Test
+
+* Code test
+
+.code readability/test-pattern_en.go
+
+- [[/s/comments#Useful_Test_Failures][Có thông báo lỗi test hữu ích]]
+- Đừng tạo thêm hàm assert. Dùng các tính năng lập trình có sẵn của ngôn ngữ.
+- Viết [[/pkg/testing/#hdr-Examples][test ví dụ]] thay vì viết cách sử dụng API trong comment tài liệu.
+
+.code readability/example_test.go
+
+* Comment
+
+* Comment
+
+[[/s/comments#Package_Comments][Viết comment cho package.]]  Viết comment lệnh trong package main.
+[[/s/comments#Doc_Comments][Viết comment cho các tên được xuất.]]
+[[/s/comments#Comment_Sentences][Comment tài liệu phải là một câu hoàn chỉnh bắt đầu bằng tên được khai báo.]]
+
+	// Package math provides basic constants and mathematical functions.
+	package math
+
+	// A Request represents a request to run a command.
+	type Request struct { ..
+
+	// Encode writes the JSON encoding of req to w.
+	func Encode(w io.Writer, req *Request) {
+
+Duyệt với [[/blog/godoc-documenting-go-code][godoc]]
+
+	$ godoc bytes Buffer
+
+	$ godoc -http=:6060  # http://localhost:6060/pkg
+
+Nếu bạn cảm thấy comment không rõ ràng hoặc khó viết súc tích, hãy xem lại thiết kế API của bạn.
+
+* Thiết kế API
+
+Quan trọng là phải chọn tên package tốt.
+
+- ví dụ package `util` không phải tên tốt, vì hầu hết các package đều là tiện ích của cái gì đó.
+# split it into smaller packages, or merge it in bigger package, or wrong package boundary.
+
+Làm cho API đơn giản.
+
+- [[/doc/effective_go.html#multiple-returns][Dùng nhiều giá trị trả về]]. Đừng dùng con trỏ làm tham số đầu ra.
+- Đừng dùng con trỏ đến slice, map, chan hoặc interface.
+- [[/doc/effective_go.html#multiple-returns][Trả về lỗi như error]]: [[/s/comments#Don't_Panic][đừng panic]]
+- Triển khai các interface phổ biến ([[/pkg/fmt/#Stringer][fmt.Stringer]], [[/pkg/io/#Reader][io.Reader]] và các loại khác) nếu chúng phù hợp với code của bạn.
+- Dùng interface cho tham số. Chúng giúp dễ test hơn. ví dụ: Nếu một hàm đọc từ một file, dùng [[/pkg/io/#Reader][io.Reader]] làm tham số thay vì [[/pkg/os/#File][*os.File]].
+- Ưu tiên API đồng bộ hơn API bất đồng bộ: hạn chế dùng chan qua ranh giới package.
+- Client có thể dễ dàng chạy API đồng bộ đồng thời với goroutine và chan.
+
+* Để viết code dễ đọc
+
+* Code là giao tiếp
+
+Hãy rõ ràng:
+
+- Chọn tên tốt.
+- Thiết kế API đơn giản.
+- Viết tài liệu chính xác.
+- Đừng quá phức tạp.
+
+.image readability/talks.png
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]]
+
+* Khi bạn viết code
+
+Hãy nhớ
+
+- Rõ ràng, súc tích.
+- Cung cấp API đơn giản.
+- Có comment chính xác.
+- Code dễ đọc, từ trên xuống dưới.
+
+* Tài liệu tham khảo
+
+- Effective Go: [[/doc/effective_go.html][go.dev/doc/effective_go.html]]
+- package chuẩn:  [[/pkg/][go.dev/pkg/]]
+- Code Review Comments:  [[/s/comments][go.dev/s/comments]]
+
+- Go for gophers: [[/talks/2014/go4gophers.slide][/talks/2014/go4gophers.slide]]
+- What's in a name? [[/talks/2014/names.slide][/talks/2014/names.slide]]
+- Organizing Go code: [[/talks/2014/organizeio.slide][/talks/2014/organizeio.slide]]
+
+.image readability/ref.png
+.caption _Gopher_ by [[http://www.reneefrench.com][Renée French]]

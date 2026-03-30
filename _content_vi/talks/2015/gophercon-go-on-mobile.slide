@@ -1,0 +1,348 @@
+Go trên thiết bị di động
+
+GopherCon 2015
+
+Hana Kim
+Google
+
+
+* Video
+
+Bài nói này đã được ghi hình tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=sQ6-HyPxHKg Xem bài nói trên YouTube
+
+
+* Lưu ý
+
+.image gophercon-go-on-mobile/caution.png 300 _
+
+Dự án Go Mobile đang ở giai đoạn thử nghiệm. Sử dụng với rủi ro của riêng bạn.
+
+Trong khi chúng tôi đang cố gắng cải thiện nó, không có Google hay nhóm Go nào
+có thể cung cấp hỗ trợ người dùng cuối.
+
+* Bối cảnh
+
+Hỗ trợ di động được yêu cầu thường xuyên
+
+Một số người dùng đã tự xây dựng binary Go cho Android với cgo + liên kết bên ngoài qua chuỗi công cụ NDK
+
+Một số ứng dụng Android đã dùng Go ngay cả trước Go 1.4
+
+- Ứng dụng android Camlistore (mô hình ngoài tiến trình)
+- Goandroid+Mandala (mô hình trong tiến trình)
+- ...
+
+* golang.org/x/mobile
+
+Mục tiêu: Đưa Go đến các nền tảng di động
+
+Tại sao?
+
+- Dùng Go để lập trình toàn bộ hệ thống (máy chủ/máy khách)
+- Viết một thư viện Go đa nền tảng duy nhất
+- Đưa ngôn ngữ đơn giản và công cụ phát triển đến thiết bị di động
+
+* Hai cách dùng Go
+
+Ứng dụng gốc
+
+- Viết toàn bộ ứng dụng bằng Go
+- Dùng các gói Go cho đồ họa, xử lý sự kiện, âm thanh, v.v.
+
+Ứng dụng SDK
+
+- Viết giao diện Android bằng Java, giao diện iOS bằng Objective-C/Swift
+- Viết chức năng chung bằng Go như một thư viện
+
+* Ứng dụng gốc
+
+* Thách thức số 1: API đa nền tảng
+
+Hoạt động cho môi trường Android, iOS và Desktop
+
+Cung cấp bộ API phong phú
+
+Theo phong cách Go idiomatik
+
+* Demo: Xin chào, Gopher!
+
+.image gophercon-go-on-mobile/gophercloud.png 400 _
+
+Chương trình này dùng các gói từ repo golang.org/x/mobile
+Không có Java, Objective-C hay C trong code của tôi
+
+* Những gì có sẵn?
+
+golang.org/x/mobile/...
+
+- [[https://pkg.go.dev/golang.org/x/mobile/app][app: Điều khiển ứng dụng]]
+- [[https://pkg.go.dev/golang.org/x/mobile/asset][asset: Quản lý tài nguyên]]
+- [[https://pkg.go.dev/golang.org/x/mobile/gl][gl: OpenGL ES 2]]
+- [[https://pkg.go.dev/golang.org/x/mobile/event][event: Sự kiện]]
+- [[https://pkg.go.dev/golang.org/x/mobile/geom][geom: Hình học màn hình]]
+
+golang.org/x/mobile/exp/...
+
+- [[https://pkg.go.dev/golang.org/x/mobile/exp/audio][audio: Âm thanh]]
+- [[https://pkg.go.dev/golang.org/x/mobile/exp/font][font: Phông chữ hệ thống]]
+- [[https://pkg.go.dev/golang.org/x/mobile/exp/sprite][sprite: Kết xuất 2D]]
+- [[https://pkg.go.dev/golang.org/x/mobile/exp/sensor][sensor: Cảm biến]]
+
+* Thách thức số 2: Hệ thống build
+
+Xử lý với
+
+- Cài đặt chuỗi công cụ
+
+- Biên dịch chéo cho các tổ hợp `GOOS/GOARCH`
+
+- Chi tiết build đặc thù Android/iOS
+
+Không thú vị chút nào!
+
+* Công cụ gomobile
+
+  $ go get golang.org/x/mobile/cmd/gomobile
+
+Đơn giản hóa việc cài đặt chuỗi công cụ và triển khai ứng dụng
+
+Để cài đặt chuỗi công cụ trình biên dịch Android/iOS:
+
+	$ gomobile init
+
+Để build APK Android và ứng dụng iOS
+
+	$ gomobile -target=android build
+	$ gomobile -target=ios     build
+
+(Demo)
+
+* Ứng dụng SDK
+
+* Go như một thư viện
+
+Go 1.5 có thể build các chương trình Go như một thư viện có thể được dùng bởi các chương trình không phải Go
+
+- Thư viện chia sẻ để liên kết động (`-buildmode=c-shared`)
+- File archive để liên kết tĩnh (`-buildmode=c-archive`)
+
+Các hàm được đánh dấu với annotation cgo `//export` có thể gọi được.
+
+.link /s/execmodes go.dev/s/execmodes
+
+* Làm việc với các ngôn ngữ nước ngoài
+
+.image gophercon-go-on-mobile/gobind.png 300 _
+
+Ánh xạ thủ công các cấu trúc dữ liệu và hàm giữa các ngôn ngữ rất tẻ nhạt và dễ gây lỗi!
+
+
+* Công cụ gobind
+
+	$ go get golang.org/x/mobile/cmd/gobind
+
+Tự động hóa liên kết ngôn ngữ thông qua tạo code
+
+Định nghĩa liên kết ngôn ngữ từ các API Go được xuất khẩu; không cần annotation rõ ràng
+
+Hiện tại hỗ trợ [[https://pkg.go.dev/golang.org/x/mobile/cmd/gobind][tập con của các kiểu Go]]
+
+
+* Liên kết hàm, kiểu cơ bản và lỗi
+
+API Go
+
+	package mypkg
+
+	func Hello() (string, error) { return "Gopher", nil }
+
+API Java được tạo
+
+	public abstract class Mypkg {
+	    public static String Hello() throws Exception { ... }
+	}
+
+API Objective-C được tạo
+
+	FOUNDATION_EXPORT BOOL GoMypkgHello(NSString** ret0_, NSError** error);
+
+* Liên kết struct
+
+	package mypkg
+
+	type Counter struct {
+		Value int64
+	}
+
+	func (c *Counter) Inc() {
+		c.Value++
+	}
+
+	func NewCounter() *Counter {
+		return &Counter{}
+	}
+
+* API Java được tạo
+
+	public abstract class Mypkg {
+		public static final class Counter {
+			public void Inc() { ... }
+			public long GetValue() { ... }
+			public void SetValue(long value) { ... }
+		}
+
+		public static Counter NewCounter() { ... }
+	}
+
+Dùng nó từ Java
+
+	Counter counter = NewCounter();
+	counter.SetValue(12345);
+	counter.Inc();
+
+
+* API Objective-C được tạo
+
+	@interface GoMypkgCounter : NSObject { }
+	@property(strong, readonly) GoSeqRef *ref;
+	- (int64_t)Value;
+	- (void)setValue:(int64_t)v;
+	- (void)Inc;
+	@end
+
+	FOUNDATION_EXPORT GoMypkgCounter* GoMypkgNewCounter();
+
+Dùng nó từ Objective-C
+
+	GoMypkgCounter* counter = GoMypkgNewCounter();
+	[counter setValue:12345];
+	[counter Inc];
+
+* Làm thế nào để build nó?
+
+.image gophercon-go-on-mobile/memegobind.jpg 500 _
+
+
+* Lệnh gomobile bind
+
+Đơn giản hóa quá trình build. Ví dụ, cho Android,
+
+- Tạo liên kết ngôn ngữ cho các gói Go
+
+- Biên dịch code Go thành thư viện chia sẻ
+
+- Biên dịch code ngôn ngữ đích được tạo
+
+- Đóng gói mọi thứ vào file `.aar` (cách hiện đại để phân phối thư viện android)
+
+(DEMO)
+
+Hỗ trợ iOS đang được phát triển.
+
+* Tích hợp Android Studio
+
+Android Studio 1.2+ hỗ trợ nhập `.aar`.
+
+.image gophercon-go-on-mobile/androidstudio2.png 250 _
+
+Để cập nhật .aar,
+
+- Script build để gọi `gomobile` `bind`, hoặc
+- Plugin Gradle để gọi `gomobile` `bind` và xuất bản đầu ra
+
+
+* Câu chuyện về Ivy
+
+[[https://robpike.io/ivy][Ivy]] là công cụ dòng lệnh được phát triển bởi Rob Pike
+
+Đây là một máy tính desktop hữu ích xử lý số nguyên lớn, số hữu tỷ và số dấu phẩy động, vector, ma trận, ...
+
+.image gophercon-go-on-mobile/ivyscreenshot2.png 300 _
+
+Thực ra đây là trình thông dịch cho ngôn ngữ giống [[https://en.wikipedia.org/wiki/APL_(programming_language)][APL]]
+
+* Ivy trên thiết bị di động?
+
+Khoảng 5k dòng code Go (không tính kiểm thử, tài liệu)
+
+Phụ thuộc vào `math`, `math/big`, `math/rand`, `unicode`, ...
+
+.image gophercon-go-on-mobile/canihas.jpg 300 _
+
+Viết lại bằng Java hoặc Objective-C là không thể
+
+* Ứng dụng Ivy
+
+.image gophercon-go-on-mobile/ivymobile.png 300 _
+.caption Logo Ivy của [[https://www.reneefrench.com][Renée French]]
+.link https://play.google.com/store/apps/details?id=org.golang.ivy Google Play Store
+.link https://itunes.apple.com/us/app/ivy-big-number-calculator/id1012116478 Apple App Store
+
+* Gomobile bind
+
+Viết một lần như thư viện bằng Go
+
+Tận hưởng các tính năng ngôn ngữ tuyệt vời và các gói có sẵn trong Go
+
+* Chúng ta đang ở đâu?
+
+* Go 1.4: Xin chào Android!
+
+Được phát hành vào tháng 12 năm 2014
+
+Có thể build ứng dụng Android (`arm`)
+
+Builder Android
+
+Công cụ `gobind` cho liên kết ngôn ngữ Java và Go
+
+Các gói cho ứng dụng đa thiết bị: điều khiển ứng dụng cơ bản, OpenGL ES 2, chạm
+
+.link /s/go14android go.dev/s/go14android
+.link /s/gobind go.dev/s/gobind
+
+* Go 1.5: Xin chào iOS!
+
+Kế hoạch phát hành vào đầu tháng 8 năm 2015
+
+Hỗ trợ thử nghiệm cho iOS (`arm,arm64`)
+
+Builder iOS
+
+* Go 1.5: Chương trình Go như thư viện
+
+Có thể gọi các hàm Go từ ngôn ngữ nước ngoài theo cách sạch sẽ
+
+.link /s/execmodes go.dev/s/execmodes
+
+* Go 1.5: Công cụ tốt hơn và nhiều gói hơn
+
+Repo `golang.org/x/mobile` ngày càng tốt hơn
+
+- Công cụ `gomobile` để build ứng dụng/thư viện di động
+
+- Công cụ `gobind` mở rộng: liên kết Objective-C
+
+- `golang.org/x/mobile/exp`: thử nghiệm với audio, sensor, sprite, ...
+
+* Go 1.6+
+
+- Cải tiến trong các gói GL/UI
+
+- Nhiều API hơn cho ứng dụng "Go thuần túy"
+
+- Kiểm thử, profiling, gỡ lỗi
+
+- Hỗ trợ cho nhiều nền tảng hơn (ví dụ android/x86, iOS simulator)
+
+- Hỗ trợ kiểu phong phú hơn trong `gobind`
+
+- Tích hợp IDE
+
+* Đóng góp từ cộng đồng Go
+
+.image gophercon-go-on-mobile/contributors.png 480 _
+.caption git log | word_cloud
+

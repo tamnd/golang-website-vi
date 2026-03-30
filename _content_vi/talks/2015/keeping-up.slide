@@ -1,0 +1,104 @@
+Bắt kịp với các Gopher
+Lịch sử ngắn gọn về gccgo, những cải tiến và tương lai
+
+Chris Manghane
+Google Gopher | Compilers and Toolchains
+cmang@golang.org
+
+* gccgo: "Trình biên dịch Go thay thế"
+
+- Được viết và bảo trì bởi Ian Lance Taylor (phát hành tháng 11 năm 2009)
+
+    2010-01-26  Ian Lance Taylor  <iant@google.com>
+
+    		* MAINTAINERS: Add myself as Go frontend maintainer.
+
+- Frontend trình biên dịch cho ngôn ngữ Go viết bằng C++
+
+.image keeping-up/gccgo_structure.png 320 _
+
+* gccgo: Nhóm Go không biết
+
+"Ian chỉ xuất hiện ở cửa nhà chúng tôi với một trình biên dịch hoàn chỉnh" ~ có lẽ là Rob
+
+.html keeping-up/gource_explosion.html
+
+* Tại sao viết trình biên dịch Go bằng C++?
+
+* lý do: hỗ trợ kiến trúc
+
+- cmd/gc (2009) hướng tới 4 kiến trúc chính: i386, amd64, ARM và IBM POWER
+- gcc (4.3, 2009) hướng tới 45 kiến trúc chính thức, 28 không chính thức
+- tận dụng gcc => nỗ lực tối thiểu để hỗ trợ Go trên các kiến trúc hiện có
+
+* lý do: tạo mã
+
+- gcc có ~30 năm công việc được đầu tư vào phân tích và tối ưu hóa mã
+- cmd/gc chỉ mới tập trung vào việc tạo mã gần đây (công việc SSA của khr)
+- tận dụng gcc => nỗ lực tối thiểu để tạo ra các nhị phân đã được tối ưu hóa
+
+* lý do: tính trung thực kỹ thuật
+
+- "Giữ cho nhau trung thực"
+- Các triển khai riêng biệt => Sự không nhất quán trong đặc tả và các triển khai
+- Người dùng có các lựa chọn khi một triển khai thiếu tính năng
+- Các trình biên dịch tìm kiếm tính năng tương đương => Các trình biên dịch học hỏi từ nhau
+- Các trình biên dịch tạo ra các nhị phân tốt hơn => Vòng tròn đức hạnh
+
+* Những cải tiến gccgo qua kính viễn vọng
+
+* gofrontend: không phụ thuộc vào gcc
+
+- gcc triển khai giao diện backend của gofrontend
+
+gofrontend (gcc/go/gofrontend/expressions.cc)
+
+.code keeping-up/backend_interface.diff
+
+backend (gcc/go/go-gcc.cc)
+
+.code keeping-up/cst.gcc
+
+* gccgo: xây dựng công cụ `go`
+
+- Một cách để xây dựng code trên nhiều trình biên dịch
+
+.code keeping-up/go_build.log
+
+* gofrontend: phân tích escape cơ bản
+
+- Triển khai _Phân_tích_escape_cho_Java_ của JD Choi
+
+escape.go
+
+.code keeping-up/escape.go
+
+Đồ thị kết nối
+
+.image keeping-up/escape.png
+
+* Bắt kịp
+
+* gccgo: tương đương runtime và garbage collector
+
+- runtime gccgo là phiên bản đã được sửa đổi của runtime Go 1.3
+- runtime Go 1.4 đã được viết lại bằng Go
+- Go 1.4 đã thay đổi thông tin kiểu GC
+
+* vượt ra ngoài gccgo: stack maps của trình biên dịch
+
+- Stack map ghi lại vị trí của các giá trị đang hoạt động tại một địa chỉ nhất định
+- Cho phép Garbage Collector chính xác về các kiểu trên stack
+- Cho phép các stack liên tục điều chỉnh lại các con trỏ đã sao chép
+- Hỗ trợ ít trong các trình biên dịch C: gcc không có hỗ trợ, hỗ trợ LLVM đang trong tiến trình
+
+* llvmgo: một "trình biên dịch Go thay thế" khác
+
+- gofrontend cung cấp giao diện backend mà LLVM có thể triển khai
+- Bytecode LLVM được tin tưởng trong các môi trường bảo mật như PNaCl
+- Chạy Go gốc trên web
+
+* Hỗ trợ OS: OSX và Windows
+
+- hỗ trợ gccgo trên các hệ thống không phải Unix
+- Cần chuyên gia

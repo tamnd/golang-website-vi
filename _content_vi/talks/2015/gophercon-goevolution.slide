@@ -1,0 +1,403 @@
+Sự tiến hóa của Go
+Bài phát biểu khai mạc GopherCon 2015 - 9 tháng 7 năm 2015
+
+Robert Griesemer
+Google, Inc.
+gri@golang.org
+
+
+* Video
+
+Bài nói này đã được ghi hình tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=0ReKdcpNyQg Xem bài nói trên YouTube
+
+
+*
+
+.image gophercon-goevolution/GopherEvolution.svg
+
+
+* Lý lịch cá nhân
+
+- Tôi có niềm say mê cá nhân với các ngôn ngữ lập trình.
+
+- Sau trường sau đại học, lập trình trong ngành công nghiệp giống như một bước lùi lớn.
+
+- Qua nhiều năm, đã dành nhiều thời gian suy nghĩ về các ngôn ngữ lập trình.
+
+- Thiết kế ngôn ngữ tốt rất *khó*.
+
+- Sau 15 năm dùng C++, chỉ còn hai con đường: *bán*mình*hay*thoát*ra*!
+
+- May mắn khi được cùng Rob và Ken.
+
+
+* Điểm xuất phát
+
+- Mục tiêu rõ ràng trong tâm trí: Chúng ta cần một ngôn ngữ tốt hơn cho những gì chúng ta làm ở Google.
+
+- Động lực cá nhân: Muốn một ngôn ngữ nhỏ, sạch, biên dịch với các tính năng hiện đại.
+
+- Rõ ràng về điều gì sai: Độ phức tạp, thiếu hỗ trợ đồng thời, thiếu khả năng mở rộng, thời gian build điên rồ.
+
+- Ý tưởng tốt về cách giải quyết vấn đề.
+
+- Suy nghĩ chưa hoàn chỉnh về phần còn lại.
+
+- Kinh nghiệm của ba người giàu kinh nghiệm về cách không làm điều đó.
+
+- Cạm bẫy: Thiết kế ngôn ngữ mới thật dễ dàng.
+
+Điều gì có thể xảy ra?
+
+
+* Các nguyên tắc dẫn đường
+
+- Sự đơn giản, an toàn và dễ đọc là tối quan trọng.
+
+- Phấn đấu cho tính trực giao trong thiết kế.
+
+- Tối giản: Một cách để viết một đoạn code.
+
+- Đây là về *biểu_diễn_thuật_toán*, không phải hệ thống kiểu.
+
+- Lịch sử tiềm thức tập thể của các ngôn ngữ lập trình.
+
+Những thứ quan trọng nên dễ dàng; dù điều đó có nghĩa là không phải mọi thứ đều có thể.
+
+
+* Tài liệu về thiết kế ngôn ngữ tốt rất thưa thớt
+
+.image gophercon-goevolution/HoaresPLHints.JPG 400 600
+
+- "Gợi ý về Thiết kế Ngôn ngữ Lập trình" (C.A.R. Hoare, 1973)
+- "Mọi thứ bạn luôn muốn biết về ngôn ngữ lập trình nhưng sợ hỏi" (C.A.R. Hoare, 1978)
+
+
+* Ghi chú thiết kế đầu tiên
+
+	Date: Sun, 23 Sep 2007 23:33:41 -0700
+	From: "Robert Griesemer" <gri@google.com>
+	To: "Rob 'Commander' Pike" <r@google.com>, ken@google.com
+	Subject: prog lang discussion
+	...
+	*** General:
+	Starting point: C, fix some obvious flaws, remove crud, add a few missing features
+	  - no includes, instead: import
+	  - no macros (do we need something instead?)
+	  - ideally only one file instead of a .h and .c file, module interface
+	should be extracted automatically
+	  - statements: like in C, though should fix 'switch' statement
+	  - expressions: like in C, though with caveats (do we need ',' expressions?)
+	  - essentially strongly typed, but probably w/ support for runtime types
+	  - want arrays with bounds checking on always (except perhaps in 'unsafe mode'-see section on GC)
+	  - mechanism to hook up GC (I think that most code can live w/ GC, but for a true systems
+	    programming language there should be mode w/ full control over memory allocation)
+	  - support for interfaces (differentiate between concrete, or implementation types, and abstract,
+	    or interface types)
+	  - support for nested and anonymous functions/closures (don't pay if not used)
+	  - a simple compiler should be able to generate decent code
+	  - the various language mechanisms should result in predictable code
+	...
+
+
+* Nhìn lại
+
+Nhiều ý tưởng từ Ngày Một đã được đưa vào Go:
+
+- Cú pháp: Ký hiệu từ khóa đứng đầu (const, var, type, v.v.), nhiều cải tiến.
+- Biểu thức: Tối đa 5 cấp độ ưu tiên nhị phân.
+- Kiểu cơ bản có kích thước rõ ràng, kiểu rune, không chuyển đổi ngầm định.
+
+- Gói và import.
+- Phương thức với tham số receiver rõ ràng.
+- Interface.
+- Hiểu rằng chúng ta sẽ thêm hỗ trợ đồng thời dựa trên công việc trước đây của Rob.
+
+Nhiều khái niệm bị thiếu, và thậm chí nhiều ý tưởng hơn không được thực hiện.
+
+Tuy nhiên, chúng ta đã có một khởi đầu tốt. Điều này không rõ ràng chút nào vào thời điểm đó!
+
+
+* Hầu hết ý tưởng đến từ các ý tưởng trước.
+(Alan Kay)
+
+Hoặc, như một số nhà phê bình sẽ nói: Không có gì mới trong Go!
+
+
+Họ đang bỏ lỡ điểm mấu chốt:
+
+Nhiệm vụ của nhà thiết kế ngôn ngữ lập trình *"là*củng*cố*chứ*không*phải*đổi*mới"*.
+(Hoare, 1973).
+
+
+* Họ Algol
+
+
+* Algol60
+
+
+(John Backus, John McCarthy, Alan Perlis, v.v., 1958-1960)
+
+=> Cấu trúc block, hàm và thủ tục lồng nhau và đệ quy, khai báo kiểu và kiểu tĩnh, câu lệnh "for", câu lệnh "return", câu lệnh được phân tách bằng dấu chấm phẩy, block "begin"-"end", "call by name", v.v.
+
+"Đây là ngôn ngữ [Algol60] vượt trước thời đại đến mức không chỉ là sự cải tiến so với các phiên bản trước, mà còn so với hầu hết các phiên bản kế nhiệm." (C.A.R. Hoare)
+
+Trùng hợp thay, vài năm trước:
+- Dạng chuẩn Backus Naur (John Backus, Peter Naur, 1958)
+
+
+* Các phiên bản kế nhiệm Algol
+
+- *Pascal* (N. Wirth, ETH Zürich, 1968-1970)
+=> BEGIN/END cho block, dấu chấm phẩy là dấu phân cách, khai báo từ trái sang phải,
+kiểu dữ liệu có cấu trúc có nguyên tắc, khái niệm hàm ("chuẩn") được khai báo trước, được thiết kế để dạy học.
+
+- *C* (Dennis Ritchie, Bell Labs, 1969-1973)
+=> Dấu ngoặc nhọn cho block, dấu chấm phẩy là dấu kết thúc, khai báo bắt chước cách dùng,
+tính đối ngẫu giữa mảng và con trỏ, kiểu tĩnh nhưng thực thi yếu, được thiết kế để viết nhân Unix.
+
+
+* Các phiên bản kế nhiệm Pascal
+
+- *Modula*, *Modula-2* (N. Wirth, 1978, 1980)
+=> Module tách biên dịch và đóng gói, coroutine và monitor, hỗ trợ lập trình cấp thấp.
+
+- *Oberon* (N. Wirth, 1986)
+=> Module đơn giản hóa, mở rộng kiểu động và kiểm tra kiểu, cú pháp được tinh gọn.
+
+Triết học: "Làm cho nó đơn giản nhất có thể, nhưng không đơn giản hơn." (A. Einstein)
+
+- *Object*Oberon* (J. Templ, H.P. Moessenboeck, 1989)
+=> Phương ngữ Oberon thử nghiệm với class và phương thức.
+
+- *Oberon-2* (J. Templ, H.P Moessenboeck, N. Wirth, 1991)
+=> Oberon với phương thức trên record (== struct), thay thế Object Oberon.
+
+
+* Tra cứu nút cây trong Oberon-2
+
+
+	MODULE Trees;
+
+	IMPORT Texts, Oberon;
+
+	TYPE
+		Tree* = POINTER TO Node;  (* dấu sao biểu thị xuất khẩu, không phải con trỏ! *)
+		Node* = RECORD
+			name-: POINTER TO ARRAY OF CHAR;  (* dấu trừ biểu thị xuất khẩu chỉ đọc *)
+			left, right: Tree
+		END;
+
+	PROCEDURE (t: Tree) Lookup* (name: ARRAY OF CHAR): Tree;
+		VAR p: Tree;
+	BEGIN p := t;
+		WHILE (p # NIL) & (name # p.name^) DO
+			IF name < p.name^ THEN p := p.left ELSE p := p.right END
+		END;
+		RETURN p
+	END Lookup;
+
+	...
+
+
+* Code tương đương trong Go
+
+
+	package trees
+
+	import ( "fmt"; "runtime" )
+
+	type (
+		Tree *Node
+		Node struct {
+			name        string
+			left, right Tree
+		}
+	)
+
+	func (t *Node) Lookup(name string) Tree {
+		var p Tree
+		p = t
+		for p != nil && name != p.name {
+			if name < p.name { p = p.left } else { p = p.right }
+		}
+		return p
+	}
+
+	...
+
+
+* Quan sát
+
+- Chi tiết cú pháp khác nhau nhưng cấu trúc giống nhau.
+=> Token C, cấu trúc Oberon.
+
+- Cùng các khái niệm (gói, import, kiểu, hàm/phương thức, v.v.).
+=> Các khái niệm Go được tinh lọc thêm (ví dụ: chỉ có một cấu trúc vòng lặp).
+
+Di sản của Go ít nhất là Oberon nhiều như C!
+(gói, import, an toàn bộ nhớ nghiêm ngặt, thu gom rác, kiểm tra kiểu động, v.v.)
+
+
+* Hướng đối tượng và generics
+
+Khoảng năm 1990: Cơn sốt OO và hệ thống kiểu đang gây hại cho các ngôn ngữ lập trình.
+- C++, Java và những ngôn ngữ khác
+- hệ thống kiểu OO phức tạp
+- hệ thống kiểu generic phức tạp
+
+Sự phổ biến của các ngôn ngữ thông dịch có kiểu động:
+- Erlang, Perl, Python, Lua, Javascript, Ruby, v.v.
+
+Thập niên 1990, 2000: Phản ứng ngược.
+- Code OO phức tạp là tương đương hiện đại của "code spaghetti" không cấu trúc những năm 1970.
+- Nhận thức rằng các chương trình lớn trong ngôn ngữ có kiểu động trở nên không thể bảo trì.
+- Ký hiệu lộn xộn: "Public Static Void" (Rob Pike, OSCON 2010).
+
+
+* Hướng đối tượng trong Go: Interface
+
+Cảm hứng: Smalltalk (Alan Kay, Dan Ingalls, Adele Goldberg, 1972-1980)
+- Mọi thứ đều là đối tượng.
+- Bất kỳ thông điệp nào cũng có thể được gửi đến bất kỳ đối tượng nào.
+
+Mong muốn: Sức mạnh tương tự trong ngôn ngữ kiểu tĩnh (chủ yếu) mà không có sự phức tạp của hệ thống kiểu.
+- Khái niệm interface cho kiểu tĩnh.
+- Thường đối tượng mang thông tin kiểu => hạn chế kiểu đối tượng thành "class".
+
+*Nhận_thức_quan_trọng*: Có thể gắn phương thức cho bất kỳ kiểu nào nếu interface mang thông tin kiểu thay vì đối tượng.
+
+Phương thức và interface là các cơ chế bổ sung duy nhất cần thiết cho lập trình hướng đối tượng.
+
+
+* Tính đồng thời
+
+- Hỗ trợ đồng thời tốt được coi là thiết yếu ngay từ ngày đầu.
+
+- Công việc của Rob Pike về NewSqueak hóa ra rất phù hợp với Go.
+
+Nguồn gốc:
+
+- "Newsqueak: A Language for Communicating with Mice", Rob Pike, 1994.
+
+- "Communicating Sequential Processes", CACM, C.A.R. Hoare, 1978.
+
+
+* Generics
+
+- Tính năng ngôn ngữ lớn nhất duy nhất (chính xác là gì?) vắng mặt trong Go.
+
+- Thường bị người mới đến Go bỏ lỡ.
+
+- Cơ chế hệ thống kiểu; không rõ liệu có phải tính năng ngôn ngữ thiết yếu hay không.
+
+- Cực kỳ phức tạp cả về ngữ nghĩa và triển khai.
+
+- Đánh đổi đáng kể: Binary lớn hơn, binary chậm hơn, hoặc mã nguồn lớn hơn.
+
+- Không trực giao: Ảnh hưởng đến nhiều tính năng ngôn ngữ khác cũng như cách thư viện được viết.
+
+- Hiện tại: Tạm dừng và tiếp tục suy nghĩ về nó.
+
+
+* Kết hợp tất cả lại
+
+May mắn khi có hai năm để xác định những điều cơ bản (cảm ơn, Google!).
+
+Quan trọng: *Thêm*một*tính*năng*tại*một*thời*điểm.*
+
+Ban đầu: Nhóm ba người rất khác nhau.
+- Thảo luận sâu sắc, đầy cảm xúc.
+- Trải nghiệm khiêm tốn.
+
+Có nhiều người soi sáng mỗi tính năng mới từ các góc độ khác nhau
+đã làm cho ngôn ngữ mạnh mẽ hơn nhiều.
+
+Sau đó:
+- Dao cạo của Russ Cox cắt qua những gì thừa, làm cho nó hoạt động tốt.
+- Ian Lance Taylor cung cấp triển khai thứ 2 (xác nhận thiết kế).
+- go/types (nay trong 1.5!) cung cấp frontend thứ 3 (xác nhận trình biên dịch và spec).
+
+Có 3 frontend đã chứng minh cực kỳ hữu ích.
+
+
+* Tiến hóa Go
+
+Thiết kế gốc đã trải qua nhiều quá trình chuyển đổi (cú pháp và ngữ nghĩa):
+
+- Phát triển thư viện song song đảm bảo chúng ta không thiết kế "vào không khí xanh".
+
+- gofmt (cho thay đổi ngôn ngữ) và gofix (cho thay đổi API) cho code hiện có.
+
+Các tính năng đến muộn hơn nhiều:
+
+- Dấu chấm phẩy tùy chọn, kiểu tùy chọn cho composite literal, bound tùy chọn trong slice expression, recover, v.v.
+
+- Làm rõ ngữ nghĩa (map, thao tác channel, v.v.).
+
+- Các điều chỉnh nhỏ tương thích ngược vẫn xảy ra với tốc độ rất thấp.
+
+
+* Tương lai của Go
+
+
+* Điều gì làm cho một ngôn ngữ lập trình thành công?
+
+- Mục tiêu rõ ràng
+
+- Triển khai vững chắc: *ngôn*ngữ*, *thư*viện* và *công*cụ*!
+
+- Sẵn sàng với thị trường
+
+- Đột phá công nghệ
+
+- Tính năng ngôn ngữ không có đối thủ cạnh tranh
+
+- Hiếm khi: Marketing
+
+
+* Còn Go thì sao?
+
+- Mục tiêu rõ ràng đằng sau thiết kế
+- Đa mô hình (bắt buộc, hàm, hướng đối tượng)
+- Cú pháp nhẹ
+- Tính năng ngôn ngữ không có cạnh tranh: goroutine, interface, defer
+- Công cụ không có cạnh tranh: trình biên dịch nhanh, gofmt, go build
+- Thư viện chuẩn mạnh
+- Triển khai vững chắc
+- Tài liệu xuất sắc, công cụ trực tuyến (playground, tour)
+- Nhưng: Không có marketing doanh nghiệp đáng kể
+
+
+* Go có trở thành ngôn ngữ chính thống không?
+
+- Cần vượt qua khoảng cách từ những người áp dụng sớm đến người dùng chính thống đầu tiên. Chúng ta đã đến đó chưa?
+- Cộng đồng Go phải tiếp tục thống nhất đằng sau mục tiêu này.
+- Đừng mắc quá nhiều lỗi khi tiến về phía trước.
+
+Phải mất khoảng 10 năm để một ngôn ngữ lập trình trở nên "được thiết lập".
+
+
+* Cạm bẫy
+
+Ngôn ngữ bị đóng băng, nhưng đây là một dạng "thiết kế ngôn ngữ":
+
+- Tag +build và các comment đặc biệt khác
+- diễn giải đặc biệt của đường dẫn import và comment đường dẫn import chính tắc
+- gói internal
+- mô tả vendoring
+
+Các cơ chế này không phải là một phần của spec ngôn ngữ và do đó có thể phân kỳ
+theo thời gian hoặc có ngữ nghĩa khác nhau trên các nền tảng khác nhau.
+
+Cần chú ý đến sự phát triển này.
+
+
+* Suy nghĩ kết thúc
+
+- Năm 1960, các chuyên gia ngôn ngữ từ Mỹ và châu Âu hợp tác để tạo ra Algol 60.
+- Năm 1970, cây Algol phân chia thành nhánh C và nhánh Pascal.
+- Khoảng 40 năm sau, hai nhánh gặp nhau lần nữa trong Go.
+- Hãy xem liệu Go có thể tận hưởng một cuộc chạy dài tương đương như các ngôn ngữ tiền nhiệm!

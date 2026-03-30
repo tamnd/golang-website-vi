@@ -1,0 +1,396 @@
+Gopher với Búa
+
+Josh Bleecher Snyder
+PayPal
+josharian@gmail.com
+@offbymany
+
+
+* Go được thiết kế với công cụ trong tâm trí. (Rob Pike)
+
+* Được thiết kế với công cụ trong tâm trí
+
+Cú pháp đơn giản, đều đặn
+Ngữ nghĩa đơn giản
+Pin đã kèm theo
+
+* Công cụ ở khắp nơi
+
+- go
+- gofmt, goimports
+- godoc
+- go test [-cover] [-race]
+- go vet
+- gofix, gofmt -r, eg
+- oracle
+- golint
+- godep
+
+và nhiều hơn nữa...
+
+* Lệnh go
+
+	$ go list -f '{{.Deps}}' bytes
+	[errors io runtime sync sync/atomic unicode unicode/utf8 unsafe]
+
+* gofmt
+
+từ
+
+	for{
+	fmt.Println(      "I feel pretty." );
+	       }
+
+sang
+
+	for {
+		fmt.Println("I feel pretty.")
+	}
+
+* godoc
+
+	$ godoc strings Repeat
+	func Repeat(s string, count int) string
+	    Repeat returns a new string consisting of count copies of the string s.
+
+* go vet
+
+Ối
+
+	if suffix != ".md" || suffix != ".markdown" {
+
+Được báo cáo
+
+	suspect or: suffix != ".md" || suffix != ".markdown"
+
+* go tool cover -mode=set
+
+	func Repeat(s string, count int) string {
+		b := make([]byte, len(s)*count)
+		bp := 0
+		for i := 0; i < count; i++ {
+			bp += copy(b[bp:], s)
+		}
+		return string(b)
+	}
+
+sang
+
+	func Repeat(s string, count int) string {
+		GoCover.Count[0] = 1
+		b := make([]byte, len(s)*count)
+		bp := 0
+		for i := 0; i < count; i++ {
+			GoCover.Count[2] = 1
+			bp += copy(b[bp:], s)
+		}
+		GoCover.Count[1] = 1
+		return string(b)
+	}
+
+* go test -cover
+
+	$ go test -coverprofile=c.out strings
+	ok  	strings	0.455s	coverage: 96.9% of statements
+
+	$ go tool cover -func=c.out
+	strings/reader.go:	Len				66.7%
+	strings/reader.go:	Read				100.0%
+	strings/reader.go:	ReadAt				100.0%
+	strings/reader.go:	ReadByte			100.0%
+	strings/reader.go:	UnreadByte			100.0%
+	strings/reader.go:	ReadRune			100.0%
+	strings/reader.go:	UnreadRune			100.0%
+	strings/reader.go:	Seek				90.9%
+	strings/reader.go:	WriteTo				83.3%
+	...
+
+	$ go tool cover -html=c.out
+	# mở cửa sổ trình duyệt, hiển thị độ phủ từng dòng
+
+
+* Công cụ để làm công cụ
+
+- text/template
+- go/build
+- go/doc
+- go/format
+- go/{parser,token,ast,printer}
+- go.tools/go/types và các gói liên quan
+
+và nhiều hơn nữa...
+
+* Búa thật vui!
+
+# Tại sao nên viết công cụ của riêng bạn: Vui vẻ, học hỏi, lợi nhuận
+
+* impl
+
+Tạo các stub cài đặt cho một interface.
+
+	go get github.com/josharian/impl
+
+Tạo ra
+
+	$ impl 'f *File' io.Reader
+	func (f *File) Read(p []byte) (n int, err error) {
+	}
+
+từ
+
+	package io
+
+	type Reader interface {
+		Read(p []byte) (n int, err error)
+	}
+
+* impl
+
+Tạo ra
+
+	$ impl 'f *File' io.ReadWriter
+	func (f *File) Read(p []byte) (n int, err error) {
+	}
+
+	func (f *File) Write(p []byte) (n int, err error) {
+	}
+
+từ
+
+	package io
+
+	type ReadWriter interface {
+		Reader
+		Writer
+	}
+
+* impl
+
+Tạo ra
+
+	$ impl 'c *Ctx' http.Handler
+	func (c *Ctx) ServeHTTP(http.ResponseWriter, *http.Request) {
+	}
+
+từ
+
+	package http
+
+	type Handler interface {
+		ServeHTTP(ResponseWriter, *Request)
+	}
+
+* Kế hoạch
+
+*Tìm đường dẫn import và tên interface*
+
+	http.Handler => net/http, Handler
+
+Phân tích cú pháp interface
+
+	net/http, Handler => {{"ServeHTTP", {{"", "http.ResponseWriter"}, {"", "*http.Request"}}, {}}}}
+
+Tạo đầu ra
+
+	{{"ServeHTTP", {{"", "http.ResponseWriter"}, {"", "*http.Request"}}, {}}}} => lợi nhuận!
+
+* goimports ftw
+
+	import "golang.org/x/tools/imports"
+
+.play hammers/importpath.go /func main/,/^}/
+
+* Xin chào, AST
+
+    *ast.File {
+    .  Package: 1:1
+    .  Name: *ast.Ident {
+    .  .  NamePos: 1:9
+    .  .  Name: "hack"
+    .  }
+    .  Decls: []ast.Decl (len = 2) {
+    .  .  0: *ast.GenDecl {
+    .  .  .  TokPos: 1:15
+    .  .  .  Tok: import
+    .  .  .  Lparen: -
+    .  .  .  Specs: []ast.Spec (len = 1) {
+    .  .  .  .  0: *ast.ImportSpec {
+    .  .  .  .  .  Path: *ast.BasicLit {
+    .  .  .  .  .  .  ValuePos: 1:22
+    .  .  .  .  .  .  Kind: STRING
+    .  .  .  .  .  .  Value: "\"net/http\""
+
+[cắt bớt]
+
+
+* Trích xuất đường dẫn import
+
+	import (
+		"go/parser"
+		"go/token"
+	)
+
+.play hammers/extractpath.go /func main/,/^}/
+
+* Trích xuất tên interface
+
+	import "go/ast"
+
+.play hammers/extractiface.go /func main/,/^}/
+
+Một `GenDecl` có thể có nhiều `Spec`
+
+	var (
+		r io.Reader
+		w io.Writer
+	)
+
+* Kế hoạch
+
+Tìm đường dẫn import và tên interface
+
+	http.Handler => net/http, Handler
+
+*Phân tích cú pháp interface*
+
+	net/http, Handler => {{"ServeHTTP", {{"", "http.ResponseWriter"}, {"", "*http.Request"}}, {}}}}
+
+Tạo đầu ra
+
+	{{"ServeHTTP", {{"", "http.ResponseWriter"}, {"", "*http.Request"}}, {}}}} => lợi nhuận!
+
+* Cấu trúc dữ liệu
+
+Biểu diễn
+
+	Read(p []byte) (n int, err error)
+
+như
+
+	Func{
+		Name:   "Read",
+		Params: []Param{{Name: "p", Type: "[]byte"}},
+		Res: []Param{
+			{Name: "n", Type: "int"},
+			{Name: "err", Type: "error"},
+		},
+	},
+
+* Cấu trúc dữ liệu
+
+.code hammers/types.go /type Func/,/^}/
+.code hammers/types.go /type Param/,/^}/
+
+* Tìm mã
+
+	import "go/build"
+
+.play hammers/findthecode.go /func main/,/^}/
+
+* Tìm khai báo interface
+
+	import "go/printer"
+
+.play hammers/findtheifacedecl.go /func main/,/^}/
+
+* Trích xuất tên hàm
+
+Không có tên? Đó là interface được nhúng. Đệ quy.
+
+	type ByteScanner interface {
+	    ByteReader
+	    UnreadByte() error
+	}
+
+* Trích xuất params và kết quả
+
+Không có tên? Chỉ cần dùng `""`.
+
+	type ByteWriter interface {
+	    WriteByte(c byte) error
+	}
+
+* Đặt tên đầy đủ cho kiểu
+
+Kiểu có thể phức tạp tùy ý.
+
+	type CrazyGopher interface {
+		CrazyGoph(int) func(chan<- [32]byte, map[string]int64) ([]rune, error)
+	}
+
+Và chúng ta cần viết lại một số.
+
+	int => int
+	*Request => *http.Request
+	io.Reader => io.Reader
+	func(io.Reader, chan map[S][]*T) => func(io.Reader, chan map[foo.S][]*foo.T))
+
+* Đặt tên đầy đủ cho kiểu
+
+.play hammers/fulltype.go /func main/,/end main/
+
+* Kế hoạch
+
+Tìm đường dẫn import và tên interface
+
+	http.Handler => net/http, Handler
+
+Phân tích cú pháp interface
+
+	net/http, Handler => {{"ServeHTTP", {{"", "http.ResponseWriter"}, {"", "*http.Request"}}, {}}}}
+
+*Tạo đầu ra*
+
+	{{"ServeHTTP", {{"", "http.ResponseWriter"}, {"", "*http.Request"}}, {}}}} => lợi nhuận!
+
+* Kiểu Method
+
+.code hammers/types.go /type Method/,/^}/
+.code hammers/types.go /type Func/,/^}/
+.code hammers/types.go /type Param/,/^}/
+
+* Dùng text/template
+
+.play hammers/codegen.go /func main/,/^}/
+
+# Đừng tạo AST. Tốn nhiều công sức, và Go là DSL của chính nó.
+
+* Xấu thì cũng ổn
+
+	import "go/format"
+
+.play hammers/format.go /func main/,/^}/
+
+* Thành công lớn
+
+Mã đầy đủ cộng với test tại `github.com/josharian/impl`
+
+* Mẹo
+
+Dùng `go`get`-d` để tải nhiều mã từ `godoc.org/-/index`. (Đừng quên đặt `GOPATH` tạm thời!)
+
+Dùng (và cải thiện) `github.com/yuroyoro/goast-viewer`.
+
+Bạn không cần phải tạo ra tất cả mã. Và tạo dữ liệu còn tốt hơn.
+
+Tài liệu `go/ast` là người bạn của bạn.
+
+`go.tools/go/types` rất mạnh mẽ.
+
+`go`generate` sắp ra mắt.
+
+
+* Đinh!
+
+- Tách các chuỗi dài
+- Enum và flag thành Stringer
+- Phân tích mã động
+- Kiểm tra vet
+- Reflect thành codegen
+- Dispatch http dựa trên quy ước
+- Phát hiện lỗi copy/paste "dòng cuối"
+- Diff, merge, blame nhận biết AST; phân tích fork tự động
+- Mô hình machine learning của AST: phát hiện bất thường, phát hiện mã dễ có lỗi
+- Fingerprinting mã
+- Kiểm tra mẫu sử dụng
+- Bài kiểm thử căng thẳng trình biên dịch

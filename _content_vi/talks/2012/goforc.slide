@@ -1,0 +1,724 @@
+Go dành cho lập trình viên C
+ACCU, Silicon Valley Chapter, 14 tháng 11 năm 2012
+
+# Go là ngôn ngữ lập trình đa dụng được phát triển tại Google.
+# Thiết kế của Go chịu ảnh hưởng từ dòng C và Pascal, nhưng thay vì cung cấp
+# một tập hợp các tính năng, Go nhìn lại các cơ chế thiết yếu
+# cần thiết cho các tác vụ lập trình hiện đại. Kết quả là, Go đã phát triển thành một ngôn ngữ
+# nhỏ gọn với sức mạnh đáng ngạc nhiên. Trong bài thuyết trình này chúng tôi trình bày giới thiệu ngắn
+# về Go, hơi nghiêng về phía các lập trình viên có nền tảng C/C++, và sau đó
+# nói về các khía cạnh đặc biệt thú vị của Go.
+
+Robert Griesemer
+Google Inc.
+gri@golang.org
+
+* Tổ chức buổi nói chuyện
+
+Phần 1: Giới thiệu Go
+
+Nghỉ giải lao
+
+Phần 2: Lập trình hướng đối tượng và đồng thời trong Go
+
+# nếu có thời gian và mong muốn
+
+* Động lực
+
+* Hiện tại
+
+Mã không thể đọc và không an toàn.
+
+Thời gian build cực kỳ chậm.
+
+Thiếu hỗ trợ lập trình đồng thời.
+
+Công cụ lỗi thời.
+
+# C, C++ đã hơn 30 tuổi!
+# Java 15 tuổi, nhưng thực sự không phải ngôn ngữ lập trình hệ thống.
+# (Không kiểm soát được bố cục dữ liệu, không có unsigned, dài dòng, v.v.)
+
+* Mong muốn
+
+Mã đọc được, an toàn và hiệu quả.
+
+Hệ thống build có thể mở rộng.
+
+Hỗ trợ lập trình đồng thời tốt.
+
+Các công cụ có thể hoạt động ở quy mô Google.
+
+# Một ngôn ngữ cho thế kỷ 21!
+
+* Gặp Go
+
+Nhỏ gọn, nhưng giàu biểu đạt
+# spec khoảng 50 trang
+
+Kiểu tĩnh và có bộ gom rác
+
+Hướng đối tượng nhưng không hướng kiểu
+
+Hỗ trợ lập trình đồng thời mạnh mẽ
+
+Triển khai hiệu quả
+
+Thư viện chuẩn phong phú
+
+Trình biên dịch nhanh
+
+Công cụ có thể mở rộng
+
+* Hello, World
+
+.play goforc/hello.go
+
+# chương trình chuẩn đầu tiên
+# lưu ý: có thể đọc ngay cho lập trình viên C ngay cả khi không biết Go trước
+# (không phải trường hợp với Hello, World của C++, vốn dùng toán tử <<)
+# điều này đưa chúng ta đến mục đầu tiên trong danh sách "Mong muốn": mã đọc được.
+
+* Cú pháp
+
+* Cú pháp
+
+_Cú_pháp_không_quan_trọng..._-_trừ_khi_bạn_là_lập_trình_viên._
+Rob Pike.
+
+_Khả_năng_đọc_của_chương_trình_quan_trọng_hơn_khả_năng_viết_vô_số_lần._
+Hints on Programming Language Design
+C. A. R. Hoare 1973
+
+# Rất nhiều nỗ lực đã được bỏ ra để mài giũa cú pháp của Go trong hơn 3 năm.
+# Kết quả là ký pháp sạch sẽ, ngắn gọn nhưng dễ đọc.
+# Xem xét một số lựa chọn thay thế...
+
+* Quá dài dòng
+
+	scoped_ptr<logStats::LogStats>
+		logStats(logStats::LogStats::NewLogStats(FLAGS_logStats, logStats::LogStats::kFIFO));
+
+# ví dụ thực tế từ C++ (2012) (tên đã được thay đổi)
+# logStats được đề cập 9 lần!
+# quá lộn xộn
+
+* Quá cô đọng
+
+	(n: Int) => (2 to n) |> (r => r.foldLeft(r.toSet)((ps, x) =>
+		if (ps(x)) ps -- (x * x to n by x) else ps))
+
+# sàng số nguyên tố trong Scala
+# đẹp và ngắn nhưng không thể đọc được
+
+* Vừa đủ
+
+	t := time.Now()
+	switch {
+	case t.Hour() < 12:
+	    return "morning"
+	case t.Hour() < 18:
+	    return "afternoon"
+	default:
+	    return "evening"
+	}
+
+# trông như mã giả
+# đọc được ngay cả khi không biết Go
+# nhiều thứ đang diễn ra nhưng không liên quan đến việc hiểu
+# không lộn xộn
+
+* Đọc mã Go
+
+* Package
+
+Một chương trình Go gồm các _package_.
+
+Một _package_ gồm một hoặc nhiều _tệp_nguồn_ (tệp `.go`).
+
+Mỗi _tệp_nguồn_ bắt đầu bằng _mệnh_đề_package_ theo sau là các khai báo.
+
+.code goforc/hello.go
+
+Theo quy ước, tất cả các tệp thuộc một package đều nằm trong cùng một thư mục.
+
+* Khai báo, "phong cách Pascal" (từ trái sang phải)
+
+Mẫu: từ khóa tên [kiểu] [bộ khởi tạo]
+
+.code goforc/decls.go /START/,/STOP/
+
+* Tại sao?
+
+	p, q *Point
+
+	func adder(delta int) func(x int) int
+
+# thử điều này trong C
+# kết hợp kiểu đơn giản
+
+* Hằng số
+
+Trong Go, hằng số _chính_xác_về_mặt_toán_học_.
+
+Không cần qualifier (`-42LL`, `7UL`, v.v.)
+
+.code goforc/consts.go /START1/,/STOP1/
+
+Chỉ khi được dùng, hằng số mới bị cắt theo kích thước:
+
+.play goforc/consts.go /START2/,/STOP2/
+
+Lợi ích lớn về khả năng đọc và dễ dùng.
+
+* Kiểu
+
+Quen thuộc:
+- Kiểu cơ bản, mảng, struct, con trỏ, hàm.
+
+Nhưng:
+- `string` là kiểu cơ bản.
+- Không tự động chuyển đổi kiểu cơ bản trong biểu thức.
+- Không có số học con trỏ; con trỏ và mảng khác nhau.
+- Kiểu hàm biểu diễn một hàm; ngữ cảnh và tất cả.
+
+Mới:
+- _Slice_ thay vì con trỏ mảng + độ dài riêng: `[]int`
+- _Map_ vì mọi người đều cần: `map[string]int`
+- _Interface_ cho đa hình: `interface{}`
+- _Channel_ để giao tiếp giữa goroutine: `chan` `int`
+
+* Biến
+
+Quen thuộc:
+
+.code goforc/vars.go /START1/,/STOP1/
+
+Mới: Kiểu có thể được suy luận từ kiểu của biểu thức khởi tạo.
+
+.code goforc/vars.go /START2/,/STOP2/
+
+Cách viết tắt (bên trong hàm):
+
+.code goforc/vars.go /i :=/
+
+Việc lấy địa chỉ của _bất_kỳ_ biến nào đều _an_toàn_:
+
+.code goforc/vars.go /return/
+
+* Hàm
+
+Hàm có thể có nhiều giá trị trả về:
+
+	func atoi(s string) (i int, err error)
+
+Hàm là công dân hạng nhất (_closure_):
+
+.code goforc/adder.go /START1/,/STOP1/
+.play goforc/adder.go /START2/,/STOP2/
+
+* Câu lệnh
+
+.code goforc/stmts.go /START/,/STOP/
+
+* Câu lệnh Go dành cho lập trình viên C
+
+Cải tiến:
+
+- Không dấu chấm phẩy
+- Gán nhiều giá trị
+- `++` và `--` là câu lệnh
+- Không cần dấu ngoặc đơn quanh điều kiện; dấu ngoặc nhọn bắt buộc
+- `break` ngầm định trong `switch`; `fallthrough` tường minh
+
+Mới:
+
+- `for` `range`
+- kiểu `switch`
+- `go`, `select`
+- `defer`
+
+* Gán giá trị
+
+Phép gán có thể gán nhiều giá trị cùng lúc:
+
+	a, b = x, y
+
+Tương đương với:
+
+	t1 := x
+	t2 := y
+	a = t1
+	b = t2
+
+Ví dụ:
+
+	a, b = b, a       // hoán đổi a và b
+	i, err = atoi(s)  // gán kết quả của atoi
+	i, _ = atoi(991)  // bỏ giá trị thứ 2
+
+* Câu lệnh switch
+
+Câu lệnh switch có thể có nhiều giá trị case, và `break` là ngầm định:
+
+	switch day {
+	case 1, 2, 3, 4, 5:
+		tag = "workday"
+	case 0, 6:
+		tag = "weekend"
+	default:
+		tag = "invalid"
+	}
+
+Các giá trị case không cần phải là hằng số:
+
+	switch {
+	case day < 0 || day > 6:
+		tag = "invalid"
+	case day == 0 || day == 6:
+		tag = "weekend"
+	default:
+		tag = "workday"
+	}
+
+* Vòng lặp for
+
+.code goforc/forloop.go /START1/,/STOP1/
+
+Mệnh đề `range` cho phép duyệt dễ dàng qua mảng và slice:
+
+.play goforc/forloop.go /START3/,/STOP3/
+
+Giá trị không dùng được loại bỏ bằng cách gán cho định danh trống (_):
+
+.code goforc/forloop.go /START2/,/STOP2/
+
+* Dependency
+
+* Dependency trong Go
+
+Một _khai_báo_import_ được dùng để thể hiện _dependency_ trên package khác:
+
+	import "net/rpc"
+
+Ở đây, package nhập khẩu phụ thuộc vào package Go "rpc".
+
+_Đường_dẫn_import_ ("net/rpc") xác định duy nhất một package; nhiều package có thể có cùng tên, nhưng chúng đều nằm ở các vị trí khác nhau (thư mục).
+
+Theo quy ước, tên package khớp với phần tử cuối của đường dẫn import (ở đây: "rpc").
+
+Chức năng _được_xuất_ của package `rpc` có sẵn qua _bộ_định_danh_package_ (`rpc`):
+
+	rpc.Call
+
+Khai báo import của Go đảm nhận vai trò của _include_ trong C.
+
+* Đặt tên: Một chút khám phá
+
+Cách tên hoạt động trong ngôn ngữ lập trình rất quan trọng cho khả năng đọc.
+Phạm vi kiểm soát cách tên hoạt động.
+Go có cấu trúc phạm vi rất đơn giản:
+
+- universe
+- package
+- tệp (chỉ dành cho import)
+- hàm
+- khối
+
+* Tính cục bộ của tên
+
+Tên viết hoa được _xuất_: `Name` _so với_ `name`.
+
+Bộ định danh package luôn có mặt cho các tên được nhập khẩu.
+
+(Thành phần đầu tiên của) mỗi tên luôn được khai báo trong package hiện tại.
+
+Một trong những quyết định tốt nhất (và khó nhất!) trong Go.
+
+* Tính cục bộ có thể mở rộng
+
+Không có bất ngờ khi import:
+
+- Thêm tên được xuất vào package của tôi không thể làm hỏng package của bạn!
+
+Tên không rò rỉ qua ranh giới.
+
+Trong C, C++, Java tên `y` có thể chỉ đến bất cứ thứ gì.
+Trong Go, `y` (hay thậm chí `Y`) luôn được định nghĩa trong package.
+Trong Go, `x.Y` rõ ràng: tìm `x` cục bộ, `Y` thuộc nó, và chỉ có một `Y` như vậy.
+
+Hậu quả ngay lập tức cho khả năng đọc.
+
+* Trở lại với import
+
+Import một package nghĩa là đọc API được xuất của package.
+
+Thông tin xuất này tự chứa. Ví dụ:
+
+- A import B
+- B import C
+- Xuất của B chứa tham chiếu đến C
+
+Dữ liệu xuất của B chứa tất cả thông tin cần thiết về C. Trình biên dịch không cần đọc dữ liệu xuất của C.
+
+Điều này có hậu quả lớn cho thời gian build!
+
+* Dependency trong C
+
+Các tệp `.h` không tự chứa.
+
+Kết quả là, trình biên dịch phải đọc đi đọc lại các tệp header cốt lõi.
+
+`ifdef` vẫn đòi hỏi preprocessor đọc nhiều mã.
+
+Không có gì lạ khi mất nhiều thời gian để biên dịch...
+
+Ở quy mô Google: dependency bùng nổ, theo hàm mũ, gần như không thể tính.
+
+Một build C++ lớn của Google có thể đọc cùng một tệp header hàng chục nghìn lần!
+
+# đó là công việc thực sự, phải dạy lại cho trình biên dịch string là gì mỗi lần
+
+* Công cụ
+
+* Tổng quan ngắn gọn
+
+Hai trình biên dịch: gc, gccgo
+
+Hỗ trợ nhiều nền tảng: x86 (32/64bit), ARM (32bit), Linux, BSD, OS X, ...
+
+Định dạng tự động mã nguồn: `gofmt`
+
+Trích xuất tài liệu tự động: `godoc`
+
+Điều chỉnh API tự động: `gofix`
+
+Tất cả (và nhiều hơn!) tích hợp vào lệnh `go`.
+
+* Build chương trình Go
+
+Một chương trình Go có thể được biên dịch và liên kết mà không cần thông tin build bổ sung (tệp `make`, v.v.).
+
+Theo quy ước, tất cả các tệp thuộc một package đều được tìm thấy trong cùng một thư mục.
+
+Tất cả các package phụ thuộc đều được tìm thấy bằng cách kiểm tra đường dẫn import của package (_main_) trên cùng.
+
+Một công cụ tích hợp duy nhất lo việc biên dịch các tệp riêng lẻ hoặc toàn bộ hệ thống.
+
+* Lệnh go
+
+Cách dùng:
+
+	go command [arguments]
+
+Các lệnh được chọn:
+
+	build       biên dịch package và dependency
+	clean       xóa file object
+	doc         chạy godoc trên nguồn package
+	fix         chạy go tool fix trên package
+	fmt         chạy gofmt trên nguồn package
+	get         tải và cài đặt package và dependency
+	install     biên dịch và cài đặt package và dependency
+	list        liệt kê package
+	run         biên dịch và chạy chương trình Go
+	test        kiểm thử package
+	vet         chạy go tool vet trên package
+
+.link /cmd/go/ go.dev/cmd/go/
+
+* Nghỉ giải lao
+
+# Sau nghỉ giải lao, chúng ta sẽ thảo luận về OOP và lập trình đồng thời trong Go.
+
+* Lập trình hướng đối tượng
+
+* Lập trình hướng đối tượng là gì?
+
+"Lập trình hướng đối tượng (OOP) là mô hình lập trình dùng _đối_tượng_ - thường là thể hiện của một lớp - gồm các trường dữ liệu và phương thức cùng với tương tác của chúng - để thiết kế ứng dụng và chương trình máy tính. Các kỹ thuật lập trình có thể bao gồm các tính năng như trừu tượng hóa dữ liệu, đóng gói, nhắn tin, mô-đun hóa, đa hình và kế thừa. Nhiều ngôn ngữ lập trình hiện đại bây giờ hỗ trợ các dạng OOP, ít nhất là như một tùy chọn."
+
+(Wikipedia)
+
+# Quan trọng:
+# Khái niệm về _đối tượng_
+# _Đối tượng_ có _trạng thái_ (trường dữ liệu), và _phương thức_ (để tương tác)
+
+* OOP cần rất ít hỗ trợ thêm từ ngôn ngữ lập trình
+
+Chúng ta chỉ cần
+
+- khái niệm về _Đối_tượng_,
+- cơ chế để tương tác với chúng (_Phương_thức_),
+- và hỗ trợ đa hình (_Interface_).
+
+Khẳng định: Trừu tượng hóa dữ liệu, đóng gói và mô-đun hóa là các cơ chế theo nghĩa riêng của chúng, không đặc trưng cho OOP, và một ngôn ngữ hiện đại (OO hay không) nên hỗ trợ chúng độc lập.
+
+
+* Lập trình hướng đối tượng trong Go
+
+Phương thức không cần lớp
+
+Interface không cần phân cấp
+
+Tái sử dụng mã không cần kế thừa
+
+Cụ thể:
+
+- Bất kỳ _giá_trị_ nào cũng có thể là _đối_tượng_
+- Bất kỳ _kiểu_ nào cũng có thể đóng vai _lớp_
+- _Phương_thức_ có thể gắn vào bất kỳ _kiểu_ nào
+- _Interface_ triển khai đa hình.
+
+* Phương thức
+
+.play goforc/point.go
+
+* Phương thức có thể gắn vào bất kỳ kiểu nào
+
+.play goforc/celsius.go
+
+* Interface
+
+	type Stringer interface {
+	     String() string
+	}
+
+	type Reader interface {
+	     Read(p []byte) (n int, err error)
+	}
+
+	type Writer interface {
+	     Write(p []byte) (n int, err error)
+	}
+
+	type Empty interface{}
+
+Một interface định nghĩa một tập hợp các phương thức.
+Một kiểu triển khai tất cả các phương thức của interface được gọi là triển khai interface đó.
+Tất cả các kiểu triển khai interface rỗng interface{}.
+
+* Điều phối động
+
+.play goforc/interface.go /START/,/STOP/
+
+Một giá trị (ở đây: `corner`, `boiling`) của kiểu (`Point`, `Celsius`) triển khai
+interface (`Stringer`) có thể được gán cho biến (`v`) của kiểu interface đó.
+
+* Thành phần và chaining
+
+Thường các interface nhỏ (1-3 phương thức).
+
+Việc sử dụng rộng rãi các interface chính trong thư viện chuẩn giúp dễ dàng nối các API lại.
+
+	package io
+	func Copy(dst Writer, src Reader) (int64, error)
+
+Hàm io.Copy sao chép bằng cách đọc từ bất kỳ Reader nào và ghi vào bất kỳ Writer nào.
+
+Interface thường được giới thiệu ngẫu hứng, và sau thực tế.
+
+Không có phân cấp rõ ràng và do đó không cần thiết kế một cái!
+
+* cat
+
+.code goforc/cat.go
+
+# Một `os.File` triển khai interface `Reader`;
+# `os.Stdout` triển khai interface `Writer`.
+
+* Interface trong thực tế
+
+Phương thức trên bất kỳ kiểu nào và interface _ngẫu_hứng_ tạo ra phong cách lập trình OO nhẹ nhàng.
+
+Interface Go cho phép trừu tượng hóa sau thực tế.
+# Mã hiện tại có thể không biết về interface mới
+
+Không có phân cấp kiểu rõ ràng.
+# Đưa ra phân cấp kiểu đúng là khó
+# Chúng thường sai
+# Chúng khó và tốn thời gian để thay đổi
+
+"Cắm và chạy" theo cách an toàn về kiểu.
+
+# Còn nhiều hơn nhưng chúng ta sẽ không có thời gian để đi vào chi tiết hơn.
+
+* Lập trình đồng thời
+
+* Lập trình đồng thời là gì?
+
+Lập trình đồng thời là sự kết hợp của các tính toán thực thi độc lập.
+
+Lập trình đồng thời là cách cấu trúc phần mềm, đặc biệt là cách viết mã sạch tương tác tốt với thế giới thực.
+
+Nó không phải là song song.
+
+* Lập trình đồng thời không phải là song song
+
+Lập trình đồng thời không phải là song song, dù nó kích hoạt song song.
+
+Nếu bạn chỉ có một bộ xử lý, chương trình của bạn vẫn có thể đồng thời nhưng không thể song song.
+
+Mặt khác, một chương trình đồng thời được viết tốt có thể chạy hiệu quả song song trên bộ xử lý đa nhân. Thuộc tính đó có thể quan trọng...
+
+Để biết thêm về sự khác biệt đó, xem liên kết bên dưới. Quá nhiều để thảo luận ở đây.
+
+.link /s/concurrency-is-not-parallelism go.dev/s/concurrency-is-not-parallelism
+
+* Một mô hình cho xây dựng phần mềm
+
+Dễ hiểu.
+
+Dễ dùng.
+
+Dễ lý luận.
+
+Bạn không cần phải là chuyên gia!
+
+(Tốt hơn nhiều so với việc giải quyết chi tiết của song song (thread, semaphore, khóa, rào cản, v.v.))
+
+Có lịch sử lâu dài đằng sau các tính năng đồng thời của Go, trở về CSP của Hoare năm 1978 và thậm chí các lệnh có điều kiện của Dijkstra (1975).
+
+* Ví dụ cơ bản
+
+* Một hàm nhàm chán
+
+Chúng ta cần một ví dụ để thể hiện các thuộc tính thú vị của các nguyên thủy đồng thời.
+
+Để tránh phân tán, chúng ta làm một ví dụ nhàm chán.
+
+.code goforc/example0.go /START1/,/STOP1/
+.play goforc/example0.go /START2/,/STOP2/
+
+* Bỏ qua nó
+
+Lệnh `go` chạy hàm như bình thường, nhưng không bắt người gọi chờ.
+
+Nó khởi chạy một goroutine.
+
+Chức năng tương tự như & ở cuối lệnh shell.
+
+.play goforc/example1.go /START/,/STOP/
+
+* Bỏ qua nó ít hơn một chút
+
+Khi main trả về, chương trình thoát và kéo hàm `f` xuống cùng.
+
+Chúng ta có thể ở lại một chút, và trên đường chỉ ra rằng cả main lẫn goroutine đã khởi chạy đều đang chạy.
+
+.play goforc/example2.go /START/,/STOP/
+
+* Goroutine
+
+Goroutine là gì? Đó là hàm thực thi độc lập, được khởi chạy bởi lệnh `go`.
+
+Nó có call stack riêng, tăng và thu nhỏ theo yêu cầu.
+
+Rất rẻ. Thực tế để có hàng nghìn, thậm chí hàng trăm nghìn goroutine.
+
+Không phải là thread.
+
+Có thể chỉ có một thread trong chương trình với hàng nghìn goroutine.
+
+Thay vào đó, goroutine được ghép kênh động vào thread khi cần để giữ tất cả goroutine chạy.
+
+Nhưng nếu bạn nghĩ nó như một thread rất rẻ, bạn không sai lắm.
+
+* Channel
+
+Một channel trong Go cung cấp kết nối giữa hai goroutine, cho phép chúng giao tiếp.
+
+.code goforc/channels.go /START1/,/STOP1/
+.code goforc/channels.go /START2/,/STOP2/
+.code goforc/channels.go /START3/,/STOP3/
+
+* Dùng channel
+
+Một channel kết nối các goroutine `main` và `f` để chúng có thể giao tiếp.
+
+.play goforc/communication1.go /START1/,/STOP1/
+.code goforc/communication1.go /START2/,/STOP2/
+
+* Đồng bộ hóa
+
+Khi hàm main thực thi `<-c`, nó sẽ chờ một giá trị được gửi.
+
+Tương tự, khi hàm `f` thực thi `c<-value`, nó chờ một receiver sẵn sàng.
+
+Người gửi và người nhận đều phải sẵn sàng để tham gia giao tiếp. Nếu không chúng ta chờ cho đến khi họ sẵn sàng.
+
+Do đó channel vừa giao tiếp vừa đồng bộ hóa.
+
+Channel có thể không có đệm hoặc có đệm.
+
+* Dùng channel giữa nhiều goroutine
+
+.play goforc/communication2.go /START1/,/STOP1/
+
+Một channel duy nhất có thể được dùng để giao tiếp giữa nhiều (không chỉ hai) goroutine; nhiều goroutine có thể giao tiếp qua một hoặc nhiều channel.
+
+Điều này cho phép đa dạng các mẫu lập trình đồng thời phong phú.
+
+# Có đủ tài liệu cho nhiều buổi nói chuyện chỉ về chủ đề này.
+
+* Các thành phần của bộ lập lịch work-stealing
+
+.code goforc/worker1.go /START2/,/STOP2/
+
+`worker` dùng hai channel để giao tiếp:
+- Channel `in` chờ một lệnh công việc.
+- Channel `out` truyền kết quả.
+- Là khối lượng công việc, worker (rất chậm) tính danh sách các thừa số nguyên tố cho lệnh cho trước.
+
+* Một producer và consumer tương xứng
+
+.code goforc/worker1.go /START3/,/STOP3/
+
+`producer` tạo ra chuỗi lệnh công việc vô tận và gửi chúng `out`.
+
+`consumer` nhận `n` kết quả từ channel `in` và sau đó kết thúc.
+
+* Ghép lại tất cả
+
+.play goforc/worker1.go /START1/,/STOP1/
+
+Chúng ta dùng một worker để xử lý toàn bộ khối lượng công việc.
+
+Vì chỉ có một worker, chúng ta thấy kết quả trả về theo thứ tự.
+
+Điều này chạy khá chậm...
+
+* Dùng 10 worker
+
+.play goforc/worker2.go /START1/,/STOP1/
+
+Một worker sẵn sàng sẽ đọc lệnh tiếp theo từ channel `in` và bắt đầu làm việc. Một worker sẵn sàng khác sẽ tiếp tục với lệnh tiếp theo, và cứ thế.
+
+Vì chúng ta có nhiều worker và do các lệnh khác nhau mất thời gian khác nhau để thực hiện, chúng ta thấy kết quả trả về không theo thứ tự.
+
+Trên hệ thống đa nhân, nhiều worker có thể thực sự chạy song song.
+
+Điều này chạy nhanh hơn nhiều...
+
+* Cách tiếp cận của Go
+
+Đừng giao tiếp bằng cách chia sẻ bộ nhớ, hãy chia sẻ bộ nhớ bằng cách giao tiếp.
+
+* Còn nhiều hơn nữa...
+
+* Các liên kết
+
+Trang chủ Go:
+
+.link / go.dev
+
+Go Tour (học Go trong trình duyệt)
+
+.link /tour/ go.dev/tour
+
+Tài liệu package:
+
+.link /pkg go.dev/pkg
+
+Nhiều bài viết:
+
+.link /doc go.dev/doc

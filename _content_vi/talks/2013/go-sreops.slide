@@ -1,0 +1,175 @@
+Ngôn ngữ Go dành cho Ops và Site Reliability Engineering
+
+Gustavo Franco
+Site Reliability Engineer, Google
+http://developers.google.com
+
+* Operations vs Site Reliability Engineering
+
+Operations
+
+- Xử lý gián đoạn
+- Lặp đi lặp lại
+- Khó mở rộng quy mô
+
+Site Reliability Engineering
+
+- Định hướng dự án
+- Coi trọng tự động hóa
+- Tập trung vào quy mô
+
+* Ngôn ngữ lập trình Go
+
+"Go là một môi trường lập trình mã nguồn mở giúp dễ dàng xây dựng phần mềm
+đơn giản, đáng tin cậy và hiệu quả." -- golang.org
+
+* Xin chào OSCON
+
+.play go-sreops/hello.go
+
+  $ go run hello.go -help
+  Usage of /tmp/go-build212699297/command-line-arguments/_obj/a.out:
+    -message="Hello, OSCON!": what to say
+  exit status 2
+
+* Lập trình cho SRE và Ops - Tình trạng hiện tại
+
+- "Tôi sẽ chỉ viết một script dùng một lần nhỏ cho việc đó"
+
+- "Tôi không muốn học một ngôn ngữ mới"
+
+- "Ngôn ngữ X thật tuyệt và giải quyết mọi thứ"
+
+* Lập trình cho SRE và Ops - Chúng ta đi về đâu?
+
+- Các one-liner vẫn ở đây để tồn tại
+
+- Script dùng một lần cũng vậy, vậy hãy làm chúng tốt hơn
+
+- Hãy coi các ngôn ngữ bạn có thể đọc như một bộ công cụ
+
+- Trở nên thực sự giỏi chỉ với một vài ngôn ngữ trong số đó
+
+* Chương trình nghị sự
+
+- Tại sao dùng Go cho Ops và SRE?
+
+- Các tính năng Go
+
+- Go trong môi trường production tại Google
+
+- Go trong môi trường production bên ngoài Google
+
+- Q&A
+
+* Tại sao dùng Go cho Ops và SRE? Đơn giản, đáng tin cậy và hiệu quả
+
+- Mã nguồn mở
+
+- Một binary để cai trị tất cả
+
+- Không cần Makefile, import xác định dependency
+
+- Biên dịch rất nhanh
+
+* Tại sao dùng Go cho Ops và SRE? Đơn giản, đáng tin cậy và hiệu quả
+
+- Bộ gom rác
+
+- Khả năng đọc dễ đạt được qua gofmt
+
+- Biểu thức chính quy RE2
+
+- Test, benchmarking và profiling tích hợp sẵn
+
+* Tại sao dùng Go cho Ops và SRE? Ví dụ thư viện chuẩn
+
+.link /pkg/fmt fmt
+
+.link /pkg/io/ioutil io/ioutil
+
+.link /pkg/net/http net/http
+
+.link /pkg/os/exec os/exec
+
+.link /pkg/path/filepath path/filepath
+
+.link /pkg/regexp regexp
+
+.link /pkg/strings strings
+
+.link /pkg/text/tabwriter text/tabwriter
+
+.link /pkg/time time
+
+[[https://pkg.go.dev/][pkg.go.dev]] cho nhu cầu vượt ra ngoài thư viện chuẩn
+
+* Tại sao dùng Go cho Ops và SRE? Tính đồng thời qua Goroutines
+
+.play go-sreops/goroutines.go
+
+* Tại sao dùng Go cho Ops và SRE? Tính đồng thời và Channels
+
+.play go-sreops/goroutines-channels.go /START/,/STOP/
+
+* Các tính năng Go
+
+- Hash hay dict? Map
+
+- Mảng? Có, nhưng bạn có thể sẽ muốn dùng Slice thay thế
+
+- Module được gọi là Package
+
+- Struct
+
+- Phương thức
+
+- Con trỏ không có phép toán số học
+
+Go phát triển cùng bạn - xem interface và reflection
+
+* Go trong môi trường production tại Google
+
+dl.google.com - Bài nói OSCON của Brad Fitzpatrick Thứ Sáu, 10:00 sáng
+
+.link http://code.google.com/p/vitess Vitess
+
+ vtocc: front-end cho MySQL cải thiện khả năng mở rộng
+
+.link http://code.google.com/p/emtail Emtail
+
+ Dữ liệu giám sát whitebox từ log đến cơ sở dữ liệu chuỗi thời gian
+
+.link http://code.google.com/p/go-commander Go Commander
+
+ Thư viện dòng lệnh cho Go
+
+Quản lý vòng đời máy
+
+qua App Engine
+
+* Go trong môi trường production bên ngoài Google
+
+.link http://labix.org/pipe Pipe
+
+ Pipeline kiểu Unix cho Go
+
+.link http://www.gocircuit.org Gocircuit
+
+ Goroutines giữa các host
+
+.link http://juju.ubuntu.com Juju
+
+ Công cụ quản lý điều phối dịch vụ
+
+.link http://www.docker.io Docker
+
+ Công cụ quản lý container
+
+.link http://www.packer.io Packer
+
+ Công cụ tạo image máy giống nhau cho nhiều nền tảng
+
+* Q&A
+
+ Tham gia tour - [[tour.golang.org]]
