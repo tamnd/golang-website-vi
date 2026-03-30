@@ -451,14 +451,14 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/go1.1.md`
 - [x] `doc/go1.10.md`
 - [x] `doc/go1.11.md`
-- [ ] `doc/go1.12.md`
+- [x] `doc/go1.12.md`
 - [x] `doc/go1.13.md`
 - [x] `doc/go1.14.md`
 - [x] `doc/go1.15.md`
 - [x] `doc/go1.16.md`
 - [x] `doc/go1.17.md`
 - [x] `doc/go1.18.md`
-- [ ] `doc/go1.19.md`
+- [x] `doc/go1.19.md`
 - [x] `doc/go1.2.md`
 - [x] `doc/go1.20.md`
 - [x] `doc/go1.21.md`
@@ -466,7 +466,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/go1.23.md`
 - [x] `doc/go1.24.md`
 - [x] `doc/go1.25.md`
-- [ ] `doc/go1.26.md`
+- [x] `doc/go1.26.md`
 - [x] `doc/go1.3.md`
 - [x] `doc/go1.4.md`
 - [x] `doc/go1.5.md`
@@ -647,11 +647,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2012/go-docs.slide`
 - [x] `talks/2012/go1.slide`
 - [x] `talks/2012/goforc.slide`
-- [ ] `talks/2012/insidepresent.slide`
+- [x] `talks/2012/insidepresent.slide`
 - [x] `talks/2012/insidepresent/wire.html`
-- [ ] `talks/2012/simple.slide`
+- [x] `talks/2012/simple.slide`
 - [x] `talks/2012/simple/webfront/testdata/index.html`
-- [ ] `talks/2012/splash.article`
+- [x] `talks/2012/splash.article`
 - [x] `talks/2012/splash.slide`
 - [x] `talks/2012/tutorial.slide`
 - [x] `talks/2012/waza.slide`
@@ -660,7 +660,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2013/bestpractices.slide`
 - [x] `talks/2013/distsys.slide`
 - [x] `talks/2013/go-sreops.slide`
-- [ ] `talks/2013/go1.1.slide`
+- [x] `talks/2013/go1.1.slide`
 - [ ] `talks/2013/go4python.slide`
 - [ ] `talks/2013/highperf.slide`
 - [x] `talks/2013/highperf/cachingembed.html`
@@ -681,18 +681,18 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2014/gotham-context.slide`
 - [x] `talks/2014/gothamgo-android.slide`
 - [x] `talks/2014/hammers.slide`
-- [ ] `talks/2014/hellogophers.slide`
-- [ ] `talks/2014/names.slide`
-- [ ] `talks/2014/organizeio.slide`
-- [ ] `talks/2014/playground.slide`
+- [x] `talks/2014/hellogophers.slide`
+- [x] `talks/2014/names.slide`
+- [x] `talks/2014/organizeio.slide`
+- [x] `talks/2014/playground.slide`
 - [x] `talks/2014/readability.slide`
 - [x] `talks/2014/research.slide`
-- [ ] `talks/2014/research2.slide`
-- [ ] `talks/2014/state-of-go.slide`
-- [ ] `talks/2014/state-of-the-gopher.slide`
-- [ ] `talks/2014/static-analysis.slide`
-- [ ] `talks/2014/taste.slide`
-- [ ] `talks/2014/testing.slide`
+- [x] `talks/2014/research2.slide`
+- [x] `talks/2014/state-of-go.slide`
+- [x] `talks/2014/state-of-the-gopher.slide`
+- [x] `talks/2014/static-analysis.slide`
+- [x] `talks/2014/taste.slide`
+- [x] `talks/2014/testing.slide`
 - [x] `talks/2015/dynamic-tools.slide`
 - [x] `talks/2015/go-for-java-programmers.slide`
 - [x] `talks/2015/go4cpp.slide`
@@ -701,18 +701,18 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2015/gogo.slide`
 - [x] `talks/2015/gophercon-go-on-mobile.slide`
 - [x] `talks/2015/gophercon-goevolution.slide`
-- [ ] `talks/2015/gotham-grpc.slide`
-- [ ] `talks/2015/how-go-was-made.slide`
+- [x] `talks/2015/gotham-grpc.slide`
+- [x] `talks/2015/how-go-was-made.slide`
 - [x] `talks/2015/json.slide`
 - [x] `talks/2015/keeping-up.slide`
 - [x] `talks/2015/keeping-up/gource_explosion.html`
 - [x] `talks/2015/simplicity-is-complicated.slide`
-- [ ] `talks/2015/state-of-go-may.slide`
-- [ ] `talks/2015/state-of-go.slide`
-- [ ] `talks/2015/tricks.slide`
+- [x] `talks/2015/state-of-go-may.slide`
+- [x] `talks/2015/state-of-go.slide`
+- [x] `talks/2015/tricks.slide`
 - [x] `talks/2015/using-go-types-for-tools.html`
-- [ ] `talks/2016/applicative.slide`
-- [ ] `talks/2016/asm.slide`
+- [x] `talks/2016/applicative.slide`
+- [x] `talks/2016/asm.slide`
 - [x] `talks/2016/asm/360.s.txt` (skipped: assembly code)
 - [x] `talks/2016/asm/386.s.txt` (skipped: assembly code)
 - [x] `talks/2016/asm/68000.s.txt` (skipped: assembly code)
@@ -735,7 +735,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2016/refactor/template.html`
 - [x] `talks/2016/refactor/version1.html`
 - [x] `talks/2016/refactor/version2.html`
-- [ ] `talks/2016/state-of-go.slide`
+- [x] `talks/2016/state-of-go.slide`
 - [ ] `talks/2016/token.slide`
 - [ ] `talks/2017/state-of-go-may.slide`
 - [ ] `talks/2017/state-of-go.slide`
