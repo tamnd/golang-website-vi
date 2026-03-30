@@ -1,0 +1,133 @@
+<!--{
+    "Title": "Quản lý cài đặt Go"
+}-->
+
+<p>
+Chủ đề này mô tả cách cài đặt nhiều phiên bản Go trên cùng một máy, cũng như cách gỡ cài đặt Go.
+</p>
+
+<p>Để tìm hiểu thêm về cài đặt, bạn có thể quan tâm đến:</p>
+<ul>
+<li><a href="/doc/install">Tải xuống và cài đặt</a> -- Cách đơn giản nhất để cài đặt và chạy.</li>
+<li><a href="/doc/install/source">Cài đặt Go từ mã nguồn</a> -- Cách kiểm tra mã nguồn, xây dựng chúng trên máy của bạn và chạy chúng.</li>
+</ul>
+
+<h2 id="installing-multiple">Cài đặt nhiều phiên bản Go</h2>
+
+<p>
+Bạn có thể cài đặt nhiều phiên bản Go trên cùng một máy. Ví dụ, bạn có thể muốn kiểm thử mã trên nhiều phiên bản Go. Để xem danh sách các phiên bản bạn có thể cài đặt theo cách này, hãy xem <a href="/dl/">trang tải xuống</a>.
+</p>
+
+<p>
+<strong>Lưu ý:</strong> Để cài đặt bằng phương pháp được mô tả ở đây, bạn cần cài đặt <a href="https://git-scm.com/">git</a>.
+</p>
+
+<p>
+Để cài đặt các phiên bản Go bổ sung, hãy chạy <a href="/cmd/go/#hdr-Compile_and_install_packages_and_dependencies">lệnh <code>go install</code></a>, chỉ định vị trí tải xuống của phiên bản bạn muốn cài đặt. Ví dụ sau minh họa với phiên bản 1.10.7:
+</p>
+
+<pre>
+$ go install golang.org/dl/go1.10.7@latest
+$ go1.10.7 download
+</pre>
+
+<p>
+Để chạy lệnh <code>go</code> với phiên bản vừa tải xuống, hãy thêm số phiên bản vào sau lệnh <code>go</code>, như sau:
+</p>
+
+<pre>
+$ go1.10.7 version
+go version go1.10.7 linux/amd64
+</pre>
+
+<p>
+Khi bạn có nhiều phiên bản được cài đặt, bạn có thể tìm hiểu nơi mỗi phiên bản được cài đặt bằng cách xem giá trị <code>GOROOT</code> của phiên bản đó. Ví dụ, chạy lệnh như sau:
+</p>
+
+<pre>
+$ go1.10.7 env GOROOT
+</pre>
+
+<p>
+Để gỡ cài đặt một phiên bản đã tải xuống, chỉ cần xóa thư mục được chỉ định bởi biến môi trường <code>GOROOT</code> của nó và tệp nhị phân goX.Y.Z.
+</p>
+
+<h2 id="uninstalling">Gỡ cài đặt Go</h2>
+
+<p>
+Bạn có thể xóa Go khỏi hệ thống của mình bằng các bước được mô tả trong chủ đề này.
+</p>
+
+<h3 id="remove-config">Xóa cấu hình và dữ liệu người dùng</h3>
+
+<p>
+Go lưu trữ cấu hình người dùng trong thư mục <code>go</code> trong thư mục cấu hình người dùng,
+được trả về bởi <a href="/pkg/os#UserConfigDir"><code>os.UserConfigDir</code></a>.
+Điều này cũng có thể được tìm thấy là thư mục chứa tệp cấu hình được trả về bởi <code>go env GOENV</code>.
+</p>
+
+<p>
+Go lưu trữ các artifact build trung gian trong thư mục được trả về bởi <code>go env GOCACHE</code>.
+Chúng có thể được xóa bằng <code>go clean -cache</code>.
+</p>
+
+<p>
+Go lưu trữ các dependency đã tải xuống trong thư mục được trả về bởi <code>go env GOMODCACHE</code>.
+Chúng có thể được xóa bằng <code>go clean -modcache</code>.
+</p>
+
+<h3 id="linux-mac-bsd">Linux / macOS / FreeBSD</h3>
+
+<ol>
+
+<li>Xóa thư mục go.
+
+<p>
+Thường là /usr/local/go.
+</p>
+
+</li>
+
+<li>Xóa thư mục bin của Go khỏi biến môi trường <code>PATH</code>.
+
+<p>
+Trên Linux và FreeBSD, chỉnh sửa /etc/profile hoặc $HOME/.profile. Nếu bạn cài đặt Go bằng package macOS, hãy xóa tệp /etc/paths.d/go.
+</p>
+
+</li>
+
+</ol>
+
+<h3 id="windows">Windows</h3>
+
+<p>
+Cách đơn giản nhất để xóa Go là thông qua Add/Remove Programs trong control panel Windows:
+</p>
+
+<ol>
+
+<li>Trong Control Panel, nhấp đúp vào <strong>Add/Remove Programs</strong>.</li>
+<li>Trong <strong>Add/Remove Programs</strong>, chọn <strong>Go Programming Language,</strong> nhấp Uninstall, sau đó làm theo các hướng dẫn.</li>
+
+</ol>
+
+<p>
+Để xóa Go bằng công cụ, bạn cũng có thể sử dụng command line:
+</p>
+
+<ul>
+
+<li>Gỡ cài đặt bằng command line bằng cách chạy lệnh sau:
+
+<pre>
+msiexec /x go{{version}}.windows-{{cpu-arch}}.msi /q
+</pre>
+
+<p>
+
+<strong>Lưu ý:</strong> Sử dụng quy trình gỡ cài đặt này cho Windows sẽ tự động xóa các biến môi trường Windows được tạo bởi quá trình cài đặt ban đầu.
+</p>
+
+</li>
+
+</ul>

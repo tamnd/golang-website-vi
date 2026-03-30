@@ -1,0 +1,112 @@
+<!--{
+	"Title": "Đóng góp cho gccgo frontend",
+	"Breadcrumb": true
+}-->
+
+<h2>Giới thiệu</h2>
+
+<p>
+Đây là một số ghi chú về việc đóng góp cho gccgo frontend của GCC.
+Để biết thông tin về việc đóng góp cho các phần khác của Go ngoài gccgo,
+xem <a href="/doc/contribute.html">Đóng góp cho dự án Go</a>. Để biết
+thông tin về việc xây dựng gccgo cho bản thân bạn,
+xem <a href="/doc/install/gccgo">Cài đặt và sử dụng gccgo</a>.
+Để biết thêm các chi tiết kỹ càng về quy trình phát triển
+với gccgo frontend,
+xem <a href="https://go.googlesource.com/gofrontend/+/master/HACKING">tệp
+HACKING</a> trong kho lưu trữ gofrontend.
+</p>
+
+<h2>Yêu cầu pháp lý</h2>
+
+<p>
+Bạn phải tuân theo <a href="/doc/contribute.html#copyright">các quy tắc bản quyền Go</a>
+cho tất cả các thay đổi đối với gccgo frontend và thư viện
+libgo đi kèm. Mã là một phần của GCC thay vì gccgo phải tuân theo
+<a href="https://gcc.gnu.org/contribute.html">các quy tắc đóng góp GCC</a> chung.
+</p>
+
+<h2>Mã</h2>
+
+<p>
+Mã nguồn chính cho gccgo frontend có thể tìm thấy tại
+<a href="https://go.googlesource.com/gofrontend">https://go.googlesource.com/gofrontend</a>.
+Chúng được mirror tại
+<a href="https://github.com/golang/gofrontend">https://github.com/golang/gofrontend</a>.
+Mã nguồn chính không thể tự xây dựng được, mà chỉ kết hợp
+với GCC (trong tương lai, các trình biên dịch khác có thể được
+hỗ trợ). Các thay đổi được thực hiện cho gccgo frontend cũng được áp dụng vào
+kho lưu trữ mã nguồn GCC được lưu trữ tại <code>gcc.gnu.org</code>. Trong
+kho lưu trữ <code>gofrontend</code>, thư mục <code>go</code>
+được mirror vào thư mục <code>gcc/go/gofrontend</code> trong kho lưu trữ GCC,
+và thư mục <code>libgo</code> của <code>gofrontend</code>
+được mirror vào thư mục <code>libgo</code> của GCC. Ngoài ra,
+thư mục <code>test</code>
+từ <a href="https://go.googlesource.com/go">kho lưu trữ Go chính</a>
+được mirror vào thư mục <code>gcc/testsuite/go.test/test</code>
+trong kho lưu trữ GCC.
+</p>
+
+<p>
+Các thay đổi đối với các thư mục này luôn chảy từ mã nguồn chính vào
+kho lưu trữ GCC. Các tệp không bao giờ nên được thay đổi trong kho lưu trữ GCC
+ngoại trừ bằng cách thay đổi chúng trong mã nguồn chính và mirror
+chúng.
+</p>
+
+<p>
+gccgo frontend được viết bằng C++.
+Nó tuân theo các tiêu chuẩn code GNU và GCC cho C++.
+Khi viết mã cho frontend, hãy tuân theo định dạng của
+mã xung quanh.
+Hầu hết mã dành riêng cho GCC không nằm trong frontend chính và thay vào đó nằm
+trong mã nguồn GCC trong thư mục <code>gcc/go</code>.
+</p>
+
+<p>
+Thư viện runtime cho gccgo về cơ bản giống với thư viện
+trong <a href="https://go.googlesource.com/go">kho lưu trữ Go chính</a>.
+Mã thư viện trong kho lưu trữ Go được định kỳ merge vào
+thư mục <code>libgo/go</code> của <code>gofrontend</code> và
+sau đó là kho lưu trữ GCC, sử dụng shell script <code>libgo/merge.sh</code>.
+Theo đó, hầu hết các thay đổi thư viện
+nên được thực hiện trong kho lưu trữ Go chính. Các tệp ngoài
+<code>libgo/go</code> là dành riêng cho gccgo; điều đó nói rằng, một số tệp
+trong <code>libgo/runtime</code> dựa trên các tệp
+trong <code>src/runtime</code> của kho lưu trữ Go chính.
+</p>
+
+<h2>Kiểm thử</h2>
+
+<p>
+Tất cả các patch phải được kiểm thử. Một patch gây ra các lỗi mới
+không thể chấp nhận được.
+</p>
+
+<p>
+Để chạy bộ kiểm thử gccgo, chạy <code>make check-go</code> trong
+thư mục build của bạn. Điều này sẽ chạy các kiểm thử khác nhau
+trong <code>gcc/testsuite/go.*</code> và cũng sẽ chạy
+bộ kiểm thử <code>libgo</code>. Bản sao các kiểm thử từ
+kho lưu trữ Go chính này được chạy bằng script DejaGNU có trong
+<code>gcc/testsuite/go.test/go-test.exp</code>.
+</p>
+
+<p>
+Hầu hết các kiểm thử mới nên được gửi vào kho lưu trữ Go chính để sau đó
+được mirror vào kho lưu trữ GCC. Nếu có nhu cầu về các kiểm thử cụ thể
+cho gccgo, chúng nên đặt trong
+thư mục <code>gcc/testsuite/go.go-torture</code>
+hoặc <code>gcc/testsuite/go.dg</code> trong kho lưu trữ GCC.
+</p>
+
+<h2>Gửi thay đổi</h2>
+
+<p>
+Các thay đổi cho Go frontend nên tuân theo cùng quy trình như đối với
+kho lưu trữ Go chính, chỉ là cho dự án <code>gofrontend</code> và
+danh sách gửi thư <code>gofrontend-dev@googlegroups.com</code>
+thay vì dự án <code>go</code> và
+danh sách gửi thư <code>golang-dev@googlegroups.com</code>. Những thay đổi đó
+sau đó sẽ được merge vào mã nguồn GCC.
+</p>

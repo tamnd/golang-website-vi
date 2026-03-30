@@ -1,0 +1,553 @@
+<!--{
+	"Title": "Gỡ lỗi mã Go với GDB",
+	"Breadcrumb": true
+}-->
+
+<!--
+NOTE: In this document and others in this directory, the convention is to
+set fixed-width phrases with non-fixed-width spaces, as in
+<code>hello</code> <code>world</code>.
+Do not send CLs removing the interior tags from such phrases.
+-->
+
+<p>
+<i>
+Các hướng dẫn sau áp dụng cho bộ công cụ chuẩn
+(trình biên dịch và công cụ Go <code>gc</code>).
+Gccgo có hỗ trợ gdb gốc.
+</i>
+</p>
+<p>
+<i>
+Lưu ý rằng
+<a href="https://github.com/go-delve/delve">Delve</a> là lựa chọn tốt hơn
+GDB khi gỡ lỗi các chương trình Go được xây dựng bằng bộ công cụ chuẩn.
+Delve hiểu runtime, cấu trúc dữ liệu và biểu thức của Go tốt hơn GDB.
+Hiện tại Delve hỗ trợ Linux, OSX và Windows trên <code>amd64</code>.
+Để biết danh sách các nền tảng được hỗ trợ mới nhất, vui lòng xem
+<a href="https://github.com/go-delve/delve/tree/master/Documentation/installation">
+tài liệu Delve</a>.
+</i>
+</p>
+
+<p>
+GDB không hiểu tốt các chương trình Go.
+Việc quản lý stack, phân luồng và runtime có những điểm khác biệt đáng kể
+so với mô hình thực thi mà GDB kỳ vọng, có thể gây nhầm lẫn cho trình gỡ lỗi
+và tạo ra kết quả sai ngay cả khi chương trình được biên dịch bằng gccgo.
+Do đó, mặc dù GDB có thể hữu ích trong một số tình huống (ví dụ: gỡ lỗi mã Cgo,
+hoặc gỡ lỗi bản thân runtime), nhưng nó không phải là trình gỡ lỗi đáng tin cậy
+cho các chương trình Go, đặc biệt là những chương trình có độ đồng thời cao.
+Hơn nữa, việc giải quyết những vấn đề này không phải là ưu tiên của dự án Go
+vì chúng rất khó.
+</p>
+
+<p>
+Tóm lại, các hướng dẫn bên dưới chỉ nên được xem như hướng dẫn về cách
+sử dụng GDB khi nó hoạt động được, không phải là sự đảm bảo thành công.
+
+Ngoài phần tổng quan này, bạn có thể tham khảo thêm
+<a href="https://sourceware.org/gdb/current/onlinedocs/gdb/">tài liệu GDB</a>.
+</p>
+
+<p>
+</p>
+
+<h2 id="Introduction">Giới thiệu</h2>
+
+<p>
+Khi bạn biên dịch và liên kết các chương trình Go bằng bộ công cụ <code>gc</code>
+trên Linux, macOS, FreeBSD hoặc NetBSD, các tệp nhị phân kết quả chứa thông tin
+gỡ lỗi DWARFv4 mà các phiên bản gần đây (&ge;7.5) của trình gỡ lỗi GDB có thể
+sử dụng để kiểm tra một tiến trình đang chạy hoặc một core dump.
+</p>
+
+<p>
+Truyền cờ <code>'-w'</code> cho linker để bỏ qua thông tin gỡ lỗi
+(ví dụ: <code>go</code> <code>build</code> <code>-ldflags=-w</code> <code>prog.go</code>).
+</p>
+
+<p>
+Mã do trình biên dịch <code>gc</code> tạo ra bao gồm inlining các lời gọi hàm
+và registerization các biến. Những tối ưu hóa này đôi khi làm cho việc gỡ lỗi
+bằng <code>gdb</code> khó hơn.
+Nếu cần tắt các tối ưu hóa này, hãy xây dựng chương trình bằng
+<code>go</code> <code>build</code> <code>-gcflags=all="-N -l"</code>.
+</p>
+
+<p>
+Nếu bạn muốn dùng gdb để kiểm tra một core dump, bạn có thể kích hoạt tạo dump
+khi chương trình crash, trên các hệ thống cho phép điều đó, bằng cách đặt
+<code>GOTRACEBACK=crash</code> trong môi trường (xem
+<a href="/pkg/runtime/#hdr-Environment_Variables"> tài liệu gói runtime</a>
+để biết thêm thông tin).
+</p>
+
+<h3 id="Common_Operations">Các thao tác phổ biến</h3>
+
+<ul>
+<li>
+Hiển thị tệp và số dòng của mã, đặt breakpoint và disassemble:
+<pre>(gdb) <b>list</b>
+(gdb) <b>list <i>line</i></b>
+(gdb) <b>list <i>file.go</i>:<i>line</i></b>
+(gdb) <b>break <i>line</i></b>
+(gdb) <b>break <i>file.go</i>:<i>line</i></b>
+(gdb) <b>disas</b></pre>
+</li>
+<li>
+Hiển thị backtrace và unwind stack frame:
+<pre>(gdb) <b>bt</b>
+(gdb) <b>frame <i>n</i></b></pre>
+</li>
+<li>
+Hiển thị tên, kiểu và vị trí trên stack frame của các biến cục bộ,
+tham số và giá trị trả về:
+<pre>(gdb) <b>info locals</b>
+(gdb) <b>info args</b>
+(gdb) <b>p variable</b>
+(gdb) <b>whatis variable</b></pre>
+</li>
+<li>
+Hiển thị tên, kiểu và vị trí của các biến toàn cục:
+<pre>(gdb) <b>info variables <i>regexp</i></b></pre>
+</li>
+</ul>
+
+
+<h3 id="Go_Extensions">Phần mở rộng Go</h3>
+
+<p>
+Cơ chế mở rộng gần đây của GDB cho phép tải các script mở rộng cho một
+tệp nhị phân nhất định. Bộ công cụ sử dụng cơ chế này để mở rộng GDB
+bằng một số lệnh để kiểm tra các thành phần nội bộ của mã runtime (như goroutine)
+và để in đẹp các kiểu map, slice và channel tích hợp sẵn.
+</p>
+
+<ul>
+<li>
+In đẹp một string, slice, map, channel hoặc interface:
+<pre>(gdb) <b>p <i>var</i></b></pre>
+</li>
+<li>
+Hàm $len() và $cap() cho string, slice và map:
+<pre>(gdb) <b>p $len(<i>var</i>)</b></pre>
+</li>
+<li>
+Hàm để chuyển đổi interface về kiểu động của chúng:
+<pre>(gdb) <b>p $dtype(<i>var</i>)</b>
+(gdb) <b>iface <i>var</i></b></pre>
+<p class="detail"><b>Vấn đề đã biết:</b> GDB không thể tự động tìm kiểu động
+của một giá trị interface nếu tên đầy đủ khác với tên rút gọn
+(gây phiền toái khi in stacktrace, pretty printer sẽ in tên kiểu rút gọn
+và một con trỏ).</p>
+</li>
+<li>
+Kiểm tra goroutine:
+<pre>(gdb) <b>info goroutines</b>
+(gdb) <b>goroutine <i>n</i> <i>cmd</i></b>
+(gdb) <b>help goroutine</b></pre>
+Ví dụ:
+<pre>(gdb) <b>goroutine 12 bt</b></pre>
+Bạn có thể kiểm tra tất cả goroutine bằng cách truyền <code>all</code> thay vì ID của một goroutine cụ thể.
+Ví dụ:
+<pre>(gdb) <b>goroutine all bt</b></pre>
+</li>
+</ul>
+
+<p>
+Nếu bạn muốn xem cách thức hoạt động, hoặc muốn mở rộng nó, hãy xem <a
+href="/src/runtime/runtime-gdb.py">src/runtime/runtime-gdb.py</a> trong
+bản phân phối mã nguồn Go. Nó phụ thuộc vào một số kiểu ma thuật đặc biệt
+(<code>hash&lt;T,U&gt;</code>) và biến (<code>runtime.m</code> và
+<code>runtime.g</code>) mà linker
+(<a href="/src/cmd/link/internal/ld/dwarf.go">src/cmd/link/internal/ld/dwarf.go</a>) đảm bảo được mô tả trong
+mã DWARF.
+</p>
+
+<p>
+Nếu bạn muốn xem thông tin gỡ lỗi trông như thế nào, hãy chạy
+<code>objdump</code> <code>-W</code> <code>a.out</code> và duyệt qua các section <code>.debug_*</code>.
+</p>
+
+
+<h3 id="Known_Issues">Các vấn đề đã biết</h3>
+
+<ol>
+<li>In đẹp string chỉ kích hoạt cho kiểu string, không kích hoạt cho các kiểu dẫn xuất từ nó.</li>
+<li>Thiếu thông tin kiểu cho các phần C của thư viện runtime.</li>
+<li>GDB không hiểu qualifier tên của Go và xử lý
+<code>"fmt.Print"</code> như một literal không có cấu trúc với một dấu <code>"."</code>
+cần phải được đặt trong dấu ngoặc kép. Nó còn phản đối mạnh hơn với tên phương thức
+dạng <code>pkg.(*MyType).Meth</code>.
+</li>
+<li>Từ Go 1.11, thông tin gỡ lỗi được nén mặc định.
+Các phiên bản gdb cũ hơn, chẳng hạn như phiên bản có sẵn mặc định trên MacOS,
+không hiểu định dạng nén.
+Bạn có thể tạo thông tin gỡ lỗi không nén bằng cách dùng <code>go
+build -ldflags=-compressdwarf=false</code>.
+(Để thuận tiện, bạn có thể đặt tùy chọn <code>-ldflags</code> trong
+<a href="/cmd/go/#hdr-Environment_variables">biến môi trường <code>GOFLAGS</code></a>
+để khỏi phải chỉ định mỗi lần.)
+</li>
+</ol>
+
+<h2 id="Tutorial">Hướng dẫn</h2>
+
+<p>
+Trong hướng dẫn này, chúng ta sẽ kiểm tra tệp nhị phân của
+các bài kiểm thử đơn vị trong gói <a href="/pkg/regexp/">regexp</a>. Để xây dựng tệp nhị phân,
+hãy chuyển đến <code>$GOROOT/src/regexp</code> và chạy <code>go</code> <code>test</code> <code>-c</code>.
+Thao tác này sẽ tạo ra một tệp thực thi có tên <code>regexp.test</code>.
+</p>
+
+
+<h3 id="Getting_Started">Bắt đầu</h3>
+
+<p>
+Khởi động GDB, gỡ lỗi <code>regexp.test</code>:
+</p>
+
+<pre>
+$ <b>gdb regexp.test</b>
+GNU gdb (GDB) 7.2-gg8
+Copyright (C) 2010 Free Software Foundation, Inc.
+License GPLv  3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+Type "show copying" and "show warranty" for licensing/warranty details.
+This GDB was configured as "x86_64-linux".
+
+Reading symbols from  /home/user/go/src/regexp/regexp.test...
+done.
+Loading Go Runtime support.
+(gdb)
+</pre>
+
+<p>
+Thông báo "Loading Go Runtime support" có nghĩa là GDB đã tải
+extension từ <code>$GOROOT/src/runtime/runtime-gdb.py</code>.
+</p>
+
+<p>
+Để giúp GDB tìm mã nguồn runtime Go và script hỗ trợ đi kèm,
+hãy truyền <code>$GOROOT</code> của bạn với cờ <code>'-d'</code>:
+</p>
+
+<pre>
+$ <b>gdb regexp.test -d $GOROOT</b>
+</pre>
+
+<p>
+Nếu vì lý do nào đó GDB vẫn không tìm được thư mục hoặc script đó, bạn có thể
+tải thủ công bằng cách nói với gdb (giả sử bạn có mã nguồn go trong
+<code>~/go/</code>):
+</p>
+
+<pre>
+(gdb) <b>source ~/go/src/runtime/runtime-gdb.py</b>
+Loading Go Runtime support.
+</pre>
+
+<h3 id="Inspecting_the_source">Kiểm tra mã nguồn</h3>
+
+<p>
+Dùng lệnh <code>"l"</code> hoặc <code>"list"</code> để kiểm tra mã nguồn.
+</p>
+
+<pre>
+(gdb) <b>l</b>
+</pre>
+
+<p>
+Liệt kê một phần cụ thể của mã nguồn bằng cách tham số hóa <code>"list"</code>
+với tên hàm (phải được đủ điều kiện bằng tên gói của nó).
+</p>
+
+<pre>
+(gdb) <b>l main.main</b>
+</pre>
+
+<p>
+Liệt kê theo tên tệp và số dòng cụ thể:
+</p>
+
+<pre>
+(gdb) <b>l regexp.go:1</b>
+(gdb) <i># Hit enter to repeat last command. Here, this lists next 10 lines.</i>
+</pre>
+
+
+<h3 id="Naming">Đặt tên</h3>
+
+<p>
+Tên biến và hàm phải được đủ điều kiện bằng tên của gói chứa chúng.
+Hàm <code>Compile</code> từ gói <code>regexp</code>
+được GDB biết đến với tên <code>'regexp.Compile'</code>.
+</p>
+
+<p>
+Phương thức phải được đủ điều kiện bằng tên kiểu receiver. Ví dụ,
+phương thức <code>String</code> của kiểu <code>*Regexp</code> được biết đến là
+<code>'regexp.(*Regexp).String'</code>.
+</p>
+
+<p>
+Các biến che khuất biến khác được tự động thêm hậu tố số trong thông tin gỡ lỗi.
+Các biến được tham chiếu bởi closure sẽ xuất hiện dưới dạng con trỏ có tiền tố '&amp;'.
+</p>
+
+<h3 id="Setting_breakpoints">Đặt breakpoint</h3>
+
+<p>
+Đặt breakpoint tại hàm <code>TestFind</code>:
+</p>
+
+<pre>
+(gdb) <b>b 'regexp.TestFind'</b>
+Breakpoint 1 at 0x424908: file /home/user/go/src/regexp/find_test.go, line 148.
+</pre>
+
+<p>
+Chạy chương trình:
+</p>
+
+<pre>
+(gdb) <b>run</b>
+Starting program: /home/user/go/src/regexp/regexp.test
+
+Breakpoint 1, regexp.TestFind (t=0xf8404a89c0) at /home/user/go/src/regexp/find_test.go:148
+148	func TestFind(t *testing.T) {
+</pre>
+
+<p>
+Thực thi đã tạm dừng tại breakpoint.
+Xem goroutine nào đang chạy và chúng đang làm gì:
+</p>
+
+<pre>
+(gdb) <b>info goroutines</b>
+  1  waiting runtime.gosched
+* 13  running runtime.goexit
+</pre>
+
+<p>
+Goroutine được đánh dấu <code>*</code> là goroutine hiện tại.
+</p>
+
+<h3 id="Inspecting_the_stack">Kiểm tra stack</h3>
+
+<p>
+Xem stack trace tại vị trí chương trình đã tạm dừng:
+</p>
+
+<pre>
+(gdb) <b>bt</b>  <i># backtrace</i>
+#0  regexp.TestFind (t=0xf8404a89c0) at /home/user/go/src/regexp/find_test.go:148
+#1  0x000000000042f60b in testing.tRunner (t=0xf8404a89c0, test=0x573720) at /home/user/go/src/testing/testing.go:156
+#2  0x000000000040df64 in runtime.initdone () at /home/user/go/src/runtime/proc.c:242
+#3  0x000000f8404a89c0 in ?? ()
+#4  0x0000000000573720 in ?? ()
+#5  0x0000000000000000 in ?? ()
+</pre>
+
+<p>
+Goroutine còn lại, số 1, đang bị kẹt trong <code>runtime.gosched</code>, bị block khi nhận từ channel:
+</p>
+
+<pre>
+(gdb) <b>goroutine 1 bt</b>
+#0  0x000000000040facb in runtime.gosched () at /home/user/go/src/runtime/proc.c:873
+#1  0x00000000004031c9 in runtime.chanrecv (c=void, ep=void, selected=void, received=void)
+ at  /home/user/go/src/runtime/chan.c:342
+#2  0x0000000000403299 in runtime.chanrecv1 (t=void, c=void) at/home/user/go/src/runtime/chan.c:423
+#3  0x000000000043075b in testing.RunTests (matchString={void (struct string, struct string, bool *, error *)}
+ 0x7ffff7f9ef60, tests=  []testing.InternalTest = {...}) at /home/user/go/src/testing/testing.go:201
+#4  0x00000000004302b1 in testing.Main (matchString={void (struct string, struct string, bool *, error *)}
+ 0x7ffff7f9ef80, tests= []testing.InternalTest = {...}, benchmarks= []testing.InternalBenchmark = {...})
+at /home/user/go/src/testing/testing.go:168
+#5  0x0000000000400dc1 in main.main () at /home/user/go/src/regexp/_testmain.go:98
+#6  0x00000000004022e7 in runtime.mainstart () at /home/user/go/src/runtime/amd64/asm.s:78
+#7  0x000000000040ea6f in runtime.initdone () at /home/user/go/src/runtime/proc.c:243
+#8  0x0000000000000000 in ?? ()
+</pre>
+
+<p>
+Stack frame cho thấy chúng ta đang thực thi hàm <code>regexp.TestFind</code>, đúng như kỳ vọng.
+</p>
+
+<pre>
+(gdb) <b>info frame</b>
+Stack level 0, frame at 0x7ffff7f9ff88:
+ rip = 0x425530 in regexp.TestFind (/home/user/go/src/regexp/find_test.go:148);
+    saved rip 0x430233
+ called by frame at 0x7ffff7f9ffa8
+ source language minimal.
+ Arglist at 0x7ffff7f9ff78, args: t=0xf840688b60
+ Locals at 0x7ffff7f9ff78, Previous frame's sp is 0x7ffff7f9ff88
+ Saved registers:
+  rip at 0x7ffff7f9ff80
+</pre>
+
+<p>
+Lệnh <code>info</code> <code>locals</code> liệt kê tất cả biến cục bộ của hàm cùng giá trị của chúng, nhưng hơi
+nguy hiểm khi sử dụng, vì nó cũng sẽ cố in các biến chưa được khởi tạo. Các slice chưa khởi tạo có thể khiến gdb cố
+in các mảng với kích thước tùy ý.
+</p>
+
+<p>
+Các tham số của hàm:
+</p>
+
+<pre>
+(gdb) <b>info args</b>
+t = 0xf840688b60
+</pre>
+
+<p>
+Khi in tham số, lưu ý rằng đó là con trỏ tới một
+giá trị <code>Regexp</code>. Lưu ý rằng GDB đã đặt nhầm <code>*</code>
+ở phía bên phải của tên kiểu và tự thêm từ khóa 'struct' theo phong cách C truyền thống.
+</p>
+
+<pre>
+(gdb) <b>p re</b>
+(gdb) p t
+$1 = (struct testing.T *) 0xf840688b60
+(gdb) p t
+$1 = (struct testing.T *) 0xf840688b60
+(gdb) p *t
+$2 = {errors = "", failed = false, ch = 0xf8406f5690}
+(gdb) p *t-&gt;ch
+$3 = struct hchan&lt;*testing.T&gt;
+</pre>
+
+<p>
+<code>struct</code> <code>hchan&lt;*testing.T&gt;</code> là
+biểu diễn nội bộ của runtime cho một channel. Nó hiện đang rỗng,
+nếu không thì gdb đã in đẹp nội dung của nó.
+</p>
+
+<p>
+Tiến thêm một bước:
+</p>
+
+<pre>
+(gdb) <b>n</b>  <i># execute next line</i>
+149             for _, test := range findTests {
+(gdb)    <i># enter is repeat</i>
+150                     re := MustCompile(test.pat)
+(gdb) <b>p test.pat</b>
+$4 = ""
+(gdb) <b>p re</b>
+$5 = (struct regexp.Regexp *) 0xf84068d070
+(gdb) <b>p *re</b>
+$6 = {expr = "", prog = 0xf840688b80, prefix = "", prefixBytes =  []uint8, prefixComplete = true,
+  prefixRune = 0, cond = 0 '\000', numSubexp = 0, longest = false, mu = {state = 0, sema = 0},
+  machine =  []*regexp.machine}
+(gdb) <b>p *re->prog</b>
+$7 = {Inst =  []regexp/syntax.Inst = {{Op = 5 '\005', Out = 0, Arg = 0, Rune =  []int}, {Op =
+    6 '\006', Out = 2, Arg = 0, Rune =  []int}, {Op = 4 '\004', Out = 0, Arg = 0, Rune =  []int}},
+  Start = 1, NumCap = 2}
+</pre>
+
+
+<p>
+Chúng ta có thể bước vào lời gọi hàm <code>String</code> bằng <code>"s"</code>:
+</p>
+
+<pre>
+(gdb) <b>s</b>
+regexp.(*Regexp).String (re=0xf84068d070, noname=void) at /home/user/go/src/regexp/regexp.go:97
+97      func (re *Regexp) String() string {
+</pre>
+
+<p>
+Lấy stack trace để xem chúng ta đang ở đâu:
+</p>
+
+<pre>
+(gdb) <b>bt</b>
+#0  regexp.(*Regexp).String (re=0xf84068d070, noname=void)
+    at /home/user/go/src/regexp/regexp.go:97
+#1  0x0000000000425615 in regexp.TestFind (t=0xf840688b60)
+    at /home/user/go/src/regexp/find_test.go:151
+#2  0x0000000000430233 in testing.tRunner (t=0xf840688b60, test=0x5747b8)
+    at /home/user/go/src/testing/testing.go:156
+#3  0x000000000040ea6f in runtime.initdone () at /home/user/go/src/runtime/proc.c:243
+....
+</pre>
+
+<p>
+Xem mã nguồn:
+</p>
+
+<pre>
+(gdb) <b>l</b>
+92              mu      sync.Mutex
+93              machine []*machine
+94      }
+95
+96      // String returns the source text used to compile the regular expression.
+97      func (re *Regexp) String() string {
+98              return re.expr
+99      }
+100
+101     // Compile parses a regular expression and returns, if successful,
+</pre>
+
+<h3 id="Pretty_Printing">In đẹp</h3>
+
+<p>
+Cơ chế in đẹp của GDB được kích hoạt bằng cách khớp regexp với tên kiểu. Ví dụ với slice:
+</p>
+
+<pre>
+(gdb) <b>p utf</b>
+$22 =  []uint8 = {0 '\000', 0 '\000', 0 '\000', 0 '\000'}
+</pre>
+
+<p>
+Vì slice, mảng và string không phải là con trỏ C, GDB không thể giải thích thao tác chỉ số cho bạn, nhưng
+bạn có thể xem bên trong biểu diễn runtime để làm điều đó (tab completion hữu ích ở đây):
+</p>
+<pre>
+
+(gdb) <b>p slc</b>
+$11 =  []int = {0, 0}
+(gdb) <b>p slc-&gt;</b><i>&lt;TAB&gt;</i>
+array  slc    len
+(gdb) <b>p slc->array</b>
+$12 = (int *) 0xf84057af00
+(gdb) <b>p slc->array[1]</b>
+$13 = 0</pre>
+
+
+
+<p>
+Các hàm mở rộng $len và $cap hoạt động với string, mảng và slice:
+</p>
+
+<pre>
+(gdb) <b>p $len(utf)</b>
+$23 = 4
+(gdb) <b>p $cap(utf)</b>
+$24 = 4
+</pre>
+
+<p>
+Channel và map là các kiểu 'tham chiếu', gdb hiển thị chúng như con trỏ tới các kiểu C++ như <code>hash&lt;int,string&gt;*</code>. Dereference sẽ kích hoạt prettyprinting.
+</p>
+
+<p>
+Interface được biểu diễn trong runtime dưới dạng con trỏ tới một type descriptor và một con trỏ tới giá trị. Extension runtime Go GDB giải mã điều này và tự động kích hoạt in đẹp cho kiểu runtime. Hàm mở rộng <code>$dtype</code> giải mã kiểu động cho bạn (ví dụ được lấy từ một breakpoint tại dòng 293 của <code>regexp.go</code>).
+</p>
+
+<pre>
+(gdb) <b>p i</b>
+$4 = {str = "cbb"}
+(gdb) <b>whatis i</b>
+type = regexp.input
+(gdb) <b>p $dtype(i)</b>
+$26 = (struct regexp.inputBytes *) 0xf8400b4930
+(gdb) <b>iface i</b>
+regexp.input: struct regexp.inputBytes *
+</pre>

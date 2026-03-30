@@ -416,7 +416,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/articles/wiki/index.html`
 - [x] `doc/articles/wiki/view.html`
 - [ ] `doc/build-cover.md`
-- [ ] `doc/cmd.html`
+- [x] `doc/cmd.html`
 - [ ] `doc/code.html`
 - [ ] `doc/comment.md`
 - [ ] `doc/conduct.md`
@@ -437,16 +437,16 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/devel/pre_go1.html`
 - [x] `doc/devel/release.html`
 - [x] `doc/devel/weekly.html`
-- [ ] `doc/diagnostics.html`
+- [x] `doc/diagnostics.html`
 - [x] `doc/docs.md`
-- [ ] `doc/editors.html`
+- [x] `doc/editors.html`
 - [ ] `doc/effective_go.html`
 - [ ] `doc/faq.md`
 - [ ] `doc/fuzz.md`
 - [ ] `doc/gc-guide.html`
-- [ ] `doc/gccgo_contribute.html`
+- [x] `doc/gccgo_contribute.html`
 - [ ] `doc/gccgo_install.md`
-- [ ] `doc/gdb.html`
+- [x] `doc/gdb.html`
 - [ ] `doc/go-get-install-deprecation.md`
 - [ ] `doc/go1.1.md`
 - [ ] `doc/go1.10.md`
@@ -475,17 +475,17 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/go1.8.md`
 - [ ] `doc/go1.9.md`
 - [ ] `doc/go1.md`
-- [ ] `doc/go1compat.html`
+- [x] `doc/go1compat.html`
 - [ ] `doc/go_faq.md`
-- [ ] `doc/gopath_code.html`
+- [x] `doc/gopath_code.html`
 - [ ] `doc/gopher/index.md`
 - [ ] `doc/help.md`
-- [ ] `doc/index.html`
+- [x] `doc/index.html`
 - [ ] `doc/install-source.md`
-- [ ] `doc/install.html`
+- [x] `doc/install.html`
 - [x] `doc/install/gccgo.html`
 - [x] `doc/install/source.html`
-- [ ] `doc/manage-install.html`
+- [x] `doc/manage-install.html`
 - [x] `doc/modules/developing.md`
 - [x] `doc/modules/gomod-ref.md`
 - [x] `doc/modules/layout.md`
