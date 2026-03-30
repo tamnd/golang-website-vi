@@ -312,14 +312,14 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/slices.md`
 - [ ] `blog/slog.md`
 - [ ] `blog/smarttwitter.md`
-- [ ] `blog/spotlight-on-external-go-libraries.md`
-- [ ] `blog/stable-releases.md`
-- [ ] `blog/stackoverflow.md`
-- [ ] `blog/stathat.md`
-- [ ] `blog/store.md`
-- [ ] `blog/strings.md`
-- [ ] `blog/subtests.md`
-- [ ] `blog/supply-chain.md`
+- [x] `blog/spotlight-on-external-go-libraries.md`
+- [x] `blog/stable-releases.md`
+- [x] `blog/stackoverflow.md`
+- [x] `blog/stathat.md`
+- [x] `blog/store.md`
+- [x] `blog/strings.md`
+- [x] `blog/subtests.md`
+- [x] `blog/supply-chain.md`
 - [ ] `blog/survey2011.md`
 - [ ] `blog/survey2016-results.md`
 - [ ] `blog/survey2016.md`
