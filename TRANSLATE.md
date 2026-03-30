@@ -371,7 +371,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/tidy-web.md`
 - [x] `blog/tls-cipher-suites.md`
 - [x] `blog/tob-crypto-audit.md`
-- [ ] `blog/toolchain.md`
+- [x] `blog/toolchain.md`
 - [x] `blog/tour.md`
 - [x] `blog/toward-go2.md`
 - [x] `blog/turkey-doodle.md`
@@ -392,8 +392,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/wasmexport.md`
 - [x] `blog/waza-talk.md`
 - [x] `blog/when-generics.md`
-- [ ] `blog/why-generics.md`
-- [ ] `blog/wire.md`
+- [x] `blog/why-generics.md`
+- [x] `blog/wire.md`
 - [x] `blog/writing-scalable-app-engine.md`
 
 ### (root)
