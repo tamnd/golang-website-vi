@@ -71,13 +71,13 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/c-go-cgo.md`
 - [x] `blog/cgo.md`
 - [x] `blog/chacha8rand.md`
-- [ ] `blog/chacha8rand/amd.txt` (skipped: raw benchmark data)
-- [ ] `blog/chacha8rand/amd32.txt` (skipped: raw benchmark data)
-- [ ] `blog/chacha8rand/intel.txt` (skipped: raw benchmark data)
-- [ ] `blog/chacha8rand/intel32.txt` (skipped: raw benchmark data)
-- [ ] `blog/chacha8rand/m1.txt` (skipped: raw benchmark data)
-- [ ] `blog/chacha8rand/m3.txt` (skipped: raw benchmark data)
-- [ ] `blog/chacha8rand/taut2a.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/amd.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/amd32.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/intel.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/intel32.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/m1.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/m3.txt` (skipped: raw benchmark data)
+- [x] `blog/chacha8rand/taut2a.txt` (skipped: raw benchmark data)
 - [x] `blog/cleanups-and-weak.md`
 - [x] `blog/codelab-share.md`
 - [x] `blog/community-outreach-working-group.md`
@@ -323,21 +323,21 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/survey2011.md`
 - [x] `blog/survey2016-results.md`
 - [x] `blog/survey2016.md`
-- [ ] `blog/survey2016/background.html`
-- [ ] `blog/survey2016/community.html`
-- [ ] `blog/survey2016/dev.html`
-- [ ] `blog/survey2016/effective.html`
-- [ ] `blog/survey2016/project.html`
-- [ ] `blog/survey2016/quotes.html`
-- [ ] `blog/survey2016/usage.html`
+- [x] `blog/survey2016/background.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2016/community.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2016/dev.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2016/effective.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2016/project.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2016/quotes.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2016/usage.html` (skipped: SVG chart with coordinates)
 - [x] `blog/survey2017-results.md`
 - [x] `blog/survey2017.md`
-- [ ] `blog/survey2017/background.html`
-- [ ] `blog/survey2017/community.html`
-- [ ] `blog/survey2017/dev.html`
-- [ ] `blog/survey2017/effective.html`
-- [ ] `blog/survey2017/project.html`
-- [ ] `blog/survey2017/usage.html`
+- [x] `blog/survey2017/background.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2017/community.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2017/dev.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2017/effective.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2017/project.html` (skipped: SVG chart with coordinates)
+- [x] `blog/survey2017/usage.html` (skipped: SVG chart with coordinates)
 - [x] `blog/survey2018-company.md`
 - [x] `blog/survey2018-results.md`
 - [x] `blog/survey2018.md`
