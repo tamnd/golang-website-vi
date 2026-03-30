@@ -642,7 +642,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `talks/2011/lex.slide`
 - [ ] `talks/2012/10things.slide`
 - [ ] `talks/2012/chat.slide`
-- [ ] `talks/2012/chat/support/markov.txt`
+- [x] `talks/2012/chat/support/markov.txt` (skipped: Markov chain data file)
 - [ ] `talks/2012/concurrency.slide`
 - [ ] `talks/2012/go-docs.slide`
 - [ ] `talks/2012/go1.slide`
@@ -664,9 +664,9 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `talks/2013/go4python.slide`
 - [ ] `talks/2013/highperf.slide`
 - [ ] `talks/2013/highperf/cachingembed.html`
-- [ ] `talks/2013/highperf/mart/1/app.yaml`
-- [ ] `talks/2013/highperf/mart/2/app.yaml`
-- [ ] `talks/2013/highperf/mart/3/app.yaml`
+- [x] `talks/2013/highperf/mart/1/app.yaml` (skipped: App Engine config)
+- [x] `talks/2013/highperf/mart/2/app.yaml` (skipped: App Engine config)
+- [x] `talks/2013/highperf/mart/3/app.yaml` (skipped: App Engine config)
 - [ ] `talks/2013/highperf/santaembed.html`
 - [ ] `talks/2013/oscon-dl.slide`
 - [ ] `talks/2014/c2go.slide`
@@ -713,19 +713,19 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `talks/2015/using-go-types-for-tools.html`
 - [ ] `talks/2016/applicative.slide`
 - [ ] `talks/2016/asm.slide`
-- [ ] `talks/2016/asm/360.s.txt`
-- [ ] `talks/2016/asm/386.s.txt`
-- [ ] `talks/2016/asm/68000.s.txt`
-- [ ] `talks/2016/asm/amd64.s.txt`
-- [ ] `talks/2016/asm/apollo.s.txt`
-- [ ] `talks/2016/asm/arm.s.txt`
-- [ ] `talks/2016/asm/arm64.s.txt`
-- [ ] `talks/2016/asm/cray1.s.txt`
-- [ ] `talks/2016/asm/mips64.s.txt`
-- [ ] `talks/2016/asm/pdp10.s.txt`
-- [ ] `talks/2016/asm/pdp11.s.txt`
-- [ ] `talks/2016/asm/ppc64le.s.txt`
-- [ ] `talks/2016/asm/s390x.s.txt`
+- [x] `talks/2016/asm/360.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/386.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/68000.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/amd64.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/apollo.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/arm.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/arm64.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/cray1.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/mips64.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/pdp10.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/pdp11.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/ppc64le.s.txt` (skipped: assembly code)
+- [x] `talks/2016/asm/s390x.s.txt` (skipped: assembly code)
 - [ ] `talks/2016/prototype-your-design.txt`
 - [ ] `talks/2016/refactor.article`
 - [ ] `talks/2016/refactor/atomic.html`
