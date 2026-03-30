@@ -1,0 +1,15 @@
+  - title: Tài liệu
+    content: Tất cả những gì cần biết về Go. Bắt đầu một dự án mới
+      hoặc ôn lại kiến thức cho code Go hiện có của bạn.
+    cta: Xem tài liệu
+    url: /doc/
+  - title: Tour of Go
+    content: Giới thiệu tương tác về Go trong bốn phần. Mỗi phần
+      kết thúc bằng một số bài tập để bạn luyện tập những gì đã học.
+    cta: Bắt đầu tour
+    url: /tour/
+  - title: Go by Example
+    content: <i>Go by Example</i> là phần giới thiệu thực hành về Go qua các
+      chương trình ví dụ có chú thích. Đây là điểm khởi đầu tốt khi bắt tay vào bất kỳ dự án Go nào.
+    url: https://gobyexample.com/
+    cta: Xem ví dụ

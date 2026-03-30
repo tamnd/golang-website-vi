@@ -1,0 +1,20 @@
+  - title: Ardan Labs
+    url: https://www.ardanlabs.com/
+    thumbnail:
+    blurb: Cung cấp các lớp đào tạo trực tiếp tại chỗ theo yêu cầu.
+  - title: Gopher Guides
+    url: https://www.gopherguides.com/
+    thumbnail:
+    blurb: Các lớp đào tạo theo yêu cầu hình thức trực tiếp, từ xa và trực tuyến. Đào tạo dành cho lập trình viên bởi lập trình viên.
+  - title: Boss Sauce Creative
+    url: https://bosssauce.it/services/training
+    thumbnail:
+    blurb: Đào tạo Go cá nhân hóa hoặc theo lộ trình dành cho nhóm.
+  - title: Shiju Varghese
+    url: https://github.com/shijuvar/gokit/tree/master/training
+    thumbnail:
+    blurb: Đào tạo Go trực tiếp tại lớp học và tư vấn về kiến trúc hệ thống phân tán, tại Ấn Độ.
+  - title: kkoehler
+    url: https://golang.kkoehler.com/
+    thumbnail:
+    blurb: Các lớp đào tạo Go trực tiếp tại Đức, Áo và Thụy Sĩ.
