@@ -398,14 +398,14 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### (root)
 
-- [ ] `blogfeed.tmpl`
+- [x] `blogfeed.tmpl`
 - [x] `brand.md`
-- [ ] `codewalk.tmpl`
-- [ ] `codewalkdir.tmpl`
+- [x] `codewalk.tmpl`
+- [x] `codewalkdir.tmpl`
 - [x] `conduct.html`
 - [x] `copyright.md`
-- [ ] `dir.tmpl`
-- [ ] `dl.tmpl`
+- [x] `dir.tmpl`
+- [x] `dl.tmpl`
 
 ### doc
 
