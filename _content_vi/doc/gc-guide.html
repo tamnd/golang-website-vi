@@ -1,0 +1,2015 @@
+<!--{
+	"Title": "Hướng dẫn về Bộ gom rác Go",
+	"Path":  "/doc/gc-guide",
+  	"Breadcrumb": true
+}-->
+
+<!--
+NOTE: In this document and others in this directory, the convention is to
+set fixed-width phrases with non-fixed-width spaces, as in
+<code>hello</code> <code>world</code>.
+Do not send CLs removing the interior tags from such phrases.
+-->
+
+<style>
+.gc-guide-graph {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  vertical-align: top;
+  overflow: hidden;
+}
+
+.gc-guide-graph-controls {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+}
+
+.gc-guide-graph-controls div {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  height: 24px;
+}
+
+.gc-guide-counter {
+  display: block;
+  overflow-x: hidden; /* Prevent automatic resizing, which makes the input jittery. */
+  width: 10em; /* Never contains more than 10 characters. */
+}
+
+.gc-guide-equation {
+  display: block;
+  text-align: center;
+}
+
+.gc-guide-note {
+  margin-left: 3em;
+}
+</style>
+
+<h2 id="Introduction">Giới thiệu</h2>
+
+<p>
+Hướng dẫn này nhằm giúp những người dùng Go nâng cao hiểu rõ hơn về chi phí của
+ứng dụng bằng cách cung cấp góc nhìn sâu vào bộ gom rác của Go.
+Ngoài ra, tài liệu cũng hướng dẫn cách người dùng Go có thể tận dụng những hiểu biết
+đó để cải thiện việc sử dụng tài nguyên của ứng dụng.
+Tài liệu không đòi hỏi kiến thức trước về thu gom rác, nhưng giả định người đọc đã
+quen với ngôn ngữ lập trình Go.
+</p>
+
+<p>
+Ngôn ngữ Go chịu trách nhiệm sắp xếp nơi lưu trữ các giá trị Go; trong hầu hết các
+trường hợp, lập trình viên Go không cần quan tâm đến việc các giá trị đó được lưu ở
+đâu hay tại sao.
+Tuy nhiên, trên thực tế, các giá trị này thường phải được lưu vào
+<b>bộ nhớ vật lý</b> của máy tính, và bộ nhớ vật lý là tài nguyên hữu hạn.
+Do hữu hạn, bộ nhớ phải được quản lý cẩn thận và tái sử dụng để tránh cạn kiệt
+trong khi thực thi chương trình Go.
+Việc cấp phát và thu hồi bộ nhớ khi cần là trách nhiệm của phần triển khai Go.
+</p>
+
+<p>
+Một thuật ngữ khác cho việc tự động thu hồi bộ nhớ là <b>thu gom rác</b>.
+Ở mức cao, <i>bộ gom rác</i> (hay viết tắt là GC) là một hệ thống thu hồi bộ nhớ
+thay cho ứng dụng bằng cách xác định những phần bộ nhớ nào không còn cần thiết nữa.
+Bộ công cụ chuẩn của Go cung cấp một thư viện runtime đi kèm với mọi ứng dụng,
+và thư viện runtime này bao gồm một bộ gom rác.
+</p>
+
+<p>
+Lưu ý rằng sự tồn tại của một bộ gom rác theo mô tả trong hướng dẫn này không được
+<a href="/ref/spec">đặc tả Go</a> đảm bảo, mà chỉ đảm bảo rằng bộ nhớ lưu trữ các
+giá trị Go được quản lý bởi chính ngôn ngữ.
+Sự bỏ qua có chủ ý này cho phép sử dụng các kỹ thuật quản lý bộ nhớ hoàn toàn khác nhau.
+</p>
+
+<p>
+Vì vậy, hướng dẫn này nói về một triển khai cụ thể của ngôn ngữ lập trình Go và
+<i>có thể không áp dụng cho các triển khai khác</i>.
+Cụ thể, hướng dẫn sau đây áp dụng cho bộ công cụ chuẩn (trình biên dịch Go
+<code>gc</code> và các công cụ đi kèm).
+Gccgo và Gollvm đều dùng triển khai GC rất giống nhau nên nhiều khái niệm tương tự
+vẫn áp dụng, nhưng chi tiết có thể khác.
+</p>
+
+<p>
+Ngoài ra, đây là tài liệu sống và sẽ thay đổi theo thời gian để phản ánh chính xác
+nhất bản phát hành mới nhất của Go.
+Tài liệu này hiện mô tả bộ gom rác tính đến Go 1.19.
+</p>
+
+
+<h3 id="Where_Go_Values_Live">Giá trị Go được lưu ở đâu</h3>
+
+<p>
+Trước khi đi sâu vào GC, hãy cùng thảo luận về bộ nhớ không cần GC quản lý.
+</p>
+
+<p>
+Chẳng hạn, các giá trị Go không có con trỏ được lưu trong biến cục bộ thường sẽ
+không được GC của Go quản lý, và Go thay vào đó sẽ sắp xếp để cấp phát bộ nhớ
+gắn liền với
+<a href="/ref/spec#Declarations_and_scope">phạm vi từ vựng</a> nơi biến đó được tạo.
+Nhìn chung, cách này hiệu quả hơn so với dựa vào GC, vì trình biên dịch Go có thể
+xác định trước khi nào bộ nhớ đó có thể được giải phóng và phát ra các lệnh máy
+để dọn dẹp.
+Thông thường, chúng ta gọi cách cấp phát bộ nhớ cho các giá trị Go theo cách này là
+"cấp phát trên stack," vì không gian đó được lưu trên ngăn xếp goroutine.
+</p>
+
+<p>
+Các giá trị Go mà bộ nhớ không thể cấp phát theo cách đó, vì trình biên dịch Go không
+thể xác định vòng đời của chúng, được gọi là <i>thoát ra heap</i>.
+"Heap" có thể được hiểu là nơi chứa mọi thứ khi cấp phát bộ nhớ, cho những trường
+hợp các giá trị Go cần được đặt ở <i>đâu đó</i>.
+Hành động cấp phát bộ nhớ trên heap thường được gọi là "cấp phát bộ nhớ động" vì
+cả trình biên dịch lẫn runtime đều không thể đưa ra nhiều giả định về cách bộ nhớ
+này được sử dụng và khi nào nó có thể được dọn dẹp.
+Đó là lúc GC phát huy tác dụng: nó là một hệ thống chuyên xác định và dọn dẹp các
+lần cấp phát bộ nhớ động.
+</p>
+
+<p>
+Có nhiều lý do khiến một giá trị Go có thể phải thoát ra heap.
+Một lý do có thể là kích thước của nó được xác định động.
+Ví dụ, hãy xem xét mảng nền của một slice mà kích thước ban đầu được xác định bởi
+một biến thay vì một hằng số.
+Lưu ý rằng việc thoát ra heap cũng phải có tính bắc cầu: nếu một tham chiếu đến một
+giá trị Go được ghi vào một giá trị Go khác đã được xác định là phải thoát ra, thì
+giá trị đó cũng phải thoát ra.
+</p>
+
+<p>
+Một giá trị Go có thoát ra hay không là hàm của ngữ cảnh sử dụng nó và thuật toán
+phân tích thoát của trình biên dịch Go.
+Việc cố gắng liệt kê chính xác khi nào giá trị thoát ra là điều dễ sai và khó làm:
+bản thân thuật toán khá phức tạp và thay đổi giữa các bản phát hành Go.
+Để biết thêm chi tiết về cách xác định giá trị nào thoát ra và giá trị nào không, hãy
+xem phần
+<a href="#Eliminating_heap_allocations">loại bỏ cấp phát heap</a>.
+</p>
+
+<h3 id="Tracing_Garbage_Collection">Thu gom rác tracing</h3>
+
+<p>
+Thu gom rác có thể đề cập đến nhiều phương pháp tự động thu hồi bộ nhớ khác nhau;
+ví dụ, đếm tham chiếu.
+Trong phạm vi tài liệu này, thu gom rác đề cập đến thu gom rác <b>tracing</b>,
+tức là xác định các đối tượng đang được sử dụng, gọi là đối tượng <b>sống</b>,
+bằng cách theo dõi các con trỏ một cách bắc cầu.
+</p>
+
+<p>
+Hãy định nghĩa các thuật ngữ này một cách chặt chẽ hơn.
+</p>
+
+<ul>
+	<li>
+		<p>
+		<b>Đối tượng</b>&mdash;Một đối tượng là một phần bộ nhớ được cấp phát động
+		chứa một hoặc nhiều giá trị Go.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>Con trỏ</b>&mdash;Một địa chỉ bộ nhớ tham chiếu đến bất kỳ giá trị nào bên
+		trong một đối tượng.
+		Điều này bao gồm các giá trị Go có dạng <code>*T</code>, nhưng cũng bao gồm
+		các phần của các giá trị Go tích hợp sẵn.
+		String, slice, channel, map, và giá trị interface đều chứa các địa chỉ bộ nhớ
+		mà GC phải tracing.
+		</p>
+	</li>
+</ul>
+
+<p>
+Cùng nhau, các đối tượng và các con trỏ đến đối tượng khác tạo thành <b>đồ thị đối
+tượng</b>.
+Để xác định bộ nhớ đang sống, GC duyệt đồ thị đối tượng bắt đầu từ các <b>gốc</b>
+của chương trình, tức các con trỏ xác định những đối tượng chắc chắn đang được sử
+dụng bởi chương trình.
+Hai ví dụ về gốc là biến cục bộ và biến toàn cục.
+Quá trình duyệt đồ thị đối tượng được gọi là <b>scanning</b>.
+Một cụm từ khác bạn có thể thấy trong tài liệu Go là liệu một đối tượng có
+<b>tiếp cận được</b> hay không, nghĩa là đối tượng đó có thể được phát hiện trong
+quá trình scanning.
+Cũng lưu ý rằng, <a href="#Finalizers_cleanups_and_weak_pointers">với một ngoại lệ</a>,
+một khi bộ nhớ trở nên không tiếp cận được, nó vẫn duy trì trạng thái đó.
+</p>
+
+<p>
+Thuật toán cơ bản này phổ biến với tất cả các GC tracing.
+Điểm khác biệt giữa các GC tracing là những gì chúng thực hiện sau khi phát hiện bộ
+nhớ đang sống.
+GC của Go sử dụng kỹ thuật đánh dấu-quét, nghĩa là để theo dõi tiến trình, GC cũng
+<b>đánh dấu</b> các giá trị gặp phải là đang sống.
+Sau khi hoàn thành tracing, GC duyệt qua toàn bộ bộ nhớ trên heap và làm cho tất
+cả bộ nhớ <i>chưa</i> được đánh dấu có thể sử dụng cho lần cấp phát tiếp theo.
+Quá trình này được gọi là <b>quét</b>.
+</p>
+
+<p>
+Một kỹ thuật thay thế mà bạn có thể quen thuộc là thực sự <i>di chuyển</i> các đối
+tượng đến một vùng bộ nhớ mới và để lại một con trỏ chuyển tiếp được dùng sau đó
+để cập nhật tất cả các con trỏ của ứng dụng.
+Chúng ta gọi GC di chuyển đối tượng theo cách này là GC <b>di động</b>; Go có GC
+<b>không di động</b>.
+</p>
+
+<h2 id="The_GC_cycle">Chu kỳ GC</h2>
+
+<p>
+Vì GC của Go là một GC đánh dấu-quét, nó hoạt động theo hai pha: pha đánh dấu và
+pha quét.
+Mặc dù điều này có vẻ hiển nhiên, nhưng nó chứa đựng một hiểu biết quan trọng:
+không thể giải phóng bộ nhớ để cấp phát lại cho đến khi <i>tất cả</i> bộ nhớ đã
+được tracing, vì có thể vẫn còn một con trỏ chưa được scan đang giữ cho một đối
+tượng tồn tại.
+Do đó, hành động quét phải được tách biệt hoàn toàn khỏi hành động đánh dấu.
+Hơn nữa, GC cũng có thể không hoạt động gì cả khi không có việc liên quan đến GC
+cần làm.
+GC liên tục xoay vòng qua ba pha quét, tắt và đánh dấu trong cái được gọi là
+<b>chu kỳ GC</b>.
+Cho mục đích của tài liệu này, hãy coi chu kỳ GC bắt đầu bằng quét, chuyển sang
+tắt, rồi đánh dấu.
+</p>
+
+<p>
+Một vài phần tiếp theo sẽ tập trung vào việc xây dựng trực giác về chi phí của GC
+để giúp người dùng điều chỉnh các tham số GC theo nhu cầu của mình.
+</p>
+
+<h3 id="Understanding_costs">Hiểu về chi phí</h3>
+
+<p>
+GC vốn là một phần mềm phức tạp được xây dựng trên các hệ thống còn phức tạp hơn.
+Rất dễ bị sa lầy vào chi tiết khi cố gắng hiểu GC và tinh chỉnh hành vi của nó.
+Phần này nhằm cung cấp một khung tư duy để lý luận về chi phí của GC trong Go và
+các tham số điều chỉnh của nó.
+</p>
+
+<p>
+Để bắt đầu, hãy xem xét mô hình chi phí GC dựa trên ba tiên đề đơn giản.
+</p>
+
+<ol>
+	<li>
+		<p>
+		GC chỉ liên quan đến hai tài nguyên: bộ nhớ vật lý và thời gian CPU.
+		</p>
+	</li>
+	<li>
+		<p>
+		Chi phí bộ nhớ của GC bao gồm bộ nhớ heap đang sống, bộ nhớ heap mới được
+		cấp phát trước pha đánh dấu, và không gian cho siêu dữ liệu mà, dù tỉ lệ
+		với các chi phí trước, vẫn nhỏ hơn nhiều so với chúng.
+		</p>
+		<p class="gc-guide-equation">
+		<i>
+		Chi phí bộ nhớ GC cho chu kỳ N = heap sống từ chu kỳ N-1 + heap mới
+		</i>
+		</p>
+		<p>
+		Bộ nhớ heap sống là bộ nhớ được chu kỳ GC trước xác định là đang sống, trong
+		khi heap mới là bất kỳ bộ nhớ nào được cấp phát trong chu kỳ hiện tại, có thể
+		sống hoặc không vào cuối chu kỳ.
+		Lượng bộ nhớ đang sống tại bất kỳ thời điểm nào là thuộc tính của chương trình,
+		không phải là thứ GC có thể kiểm soát trực tiếp.
+		</p>
+	</li>
+	<li>
+		<p>
+		Chi phí CPU của GC được mô hình hóa là chi phí cố định mỗi chu kỳ, và một chi
+		phí biên tỉ lệ với kích thước của heap đang sống.
+		</p>
+		<p class="gc-guide-equation">
+		<i>
+		GC CPU time for cycle N = Fixed CPU time cost per cycle + average CPU time cost per byte * live heap memory found in cycle N
+		</i>
+		</p>
+		<p>
+		Chi phí CPU cố định mỗi chu kỳ bao gồm những thứ xảy ra một số lần cố định mỗi
+		chu kỳ, như khởi tạo cấu trúc dữ liệu cho chu kỳ GC tiếp theo.
+		Chi phí này thường nhỏ và được đưa vào chỉ để hoàn chỉnh.
+		</p>
+		<p>
+		Phần lớn chi phí CPU của GC là việc đánh dấu và scanning, được thể hiện qua chi
+		phí biên.
+		Chi phí trung bình của đánh dấu và scanning phụ thuộc vào triển khai GC, nhưng
+		cũng phụ thuộc vào hành vi của chương trình.
+		Ví dụ, nhiều con trỏ hơn có nghĩa là GC phải làm nhiều hơn, vì tối thiểu GC cần
+		thăm tất cả các con trỏ trong chương trình.
+		Các cấu trúc như danh sách liên kết và cây cũng khó duyệt song song hơn cho GC,
+		làm tăng chi phí trung bình trên mỗi byte.
+		</p>
+		<p>
+		Mô hình này bỏ qua chi phí quét, tỉ lệ với tổng bộ nhớ heap, kể cả bộ nhớ đã
+		chết (nó phải được làm sẵn sàng để cấp phát).
+		Đối với triển khai GC hiện tại của Go, quét nhanh hơn nhiều so với đánh dấu và
+		scanning đến mức chi phí là không đáng kể so với chúng.
+		</p>
+	</li>
+</ol>
+
+<p>
+Mô hình này đơn giản nhưng hiệu quả: nó phân loại chính xác các chi phí chủ đạo của
+GC.
+Nó cũng cho chúng ta biết rằng <i>tổng chi phí CPU</i> của bộ gom rác phụ thuộc vào
+tổng số chu kỳ GC trong một khoảng thời gian nhất định.
+Cuối cùng, mô hình này ẩn chứa một sự đánh đổi cơ bản giữa thời gian và không gian
+cho GC.
+</p>
+
+<p>
+Để hiểu lý do, hãy khám phá một kịch bản bị ràng buộc nhưng hữu ích: <b>trạng thái
+ổn định</b>.
+Trạng thái ổn định của một ứng dụng, từ góc nhìn của GC, được định nghĩa bởi các
+thuộc tính sau:
+</p>
+
+<ul>
+	<li>
+		<p>
+		Tốc độ ứng dụng cấp phát bộ nhớ mới (tính bằng byte mỗi giây) là hằng số.
+		</p>
+		<p>
+		Điều này có nghĩa là, từ góc nhìn của GC, khối lượng công việc của ứng dụng
+		trông gần như giống nhau theo thời gian.
+		Ví dụ, đối với một dịch vụ web, đây sẽ là một tốc độ yêu cầu không đổi với,
+		trung bình, các loại yêu cầu giống nhau được thực hiện, và thời gian tồn tại
+		trung bình của mỗi yêu cầu duy trì gần như không đổi.
+		</p>
+	</li>
+	<li>
+		<p>
+		Chi phí biên của GC là hằng số.
+		</p>
+		<p>
+		Điều này có nghĩa là các thống kê của đồ thị đối tượng, như phân phối kích thước
+		đối tượng, số lượng con trỏ, và độ sâu trung bình của các cấu trúc dữ liệu, duy
+		trì giống nhau từ chu kỳ này sang chu kỳ khác.
+		</p>
+	</li>
+</ul>
+
+<p>
+Hãy làm việc qua một ví dụ.
+Giả sử một ứng dụng đang hoạt động trong trạng thái ổn định, cấp phát 10 MiB/s, trong
+khi GC có thể scan bộ nhớ với tốc độ 100 MiB/cpu-giây (đây là con số giả định).
+Trạng thái ổn định không đưa ra giả định về kích thước của heap sống, nhưng để đơn
+giản, giả sử heap sống của ứng dụng này luôn là 10 MiB.
+Cũng giả sử, lại để đơn giản, rằng chi phí GC cố định bằng không.
+Hãy thử thay đổi chu kỳ GC.
+</p>
+
+<p>
+Giả sử mỗi chu kỳ GC xảy ra sau đúng 1 cpu-giây.
+Thì, vào cuối mỗi chu kỳ GC, ứng dụng ví dụ của chúng ta sẽ đã cấp phát thêm 10 MiB
+bộ nhớ, dẫn đến tổng kích thước heap là 20 MiB.
+Và với mỗi chu kỳ GC, GC sẽ mất 0,1 cpu-giây để scan 10 MiB heap sống, dẫn đến chi
+phí CPU là 10%.
+Nhớ rằng GC chỉ cần duyệt heap sống, không phải toàn bộ heap.
+(Lưu ý: heap sống không đổi không có nghĩa là tất cả bộ nhớ mới cấp phát đều chết.
+Nó có nghĩa là, sau khi GC chạy, <i>một tổ hợp nào đó</i> của bộ nhớ heap cũ và mới
+chết đi, và chỉ là kết quả cuối cùng là 10 MiB được tìm thấy là sống mỗi chu kỳ.)
+</p>
+
+<p>
+Bây giờ giả sử mỗi chu kỳ GC xảy ra ít thường xuyên hơn, mỗi 2 cpu-giây một lần.
+Thì, ứng dụng ví dụ của chúng ta, trong trạng thái ổn định, sẽ có tổng kích thước
+heap là 30 MiB trong mỗi chu kỳ GC, vì nó sẽ cấp phát 20 MiB trong thời gian đó.
+Nhưng với mỗi chu kỳ GC, GC <i>vẫn chỉ cần 0,1 cpu-giây</i> để scan 10 MiB bộ nhớ
+sống.
+Một lần nữa, chúng ta giả sử kích thước heap sống vẫn như cũ, bất kể bao nhiêu bộ
+nhớ được cấp phát.
+Vậy có nghĩa là chi phí GC của chúng ta vừa giảm xuống, từ 10% xuống 5%, nhưng với
+cái giá là sử dụng nhiều hơn 50% bộ nhớ.
+</p>
+
+<p>
+Sự thay đổi trong chi phí này là sự đánh đổi cơ bản giữa thời gian và không gian đã
+đề cập trước đó.
+Và <b>tần suất GC</b> là trung tâm của sự đánh đổi này: nếu chúng ta thực thi GC
+thường xuyên hơn, chúng ta sử dụng ít bộ nhớ hơn, và ngược lại.
+Nhưng GC thực sự thực thi bao lâu một lần?
+Trong Go, việc quyết định khi nào GC nên bắt đầu là tham số chính mà người dùng
+có thể kiểm soát.
+</p>
+
+<h3 id="GOGC">GOGC</h3>
+
+<p>
+Ở mức cao, GOGC xác định sự đánh đổi giữa CPU GC và bộ nhớ.
+</p>
+
+<p>
+Nó hoạt động bằng cách xác định kích thước heap mục tiêu sau mỗi chu kỳ GC, một giá
+trị mục tiêu cho tổng kích thước heap trong chu kỳ tiếp theo.
+Mục tiêu của GC là hoàn thành một chu kỳ thu gom trước khi tổng kích thước heap vượt
+quá kích thước heap mục tiêu.
+Tổng kích thước heap được định nghĩa là kích thước heap sống vào cuối chu kỳ trước,
+cộng với bất kỳ bộ nhớ heap mới nào được ứng dụng cấp phát kể từ chu kỳ trước.
+Trong khi đó, bộ nhớ heap mục tiêu được định nghĩa là:
+</p>
+
+<p class="gc-guide-equation">
+<i>
+Target heap memory = Live heap + (Live heap + GC roots) * GOGC / 100
+</i>
+</p>
+
+<p>
+Ví dụ, hãy xem xét một chương trình Go với kích thước heap sống là 8 MiB, 1 MiB
+ngăn xếp goroutine, và 1 MiB con trỏ trong các biến toàn cục.
+Thì, với giá trị GOGC là 100, lượng bộ nhớ mới được cấp phát trước khi lần GC tiếp
+theo chạy sẽ là 10 MiB, tức 100% của 10 MiB công việc, với tổng footprint heap là
+18 MiB.
+Với giá trị GOGC là 50, đó sẽ là 50%, hay 5 MiB.
+Với giá trị GOGC là 200, sẽ là 200%, hay 20 MiB.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: GOGC chỉ bao gồm tập gốc từ Go 1.18 trở đi.
+Trước đây, nó chỉ tính heap sống.
+Thông thường, lượng bộ nhớ trên ngăn xếp goroutine khá nhỏ và kích thước heap sống
+chiếm ưu thế so với các nguồn công việc GC khác, nhưng trong các trường hợp chương
+trình có hàng trăm nghìn goroutine, GC đưa ra các đánh giá không tốt.
+</p>
+
+<p>
+Heap mục tiêu kiểm soát tần suất GC: mục tiêu càng lớn, GC có thể chờ đợi lâu hơn
+trước khi bắt đầu pha đánh dấu tiếp theo và ngược lại.
+Mặc dù công thức chính xác hữu ích để ước tính, tốt hơn là nên nghĩ về GOGC theo
+mục đích cơ bản của nó: một tham số chọn một điểm trong sự đánh đổi giữa CPU GC và
+bộ nhớ.
+Điểm mấu chốt là <b>nhân đôi GOGC sẽ nhân đôi chi phí bộ nhớ heap và giảm khoảng
+một nửa chi phí CPU GC</b>, và ngược lại.
+(Để xem giải thích đầy đủ về lý do tại sao, hãy xem
+<a href="#Additional_notes_on_GOGC">phụ lục</a>.)
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: kích thước heap mục tiêu chỉ là một mục tiêu, và có một số lý do khiến chu
+kỳ GC có thể không kết thúc ngay tại mục tiêu đó.
+Trước tiên, một lần cấp phát heap đủ lớn có thể đơn giản là vượt quá mục tiêu.
+Tuy nhiên, các lý do khác xuất hiện trong các triển khai GC vượt ra ngoài
+<a href="#Understanding_costs">mô hình GC</a> mà hướng dẫn này đã sử dụng cho đến
+nay.
+Để biết thêm chi tiết, hãy xem <a href="#Latency">phần độ trễ</a>, nhưng chi tiết
+đầy đủ có thể tìm thấy trong <a href="#Additional_resources">tài nguyên bổ sung</a>.
+</p>
+
+<p>
+GOGC có thể được cấu hình thông qua biến môi trường <code>GOGC</code> (mà tất cả
+các chương trình Go nhận biết), hoặc thông qua API
+<a href="https://pkg.go.dev/runtime/debug#SetGCPercent"><code>SetGCPercent</code></a>
+trong gói <code>runtime/debug</code>.
+</p>
+
+<p>
+Lưu ý rằng GOGC cũng có thể được dùng để tắt hoàn toàn GC (miễn là
+<a href="#Memory_limit">giới hạn bộ nhớ</a> không áp dụng) bằng cách đặt
+<code>GOGC=off</code> hoặc gọi <code>SetGCPercent(-1)</code>.
+Về mặt khái niệm, cài đặt này tương đương với việc đặt GOGC thành vô cực, vì lượng
+bộ nhớ mới trước khi GC được kích hoạt là không giới hạn.
+</p>
+
+<p>
+Để hiểu rõ hơn tất cả những gì đã thảo luận, hãy thử trực quan hóa tương tác bên
+dưới được xây dựng trên
+<a href="#Understanding_costs">mô hình chi phí GC</a> đã thảo luận trước đó.
+Trực quan hóa này mô tả việc thực thi một chương trình có công việc không phải GC
+mất 10 giây CPU để hoàn thành.
+Trong giây đầu tiên, nó thực hiện một bước khởi tạo (tăng heap sống) trước khi ổn
+định vào trạng thái ổn định.
+Ứng dụng cấp phát tổng cộng 200 MiB, với 20 MiB sống tại một thời điểm.
+Nó giả định rằng công việc GC liên quan duy nhất đến từ heap sống, và rằng (không
+thực tế) ứng dụng không sử dụng thêm bộ nhớ nào.
+</p>
+
+<p>
+Dùng thanh trượt để điều chỉnh giá trị GOGC và xem ứng dụng phản hồi như thế nào
+về tổng thời gian và chi phí GC.
+Mỗi chu kỳ GC kết thúc khi heap mới giảm về không.
+Thời gian thực hiện trong khi heap mới giảm về không là thời gian kết hợp cho pha
+đánh dấu của chu kỳ N và pha quét của chu kỳ N+1.
+Lưu ý rằng trực quan hóa này (và tất cả các trực quan hóa trong hướng dẫn này) giả
+định ứng dụng bị tạm dừng khi GC thực thi, vì vậy chi phí CPU của GC được thể hiện
+đầy đủ bởi thời gian để bộ nhớ heap mới giảm về không.
+Điều này chỉ để đơn giản hóa trực quan hóa; trực giác tương tự vẫn áp dụng.
+Trục X thay đổi để luôn hiển thị toàn bộ thời lượng CPU-time của chương trình.
+Lưu ý rằng thời gian CPU bổ sung được GC sử dụng làm tăng tổng thời lượng.
+</p>
+
+<div class="gc-guide-graph" data-workload='[
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0.00},
+	{"duration": 9.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00}
+]' data-config='{
+	"fixedCost": 0.04,
+	"otherMem": 0,
+	"GOGC": "graph1-gogc",
+	"memoryLimit": 100000
+}'></div>
+<div class="gc-guide-graph-controls">
+	<div>
+		GOGC
+		<input type="range" min="0" max="10" step="0.005" value="6.64" id="graph1-gogc">
+		<div class="gc-guide-counter" id="graph1-gogc-display"></div>
+	</div>
+</div>
+
+<p>
+Lưu ý rằng GC luôn phát sinh một số chi phí CPU và bộ nhớ đỉnh.
+Khi GOGC tăng, chi phí CPU giảm, nhưng bộ nhớ đỉnh tăng tỉ lệ với kích thước heap
+sống.
+Khi GOGC giảm, yêu cầu bộ nhớ đỉnh giảm với cái giá là chi phí CPU bổ sung.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: biểu đồ hiển thị thời gian CPU, không phải thời gian thực để hoàn thành
+chương trình.
+Nếu chương trình chạy trên 1 CPU và sử dụng tối đa tài nguyên của nó, thì chúng
+tương đương.
+Một chương trình thực tế có thể chạy trên hệ thống đa nhân và không sử dụng 100%
+CPU mọi lúc.
+Trong những trường hợp đó, tác động thời gian thực của GC sẽ thấp hơn.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: GC của Go có kích thước heap tối thiểu là 4 MiB, vì vậy nếu mục tiêu được
+đặt bởi GOGC bao giờ xuống dưới mức đó, nó sẽ được làm tròn lên.
+Trực quan hóa phản ánh chi tiết này.
+</p>
+
+<p>
+Đây là một ví dụ khác năng động và thực tế hơn một chút.
+Một lần nữa, ứng dụng mất 10 CPU-giây để hoàn thành mà không có GC, nhưng tốc độ
+cấp phát trong trạng thái ổn định tăng đột ngột ở giữa, và kích thước heap sống thay
+đổi một chút trong pha đầu tiên.
+Ví dụ này minh họa trạng thái ổn định trông như thế nào khi kích thước heap sống
+thực sự thay đổi, và cách tốc độ cấp phát cao hơn dẫn đến các chu kỳ GC thường xuyên
+hơn.
+</p>
+
+<div class="gc-guide-graph" data-workload='[
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0.00},
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.50},
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.50, "oldDeathRate": 0.00},
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.50},
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.50, "oldDeathRate": 0.00},
+	{"duration": 5.0, "allocRate": 200, "scanRate": 1024, "newSurvivalRate": 0.02, "oldDeathRate": 1.00}
+]' data-config='{
+	"fixedCost": 0.04,
+	"otherMem": 0,
+	"GOGC": "graph2-gogc",
+	"memoryLimit": 100000
+}'></div>
+<div class="gc-guide-graph-controls">
+	<div>
+		GOGC
+		<input type="range" min="0" max="10" step="0.005" value="6.64" id="graph2-gogc">
+		<div class="gc-guide-counter" id="graph2-gogc-display"></div>
+	</div>
+</div>
+
+<h3 id="Memory_limit">Giới hạn bộ nhớ</h3>
+
+<p>
+Cho đến Go 1.19, GOGC là tham số duy nhất có thể dùng để thay đổi hành vi của GC.
+Mặc dù nó hoạt động tốt như một cách đặt sự đánh đổi, nó không tính đến việc bộ nhớ
+khả dụng là hữu hạn.
+Hãy xem điều gì xảy ra khi có sự tăng đột biến nhất thời trong kích thước heap sống:
+vì GC sẽ chọn tổng kích thước heap tỉ lệ với kích thước heap sống đó, GOGC phải
+được cấu hình cho kích thước heap sống <i>đỉnh</i>, ngay cả khi trong trường hợp
+thông thường một giá trị GOGC cao hơn cung cấp sự đánh đổi tốt hơn.
+</p>
+
+<p>
+Trực quan hóa bên dưới minh họa tình huống đỉnh heap nhất thời này.
+</p>
+
+<div class="gc-guide-graph" data-workload='[
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0.00},
+	{"duration": 4.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00},
+	{"duration": 0.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0.00},
+	{"duration": 0.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00},
+	{"duration": 0.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.50},
+	{"duration": 3.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00}
+]' data-config='{
+	"fixedCost": 0.04,
+	"otherMem": 0,
+	"GOGC": "graph3-gogc",
+	"memoryLimit": 100000
+}'></div>
+<div class="gc-guide-graph-controls">
+	<div>
+		GOGC
+		<input type="range" min="0" max="10" step="0.005" value="6.64" id="graph3-gogc">
+		<div class="gc-guide-counter" id="graph3-gogc-display"></div>
+	</div>
+</div>
+
+<p>
+Nếu khối lượng công việc ví dụ đang chạy trong một container với hơn 60 MiB bộ nhớ
+khả dụng, thì GOGC không thể tăng vượt quá 100, ngay cả khi phần còn lại của các
+chu kỳ GC có đủ bộ nhớ khả dụng để tận dụng bộ nhớ thừa đó.
+Hơn nữa, trong một số ứng dụng, các đỉnh nhất thời này có thể hiếm và khó dự đoán,
+dẫn đến điều kiện hết bộ nhớ thỉnh thoảng xảy ra, không thể tránh khỏi, và có thể
+tốn kém.
+</p>
+
+<p>
+Đó là lý do tại sao trong bản phát hành 1.19, Go đã thêm hỗ trợ để đặt giới hạn
+bộ nhớ runtime.
+Giới hạn bộ nhớ có thể được cấu hình thông qua biến môi trường <code>GOMEMLIMIT</code>
+mà tất cả các chương trình Go nhận biết, hoặc thông qua hàm
+<code>SetMemoryLimit</code> có sẵn trong gói <code>runtime/debug</code>.
+</p>
+
+<p>
+Giới hạn bộ nhớ này đặt giá trị tối đa cho <i>tổng lượng bộ nhớ mà Go runtime có
+thể sử dụng</i>.
+Tập hợp bộ nhớ cụ thể được bao gồm được định nghĩa theo
+<a href="https://pkg.go.dev/runtime#MemStats"><code>runtime.MemStats</code></a>
+là biểu thức
+</p>
+
+<p>
+<code>Sys</code> <code>-</code> <code>HeapReleased</code>
+</p>
+
+<p>
+hoặc tương đương theo gói
+<a href="https://pkg.go.dev/runtime/metrics"><code>runtime/metrics</code></a>,
+</p>
+
+<p>
+<code>/memory/classes/total:bytes</code> <code>-</code> <code>/memory/classes/heap/released:bytes</code>
+</p>
+
+<p>
+Vì GC của Go có quyền kiểm soát rõ ràng về lượng bộ nhớ heap nó sử dụng, nó đặt
+tổng kích thước heap dựa trên giới hạn bộ nhớ này và lượng bộ nhớ khác mà Go runtime
+sử dụng.
+</p>
+
+<p>
+Trực quan hóa bên dưới mô tả khối lượng công việc trạng thái ổn định một pha giống
+với phần GOGC, nhưng lần này với thêm 10 MiB chi phí từ Go runtime và với giới hạn
+bộ nhớ có thể điều chỉnh.
+Hãy thử điều chỉnh cả GOGC và giới hạn bộ nhớ và xem điều gì xảy ra.
+</p>
+
+<div class="gc-guide-graph" data-workload='[
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0},
+	{"duration": 9.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0}
+]' data-config='{
+	"fixedCost": 0.04,
+	"otherMem": 10,
+	"GOGC": "graph4-gogc",
+	"memoryLimit": "graph4-memlimit"
+}'></div>
+<div class="gc-guide-graph-controls">
+	<div>
+		GOGC
+		<input type="range" min="0" max="10" step="0.005" value="6.64" id="graph4-gogc">
+		<div class="gc-guide-counter" id="graph4-gogc-display"></div>
+	</div>
+	<div>
+		Memory Limit
+		<input type="range" min="1" max="100" step="0.5" value="100" id="graph4-memlimit">
+		<div class="gc-guide-counter" id="graph4-memlimit-display"></div>
+	</div>
+</div>
+
+<p>
+Lưu ý rằng khi giới hạn bộ nhớ bị hạ xuống dưới mức bộ nhớ đỉnh được xác định bởi
+GOGC (42 MiB cho GOGC là 100), GC chạy thường xuyên hơn để giữ bộ nhớ đỉnh trong
+giới hạn.
+</p>
+
+<p>
+Quay lại ví dụ trước về đỉnh heap nhất thời, bằng cách đặt giới hạn bộ nhớ và tăng
+GOGC, chúng ta có thể đạt được cả hai: không vượt quá giới hạn bộ nhớ, và tiết kiệm
+tài nguyên tốt hơn.
+Hãy thử trực quan hóa tương tác bên dưới.
+</p>
+
+<div class="gc-guide-graph" data-workload='[
+	{"duration": 1.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0.00},
+	{"duration": 4.0, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00},
+	{"duration": 0.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 1.00, "oldDeathRate": 0.00},
+	{"duration": 0.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00},
+	{"duration": 0.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.50},
+	{"duration": 3.5, "allocRate": 20, "scanRate": 1024, "newSurvivalRate": 0.00, "oldDeathRate": 0.00}
+]' data-config='{
+	"fixedCost": 0.04,
+	"otherMem": 0,
+	"GOGC": "graph5-gogc",
+	"memoryLimit": "graph5-memlimit"
+}'></div>
+<div class="gc-guide-graph-controls">
+	<div>
+		GOGC
+		<input type="range" min="0" max="10" step="0.005" value="6.64" id="graph5-gogc">
+		<div class="gc-guide-counter" id="graph5-gogc-display"></div>
+	</div>
+	<div>
+		Memory Limit
+		<input type="range" min="1" max="100" step="0.5" value="100" id="graph5-memlimit">
+		<div class="gc-guide-counter" id="graph5-memlimit-display"></div>
+	</div>
+</div>
+
+<p>
+Lưu ý rằng với một số giá trị GOGC và giới hạn bộ nhớ, mức sử dụng bộ nhớ đỉnh
+dừng lại ở bất cứ mức giới hạn bộ nhớ nào, nhưng phần còn lại của việc thực thi
+chương trình vẫn tuân theo quy tắc tổng kích thước heap được đặt bởi GOGC.
+</p>
+
+<p>
+Quan sát này dẫn đến một chi tiết thú vị khác: ngay cả khi GOGC được đặt thành off,
+giới hạn bộ nhớ vẫn được tôn trọng!
+Thực ra, cấu hình cụ thể này đại diện cho việc <i>tối đa hóa tiết kiệm tài nguyên</i>
+vì nó đặt tần suất GC tối thiểu cần thiết để duy trì một giới hạn bộ nhớ.
+Trong trường hợp này, <i>toàn bộ</i> việc thực thi chương trình có kích thước heap
+tăng lên để đáp ứng giới hạn bộ nhớ.
+</p>
+
+<p>
+Bây giờ, mặc dù giới hạn bộ nhớ rõ ràng là một công cụ mạnh mẽ, <b>việc sử dụng
+giới hạn bộ nhớ không phải là không có chi phí</b>, và chắc chắn không làm mất đi
+tính hữu ích của GOGC.
+</p>
+
+<p>
+Hãy xem điều gì xảy ra khi heap sống tăng đủ lớn để đưa tổng mức sử dụng bộ nhớ
+gần với giới hạn bộ nhớ.
+Trong trực quan hóa trạng thái ổn định ở trên, hãy thử tắt GOGC rồi từ từ hạ giới
+hạn bộ nhớ xuống dần để xem điều gì xảy ra.
+Lưu ý rằng tổng thời gian ứng dụng mất sẽ bắt đầu tăng không giới hạn khi GC liên
+tục thực thi để duy trì giới hạn bộ nhớ không thể đạt được.
+</p>
+
+<p>
+Tình huống này, khi chương trình không thể tiến triển hợp lý do các chu kỳ GC liên
+tục, được gọi là <b>thrashing</b>.
+Đây là tình trạng đặc biệt nguy hiểm vì nó thực sự làm đình trệ chương trình.
+Còn tệ hơn, nó có thể xảy ra chính xác trong tình huống mà chúng ta đang cố gắng
+tránh với GOGC: một đỉnh heap nhất thời đủ lớn có thể khiến chương trình bị đình
+trệ vô thời hạn!
+Hãy thử giảm giới hạn bộ nhớ (khoảng 30 MiB hoặc thấp hơn) trong trực quan hóa
+đỉnh heap nhất thời và lưu ý cách hành vi tệ nhất bắt đầu cụ thể với đỉnh heap.
+</p>
+
+<p>
+Trong nhiều trường hợp, tình trạng đình trệ vô thời hạn còn tệ hơn điều kiện hết
+bộ nhớ, vốn thường dẫn đến lỗi nhanh hơn nhiều.
+</p>
+
+<p>
+Vì lý do này, giới hạn bộ nhớ được định nghĩa là <b>mềm</b>.
+Go runtime không đảm bảo rằng nó sẽ duy trì giới hạn bộ nhớ này trong mọi hoàn
+cảnh; nó chỉ hứa hẹn một lượng nỗ lực hợp lý.
+Sự nới lỏng giới hạn bộ nhớ này rất quan trọng để tránh hành vi thrashing, vì nó
+cho GC một lối thoát: để mức sử dụng bộ nhớ vượt quá giới hạn để tránh dành quá
+nhiều thời gian trong GC.
+</p>
+
+<p>
+Cách hoạt động nội bộ là GC đặt giới hạn trên về lượng thời gian CPU nó có thể sử
+dụng trong một khoảng thời gian nhất định (với một số trễ cho các đợt tăng đột biến
+CPU rất ngắn nhất thời).
+Giới hạn này hiện được đặt ở khoảng 50%, với cửa sổ <code>2 * GOMAXPROCS</code>
+CPU-giây.
+Hậu quả của việc giới hạn thời gian CPU của GC là công việc của GC bị trì hoãn,
+trong khi đó chương trình Go có thể tiếp tục cấp phát bộ nhớ heap mới, ngay cả
+vượt quá giới hạn bộ nhớ.
+</p>
+
+<p>
+Trực giác đằng sau giới hạn 50% CPU của GC dựa trên tác động trong trường hợp xấu
+nhất đối với một chương trình có nhiều bộ nhớ khả dụng.
+Trong trường hợp cấu hình sai giới hạn bộ nhớ, khi nó được đặt quá thấp một cách
+nhầm lẫn, chương trình sẽ chậm đi nhiều nhất là 2 lần, vì GC không thể chiếm hơn
+50% thời gian CPU của nó.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: các trực quan hóa trên trang này không mô phỏng giới hạn CPU của GC.
+</p>
+
+<h4 id="Suggested_uses">Cách dùng được khuyến nghị</h4>
+
+<p>
+Mặc dù giới hạn bộ nhớ là một công cụ mạnh mẽ, và Go runtime thực hiện các bước để
+giảm thiểu các hành vi tệ nhất từ việc lạm dụng, điều quan trọng vẫn là sử dụng
+nó một cách thận trọng.
+Dưới đây là tập hợp các lời khuyên về nơi giới hạn bộ nhớ hữu ích nhất và áp dụng
+được nhất, và nơi nó có thể gây hại nhiều hơn lợi.
+</p>
+
+<ul>
+	<li>
+		<p>
+		<b>Nên</b> tận dụng giới hạn bộ nhớ khi môi trường thực thi của chương trình
+		Go hoàn toàn nằm trong tầm kiểm soát của bạn, và chương trình Go là chương
+		trình duy nhất có quyền truy cập vào một tập tài nguyên nào đó (ví dụ, một
+		loại dự trữ bộ nhớ nào đó, như giới hạn bộ nhớ container).
+		</p>
+		<p>
+		Một ví dụ tốt là việc triển khai một dịch vụ web vào các container với lượng
+		bộ nhớ khả dụng cố định.
+		</p>
+		<p>
+		<b>Trong trường hợp này, một quy tắc tốt là để lại thêm 5-10% dự phòng để
+		tính đến các nguồn bộ nhớ mà Go runtime không biết đến.</b>
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>Nên</b> điều chỉnh giới hạn bộ nhớ theo thời gian thực để thích nghi với
+		các điều kiện thay đổi.
+		</p>
+		<p>
+		Một ví dụ tốt là một chương trình cgo trong đó các thư viện C tạm thời cần
+		sử dụng nhiều bộ nhớ hơn đáng kể.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>Không nên</b> đặt GOGC thành off cùng với giới hạn bộ nhớ nếu chương trình
+		Go có thể chia sẻ một phần bộ nhớ giới hạn với các chương trình khác, và các
+		chương trình đó thường tách biệt khỏi chương trình Go.
+		Thay vào đó, hãy giữ giới hạn bộ nhớ vì nó có thể giúp kiềm chế các hành vi
+		nhất thời không mong muốn, nhưng đặt GOGC thành một giá trị nhỏ hơn, hợp lý
+		cho trường hợp trung bình.
+		</p>
+		<p>
+		Mặc dù có thể hấp dẫn khi cố gắng "dự trữ" bộ nhớ cho các chương trình cùng
+		thuê, trừ khi các chương trình được đồng bộ hóa hoàn toàn (ví dụ: chương trình
+		Go gọi một tiến trình con và chặn trong khi tiến trình con đó thực thi), kết
+		quả sẽ kém tin cậy hơn vì chắc chắn cả hai chương trình đều sẽ cần thêm bộ nhớ.
+		Để chương trình Go sử dụng ít bộ nhớ hơn khi không cần sẽ tạo ra kết quả đáng
+		tin cậy hơn tổng thể.
+		Lời khuyên này cũng áp dụng cho các tình huống overcommit, khi tổng các giới
+		hạn bộ nhớ của các container chạy trên một máy có thể vượt quá bộ nhớ vật lý
+		thực sự khả dụng cho máy đó.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>Không nên</b> sử dụng giới hạn bộ nhớ khi triển khai vào môi trường thực
+		thi mà bạn không kiểm soát, đặc biệt khi mức sử dụng bộ nhớ của chương trình
+		tỉ lệ với đầu vào của nó.
+		</p>
+		<p>
+		Một ví dụ tốt là một công cụ CLI hoặc ứng dụng desktop.
+		Gắn giới hạn bộ nhớ vào chương trình khi không rõ loại đầu vào nào có thể được
+		cung cấp, hoặc bao nhiêu bộ nhớ có thể khả dụng trên hệ thống có thể dẫn đến
+		lỗi khó hiểu và hiệu suất kém.
+		Hơn nữa, người dùng nâng cao luôn có thể đặt giới hạn bộ nhớ nếu họ muốn.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>Không nên</b> đặt giới hạn bộ nhớ để tránh điều kiện hết bộ nhớ khi một
+		chương trình đã gần với giới hạn bộ nhớ của môi trường.
+		</p>
+		<p>
+		Điều này thực sự thay thế rủi ro hết bộ nhớ bằng rủi ro ứng dụng chậm nghiêm
+		trọng, thường không phải là sự đánh đổi có lợi, ngay cả với những nỗ lực của
+		Go để giảm thiểu thrashing.
+		Trong trường hợp đó, sẽ hiệu quả hơn nhiều nếu tăng giới hạn bộ nhớ của môi
+		trường (và <i>sau đó</i> có thể đặt giới hạn bộ nhớ) hoặc giảm GOGC (cung cấp
+		sự đánh đổi rõ ràng hơn nhiều so với giảm thiểu thrashing).
+		</p>
+	</li>
+</ul>
+
+<h3 id="Latency">Độ trễ</h3>
+
+<p>
+Các trực quan hóa trong tài liệu này đã mô hình hóa ứng dụng như bị tạm dừng khi
+GC đang thực thi.
+Các triển khai GC hoạt động theo cách này thực sự tồn tại, và chúng được gọi là
+GC "stop-the-world".
+</p>
+
+<p>
+Tuy nhiên, GC của Go không hoàn toàn stop-the-world và thực hiện hầu hết công việc
+của mình đồng thời với ứng dụng.
+Điều này chủ yếu nhằm giảm <i>độ trễ</i> của ứng dụng.
+Cụ thể, thời gian đầu cuối của một đơn vị tính toán (ví dụ: một yêu cầu web).
+Cho đến nay, tài liệu này chủ yếu xem xét <i>thông lượng</i> của ứng dụng (ví dụ:
+số yêu cầu web được xử lý mỗi giây).
+Lưu ý rằng mỗi ví dụ trong phần <a href="#The_GC_cycle">chu kỳ GC</a> tập trung vào
+tổng thời lượng CPU của một chương trình đang thực thi.
+Tuy nhiên, thời lượng như vậy ít có ý nghĩa hơn đối với, giả sử, một dịch vụ web.
+Mặc dù thông lượng vẫn quan trọng đối với dịch vụ web (tức là số truy vấn mỗi giây),
+độ trễ của mỗi yêu cầu riêng lẻ thường còn quan trọng hơn.
+</p>
+
+<p>
+Về mặt độ trễ, một GC stop-the-world có thể cần một khoảng thời gian đáng kể để
+thực thi cả pha đánh dấu và pha quét, trong thời gian đó ứng dụng, và trong ngữ
+cảnh dịch vụ web, bất kỳ yêu cầu đang thực hiện nào, đều không thể tiến triển thêm.
+Thay vào đó, GC của Go tránh làm cho độ dài của bất kỳ lần tạm dừng ứng dụng toàn
+cục nào tỉ lệ với kích thước của heap, và thuật toán tracing cốt lõi được thực hiện
+trong khi ứng dụng đang tích cực thực thi.
+(Các lần tạm dừng có tỉ lệ mạnh hơn với GOMAXPROCS về mặt thuật toán, nhưng phổ
+biến nhất là bị chi phối bởi thời gian cần thiết để dừng các goroutine đang chạy.)
+Thu gom đồng thời không phải là không có chi phí: trong thực tế, nó thường dẫn đến
+thiết kế với thông lượng thấp hơn so với bộ gom rác stop-the-world tương đương.
+Tuy nhiên, điều quan trọng cần lưu ý là <i>độ trễ thấp hơn không có nghĩa là thông
+lượng thấp hơn</i>, và hiệu suất của bộ gom rác Go đã cải thiện đều đặn theo thời
+gian, cả về độ trễ lẫn thông lượng.
+</p>
+
+<p>
+Bản chất đồng thời của GC hiện tại của Go không làm mất hiệu lực bất cứ điều gì
+đã thảo luận trong tài liệu này cho đến nay: không có phát biểu nào dựa trên lựa
+chọn thiết kế này.
+Tần suất GC vẫn là cách chính GC đánh đổi giữa thời gian CPU và bộ nhớ cho thông
+lượng, và thực tế, nó cũng đóng vai trò này cho độ trễ.
+Điều này là vì hầu hết chi phí của GC phát sinh trong khi pha đánh dấu đang hoạt động.
+</p>
+
+<p>
+Điểm mấu chốt là <b>giảm tần suất GC cũng có thể dẫn đến cải thiện độ trễ</b>.
+Điều này áp dụng không chỉ cho việc giảm tần suất GC từ việc thay đổi các tham số
+điều chỉnh, như tăng GOGC và/hoặc giới hạn bộ nhớ, mà còn áp dụng cho các tối ưu
+hóa được mô tả trong
+<a href="#Optimization_guide">hướng dẫn tối ưu hóa</a>.
+</p>
+
+<p>
+Tuy nhiên, độ trễ thường phức tạp hơn để hiểu so với thông lượng, vì nó là sản
+phẩm của việc thực thi từng thời điểm của chương trình chứ không chỉ là tổng hợp
+các chi phí.
+Do đó, mối liên hệ giữa độ trễ và tần suất GC ít trực tiếp hơn.
+Dưới đây là danh sách các nguồn độ trễ có thể có cho những ai muốn tìm hiểu sâu hơn.
+</p>
+
+<ol>
+	<li>
+		Các lần tạm dừng stop-the-world ngắn khi GC chuyển đổi giữa các pha đánh dấu
+		và quét,
+	</li>
+	<li>
+		Độ trễ lập lịch vì GC chiếm 25% tài nguyên CPU khi ở pha đánh dấu,
+	</li>
+	<li>
+		Các goroutine người dùng hỗ trợ GC để phản hồi tốc độ cấp phát cao,
+	</li>
+	<li>
+		Các lần ghi con trỏ yêu cầu công việc bổ sung khi GC đang ở pha đánh dấu, và
+	</li>
+	<li>
+		Các goroutine đang chạy phải bị tạm dừng để scan các gốc của chúng.
+	</li>
+</ol>
+
+<p>
+Các nguồn độ trễ này có thể thấy trong
+<a href="/doc/diagnostics#execution-tracer">execution traces</a>, ngoại trừ việc
+ghi con trỏ yêu cầu công việc bổ sung.
+</p>
+
+<h3 id="Finalizers_cleanups_and_weak_pointers">Finalizer, cleanup, và con trỏ yếu</h2>
+
+<p>
+Thu gom rác tạo ra ảo giác về bộ nhớ vô hạn chỉ sử dụng bộ nhớ hữu hạn.
+Bộ nhớ được cấp phát nhưng không bao giờ được giải phóng tường minh, điều này cho
+phép các API đơn giản hơn và các thuật toán đồng thời so với quản lý bộ nhớ thủ
+công thuần túy.
+(Một số ngôn ngữ với bộ nhớ được quản lý thủ công sử dụng các phương pháp thay thế
+như "con trỏ thông minh" và theo dõi quyền sở hữu tại thời gian biên dịch để đảm
+bảo các đối tượng được giải phóng, nhưng các tính năng này được nhúng sâu vào các
+quy ước thiết kế API trong những ngôn ngữ đó.)
+</p>
+
+<p>
+Chỉ những đối tượng đang sống&mdash;những đối tượng có thể tiếp cận từ một biến
+toàn cục hoặc một phép tính trong một goroutine&mdash;mới có thể ảnh hưởng đến hành
+vi của chương trình.
+Bất kỳ lúc nào sau khi một đối tượng trở nên không tiếp cận được ("chết"), nó có
+thể được GC thu hồi một cách an toàn.
+Điều này cho phép nhiều thiết kế GC, chẳng hạn như thiết kế tracing mà Go sử dụng
+ngày nay.
+Cái chết của một đối tượng không phải là một sự kiện có thể quan sát được ở cấp độ
+ngôn ngữ.
+</p>
+
+<p>
+Tuy nhiên, thư viện runtime của Go cung cấp ba tính năng phá vỡ ảo giác đó:
+<a href="/pkg/runtime#AddCleanup">cleanup</a>,
+<a href="/pkg/weak#Pointer">con trỏ yếu</a>, và
+<a href="/pkg/runtime#SetFinalizer">finalizer</a>.
+Mỗi tính năng này cung cấp một cách để quan sát và phản ứng với cái chết của đối
+tượng, và trong trường hợp finalizer, thậm chí đảo ngược nó.
+Điều này tất nhiên làm phức tạp các chương trình Go và thêm gánh nặng cho việc
+triển khai GC.
+Dù vậy, các tính năng này tồn tại vì chúng hữu ích trong nhiều hoàn cảnh, và các
+chương trình Go sử dụng chúng và hưởng lợi từ chúng mọi lúc.
+</p>
+
+Để biết chi tiết về từng tính năng, hãy tham khảo tài liệu của package tương ứng
+(<a href="/pkg/runtime#AddCleanup">runtime.AddCleanup</a>,
+<a href="/pkg/weak#Pointer">weak.Pointer</a>,
+<a href="/pkg/runtime#SetFinalizer">runtime.SetFinalizer</a>).
+Dưới đây là một số lời khuyên chung khi dùng các tính năng này, mô tả các lỗi phổ biến
+có thể gặp phải với từng tính năng, và gợi ý kiểm thử cho các cách dùng đó.
+</p>
+
+<h4 id="General_advice">Lời khuyên chung</h4>
+
+<ul>
+	<li>
+		<p>
+		<b>
+		Viết unit test.
+		</b>
+		</p>
+		<p>
+		Thời điểm chính xác khi cleanup, weak pointer và finalizer được chạy rất khó
+		dự đoán, và dễ tự thuyết phục rằng mọi thứ hoạt động đúng dù đã chạy thử nhiều lần liên tiếp.
+		Nhưng cũng rất dễ mắc các lỗi tinh tế.
+		<a href="#Testing_object_death">Viết test</a> cho chúng không đơn giản, nhưng
+		vì chúng rất tinh tế khi sử dụng, việc kiểm thử lại càng quan trọng hơn bình thường.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>
+		Tránh dùng trực tiếp các tính năng này trong code Go thông thường.
+		</b>
+		</p>
+		<p>
+		Đây là các tính năng cấp thấp với nhiều hạn chế và hành vi tinh tế.
+		Ví dụ, không có gì đảm bảo rằng cleanup hoặc finalizer sẽ được chạy
+		khi thoát chương trình, hoặc thậm chí được chạy lần nào cả.
+		Những đoạn chú thích dài trong tài liệu API của chúng nên được coi là lời cảnh báo.
+		Đại đa số code Go không được lợi khi dùng trực tiếp các tính năng này,
+		chỉ khi dùng gián tiếp mới có ích.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>
+		Đóng gói việc sử dụng các cơ chế này bên trong một package.
+		</b>
+		</p>
+		<p>
+		Khi có thể, không để việc dùng các cơ chế này lộ ra ngoài API công khai của package;
+		hãy cung cấp các interface khiến người dùng khó hoặc không thể dùng sai.
+		Ví dụ, thay vì yêu cầu người dùng tự đặt cleanup cho vùng nhớ được cấp phát từ C để giải phóng nó,
+		hãy viết một wrapper package và ẩn chi tiết đó vào trong.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>
+		Giới hạn quyền truy cập vào các đối tượng có finalizer, cleanup và weak pointer
+		chỉ trong package đã tạo và gắn chúng.
+		</b>
+		</p>
+		<p>
+		Điều này liên quan đến điểm trước, nhưng đáng nêu rõ vì đây là một mẫu rất hữu ích
+		để dùng các tính năng này theo cách ít gây lỗi hơn.
+		Ví dụ, <a href="/pkg/unique">package unique</a> sử dụng
+		weak pointer bên dưới, nhưng hoàn toàn đóng gói các đối tượng được trỏ yếu đến.
+		Các giá trị đó không bao giờ có thể bị thay đổi bởi phần còn lại của ứng dụng,
+		chỉ có thể được sao chép thông qua
+		<a href="/pkg/unique#Handle.Value">phương thức Value</a>, giữ cho người dùng package
+		cảm giác bộ nhớ là vô tận.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>
+		Ưu tiên giải phóng tài nguyên không phải bộ nhớ theo cách xác định khi có thể,
+		dùng finalizer và cleanup như biện pháp dự phòng.
+		</b>
+		</p>
+		<p>
+		Cleanup và finalizer phù hợp với các tài nguyên là bộ nhớ, chẳng hạn như
+		bộ nhớ được cấp phát bên ngoài như từ C, hoặc các tham chiếu đến vùng ánh xạ
+		<code>mmap</code>.
+		Bộ nhớ được cấp phát bởi <code>malloc</code> của C cuối cùng phải được giải phóng bởi <code>free</code> của C.
+		Một finalizer gọi <code>free</code>, gắn vào đối tượng wrapper cho vùng nhớ C,
+		là một cách hợp lý để đảm bảo bộ nhớ C được thu hồi khi bộ gom rác chạy.
+		</p>
+		<p>
+		Tuy nhiên, các tài nguyên không phải bộ nhớ như file descriptor thường bị giới hạn
+		bởi hệ thống mà Go runtime thường không biết đến.
+		Ngoài ra, thời điểm bộ gom rác chạy trong một chương trình Go cụ thể thường là thứ
+		tác giả package ít kiểm soát được (ví dụ, tần suất GC chạy được điều khiển bởi
+		<a href="#GOGC">GOGC</a>, có thể được người vận hành đặt thành nhiều giá trị khác nhau).
+		Hai thực tế này khiến cleanup và finalizer không phải là lựa chọn tốt nếu dùng làm
+		cơ chế duy nhất để giải phóng tài nguyên không phải bộ nhớ.
+		</p>
+		<p>
+		Nếu bạn là tác giả package đang cung cấp API bao bọc một tài nguyên không phải bộ nhớ,
+		hãy cân nhắc cung cấp API tường minh để giải phóng tài nguyên theo cách xác định
+		(thông qua phương thức <code>Close</code> hoặc tương tự),
+		thay vì dựa vào bộ gom rác thông qua cleanup hoặc finalizer.
+		Thay vào đó, hãy dùng cleanup và finalizer như cơ chế xử lý lỗi lập trình viên theo
+		nỗ lực tốt nhất, hoặc bằng cách vẫn giải phóng tài nguyên như
+		<a href="/pkg/os#File">os.File</a> làm, hoặc bằng cách thông báo cho người dùng về
+		việc không giải phóng theo cách xác định.
+		</p>
+	</li>
+	<li>
+		<p>
+		<b>
+		Ưu tiên cleanup hơn finalizer.
+		</b>
+		</p>
+		<p>
+		Về mặt lịch sử, finalizer được thêm vào để đơn giản hóa giao tiếp giữa code Go
+		và code C, và để dọn dẹp các tài nguyên không phải bộ nhớ.
+		Mục đích sử dụng là gắn chúng vào các đối tượng wrapper sở hữu bộ nhớ C hoặc
+		một số tài nguyên không phải bộ nhớ khác, để tài nguyên có thể được giải phóng sau khi
+		code Go không còn dùng nó nữa.
+		Những lý do này giải thích một phần tại sao finalizer có phạm vi hẹp,
+		tại sao một đối tượng chỉ có thể có một finalizer, và tại sao finalizer đó phải
+		được gắn vào byte đầu tiên của đối tượng.
+		Hạn chế này đã cản trở một số trường hợp sử dụng.
+		Ví dụ, bất kỳ package nào muốn cache nội bộ một số thông tin về
+		một đối tượng được truyền vào đều không thể dọn dẹp thông tin đó sau khi đối tượng biến mất.
+		</p>
+		<p>
+		Tệ hơn nữa, finalizer kém hiệu quả và dễ gây lỗi vì chúng
+		<a href="https://en.wikipedia.org/wiki/Object_resurrection">làm sống lại đối tượng</a>
+		mà chúng gắn vào, để có thể truyền vào hàm finalizer
+		(và thậm chí có thể tiếp tục tồn tại sau đó nữa).
+		Điều này có nghĩa rằng nếu đối tượng nằm trong một chu trình tham chiếu thì
+		nó không bao giờ có thể được giải phóng, và bộ nhớ backing đối tượng không thể được
+		tái sử dụng cho đến ít nhất là chu kỳ bộ gom rác tiếp theo.
+		</p>
+		<p>
+		Tuy nhiên, vì finalizer làm sống lại đối tượng, chúng có thứ tự thực thi được
+		xác định rõ hơn so với cleanup.
+		Vì lý do này, finalizer vẫn có thể (nhưng hiếm khi) hữu ích để
+		dọn dẹp các cấu trúc có yêu cầu thứ tự hủy phức tạp.
+		</p>
+		<p>
+		Nhưng với mọi mục đích sử dụng khác trong Go 1.24 trở lên, chúng tôi khuyến nghị
+		dùng cleanup vì chúng linh hoạt hơn, ít gây lỗi hơn và hiệu quả hơn finalizer.
+		</p>
+	</li>
+</ul>
+
+<h4 id="Common_cleanup_issues">Các vấn đề phổ biến với cleanup</h4>
+
+<ul>
+	<li>
+		<p>
+		Các đối tượng có cleanup gắn vào không được reachable từ hàm cleanup
+		(ví dụ, thông qua biến cục bộ được capture).
+		Điều này sẽ ngăn đối tượng được thu hồi và cleanup không bao giờ chạy.
+		</p>
+	</li>
+<pre>
+f := new(myFile)
+f.fd = syscall.Open(...)
+runtime.AddCleanup(f, func(fd int) {
+	syscall.Close(f.fd) // Lỗi: Chúng ta tham chiếu f, nên cleanup này sẽ không chạy!
+}, f.fd)
+</pre>
+	<li>
+		<p>
+		Các đối tượng có cleanup gắn vào không được reachable từ đối số
+		truyền vào hàm cleanup.
+		Điều này sẽ ngăn đối tượng được thu hồi và cleanup không bao giờ chạy.
+		</p>
+	</li>
+<pre>
+f := new(myFile)
+f.fd = syscall.Open(...)
+runtime.AddCleanup(f, func(f *myFile) {
+	syscall.Close(f.fd)
+}, f) // Lỗi: Chúng ta tham chiếu f, nên cleanup này không bao giờ chạy. Trường hợp cụ thể này còn gây panic.
+</pre>
+	<li>
+		<p>
+		Finalizer có thứ tự thực thi xác định, nhưng cleanup thì không.
+		Các cleanup cũng có thể chạy đồng thời với nhau.
+		</p>
+
+    </li>
+    <li>
+        <p>
+        Các cleanup chạy lâu nên tạo một goroutine để tránh
+        chặn việc thực thi các cleanup khác.
+        </p>
+	</li>
+	<li>
+		<p>
+		<code>runtime.GC</code> sẽ không chờ cho đến khi các cleanup cho các đối tượng
+		không reachable được thực thi, chỉ cho đến khi tất cả chúng được đưa vào hàng đợi.
+		</p>
+	</li>
+</ul>
+
+<h4 id="Common_weak_pointer_issues">Các vấn đề phổ biến với weak pointer</h4>
+
+<ul>
+	<li>
+		<p>
+		Weak pointer có thể bắt đầu trả về <code>nil</code> từ phương thức
+		<code>Value</code> vào những thời điểm bất ngờ.
+		Luôn kiểm tra giá trị trả về của <code>Value</code> bằng kiểm tra <code>nil</code>
+		và có kế hoạch dự phòng.
+		</p>
+	</li>
+	<li>
+		<p>
+		Khi weak pointer được dùng làm khóa map, chúng không ảnh hưởng đến
+		khả năng reachable của các giá trị trong map.
+		Do đó, nếu một khóa weak pointer trỏ đến một đối tượng cũng reachable
+		từ giá trị trong map, đối tượng đó vẫn được coi là reachable.
+		</p>
+	</li>
+</ul>
+
+<h4 id="Common_finalizer_issues">Các vấn đề phổ biến với finalizer</h4>
+
+<ul>
+	<li>
+		<p>
+		Các đối tượng có finalizer gắn vào không được reachable từ chính nó
+		theo bất kỳ đường dẫn nào (nói cách khác, chúng không thể nằm trong chu trình tham chiếu).
+		Điều này sẽ ngăn đối tượng được thu hồi và finalizer không bao giờ chạy.
+		</p>
+	</li>
+<pre>
+f := new(myCycle)
+f.self = f // Lỗi: f reachable từ f, nên finalizer này không bao giờ chạy.
+runtime.SetFinalizer(f, func(f *myCycle) {
+	...
+})
+</pre>
+	<li>
+		<p>
+		Các đối tượng có finalizer gắn vào không được reachable từ hàm finalizer
+		(ví dụ, thông qua biến cục bộ được capture).
+		Điều này sẽ ngăn đối tượng được thu hồi và finalizer không bao giờ chạy.
+		</p>
+	</li>
+<pre>
+f := new(myFile)
+f.fd = syscall.Open(...)
+runtime.SetFinalizer(f, func(_ *myFile) {
+	syscall.Close(f.fd) // Lỗi: Chúng ta tham chiếu f bên ngoài, nên cleanup này sẽ không chạy!
+})
+</pre>
+	<li>
+		<p>
+		Chuỗi tham chiếu các đối tượng có finalizer gắn vào (ví dụ trong linked list)
+		cần tối thiểu số chu kỳ GC bằng số lượng đối tượng trong chuỗi
+		để dọn dẹp tất cả.
+		Hãy giữ finalizer nông!
+		</p>
+	</li>
+<pre>
+// Lỗi: thu hồi linked list này sẽ mất ít nhất 10 chu kỳ GC.
+node := new(linkedListNode)
+for range 10 {
+	tmp := new(linkedListNode)
+	tmp.next = node
+	node = tmp
+	runtime.SetFinalizer(node, func(node *linkedListNode) {
+		...
+	})
+}
+</pre>
+	<li>
+		<p>
+		Tránh gắn finalizer vào các đối tượng được trả về tại ranh giới package.
+		Điều này cho phép người dùng package gọi
+		<code>runtime.SetFinalizer</code> để thay đổi finalizer trên đối tượng bạn trả về,
+		tạo ra hành vi bất ngờ mà người dùng package có thể phụ thuộc vào.
+		</p>
+	</li>
+    <li>
+        <p>
+        Các finalizer chạy lâu nên tạo một goroutine mới
+        để tránh chặn việc thực thi các finalizer khác.
+        </p>
+    </li>
+	<li>
+		<p>
+		<code>runtime.GC</code> sẽ không chờ cho đến khi các finalizer cho các đối tượng
+		không reachable được thực thi, chỉ cho đến khi tất cả chúng được đưa vào hàng đợi.
+		</p>
+	</li>
+</ul>
+
+<h4 id="Testing_object_death">Kiểm thử việc đối tượng bị hủy</h4>
+
+<p>
+Khi dùng các tính năng này, đôi khi việc viết test cho code sử dụng chúng có thể khá khó.
+Dưới đây là một số gợi ý để viết test vững chắc cho code dùng những tính năng này.
+</p>
+
+<ul>
+	<li>
+		Tránh chạy các test như vậy song song với các test khác.
+		Việc tăng tính xác định càng nhiều càng tốt và nắm rõ trạng thái của hệ thống
+		tại mọi thời điểm sẽ rất hữu ích.
+	</li>
+	<li>
+		Dùng <code>runtime.GC</code> để thiết lập baseline khi bắt đầu test.
+		Dùng <code>runtime.GC</code> để buộc weak pointer về <code>nil</code>,
+		và để đưa cleanup và finalizer vào hàng đợi chạy.
+	</li>
+	<li>
+		<p>
+		<code>runtime.GC</code> không chờ cleanup và finalizer chạy,
+		nó chỉ đưa chúng vào hàng đợi.
+		</p>
+		<p>
+		Để viết test vững chắc nhất có thể, hãy tiêm một cách để chặn trên một cleanup
+		hoặc finalizer từ test của bạn (ví dụ, truyền một channel tùy chọn vào
+		cleanup và/hoặc finalizer từ test, và ghi vào channel sau khi nó chạy xong).
+		Nếu điều này quá khó hoặc không thể, một cách khác là vòng lặp kiểm tra một trạng thái
+		nhất định sau cleanup.
+		Ví dụ, các test của package <code>os</code> gọi <code>runtime.Gosched</code> trong
+		một vòng lặp kiểm tra xem file đã được đóng hay chưa, sau khi nó không còn reachable.
+		</p>
+	</li>
+	<li>
+		<p>
+		Nếu viết test cho việc dùng finalizer, và bạn có chuỗi đối tượng
+		dùng finalizer, bạn cần tối thiểu số lần gọi <code>runtime.GC</code>
+		bằng độ sâu của chuỗi dài nhất mà test có thể tạo ra
+		để đảm bảo tất cả finalizer đều chạy.
+		</p>
+	</li>
+	<li>
+		<p>
+		Kiểm thử ở chế độ race để phát hiện race condition giữa các cleanup đồng thời,
+		và giữa code cleanup, finalizer và phần còn lại của codebase.
+		</p>
+	</li>
+</ul>
+
+<!-- TODO: Add a short section about non-steady-state behavior. -->
+
+<h3 id="Additional_resources">Tài nguyên bổ sung</h3>
+
+<p>
+Mặc dù thông tin trình bày ở trên là chính xác, nhưng còn thiếu chi tiết để
+hiểu đầy đủ các chi phí và đánh đổi trong thiết kế GC của Go.
+Để biết thêm thông tin, hãy xem các tài nguyên bổ sung sau.
+</p>
+
+<ul>
+	<li>
+		<a href="https://gchandbook.org/">The GC Handbook</a>&mdash;Một
+			tài nguyên và tài liệu tham khảo tổng quát tuyệt vời về thiết kế bộ gom rác.
+	</li>
+	<li>
+		<a href="https://google.github.io/tcmalloc/design.html">TCMalloc</a>&mdash;Tài liệu
+			thiết kế cho bộ cấp phát bộ nhớ C/C++ TCMalloc, nền tảng của bộ cấp phát bộ nhớ Go.
+	</li>
+	<li>
+		<a href="/blog/go15gc">Thông báo GC Go 1.5</a>&mdash;Bài
+			blog thông báo GC đồng thời Go 1.5, mô tả thuật toán chi tiết hơn.
+	</li>
+	<li>
+		<a href="/blog/ismmkeynote">Getting to Go</a>&mdash;Một
+			bài trình bày chuyên sâu về sự phát triển của thiết kế GC của Go đến năm 2018.
+	</li>
+	<li>
+		<a href="https://docs.google.com/document/d/1wmjrocXIWTr1JxU-3EQBI6BK6KgtiFArkG47XK73xIQ/edit">Điều phối GC đồng thời Go 1.5</a>&mdash;Tài liệu
+			thiết kế về cách xác định thời điểm bắt đầu phase đánh dấu đồng thời.
+	</li>
+	<li>
+		<a href="/issue/30333">Scavenging thông minh hơn</a>&mdash;Tài liệu
+			thiết kế về việc xem xét lại cách Go runtime trả bộ nhớ cho hệ điều hành.
+	</li>
+	<li>
+		<a href="/issue/35112">Bộ cấp phát trang có khả năng mở rộng</a>&mdash;Tài liệu
+			thiết kế về việc xem xét lại cách Go runtime quản lý bộ nhớ lấy từ hệ điều hành.
+	</li>
+	<li>
+		<a href="/issue/44167">Thiết kế lại GC pacer (Go 1.18)</a>&mdash;Tài liệu
+			thiết kế về việc sửa đổi thuật toán xác định thời điểm bắt đầu phase đánh dấu đồng thời.
+	</li>
+	<li>
+		<a href="/issue/48409">Giới hạn bộ nhớ mềm (Go 1.19)</a>&mdash;Tài liệu
+			thiết kế cho giới hạn bộ nhớ mềm.
+	</li>
+</ul>
+
+<h2 id="A_note_about_virtual_memory">Ghi chú về bộ nhớ ảo</h2>
+
+<p>
+Hướng dẫn này chủ yếu tập trung vào việc sử dụng bộ nhớ vật lý của GC, nhưng
+một câu hỏi thường xuyên được đặt ra là chính xác điều đó có nghĩa là gì và so sánh như thế nào
+với bộ nhớ ảo (thường được hiển thị trong các chương trình như <code>top</code> là
+"VSS").
+</p>
+
+<p>
+Bộ nhớ vật lý là bộ nhớ nằm trong chip RAM vật lý thực tế trong hầu hết máy tính.
+<a href="https://en.wikipedia.org/wiki/Virtual_memory">Bộ nhớ ảo</a> là
+lớp trừu tượng trên bộ nhớ vật lý do hệ điều hành cung cấp để cô lập các chương trình với nhau.
+Thông thường cũng được chấp nhận khi các chương trình đặt trước không gian địa chỉ ảo
+mà không ánh xạ đến bất kỳ địa chỉ vật lý nào.
+</p>
+
+<p>
+<b>
+Vì bộ nhớ ảo chỉ là một ánh xạ được hệ điều hành duy trì,
+thường rất rẻ để đặt trước các vùng bộ nhớ ảo lớn không ánh xạ đến bộ nhớ vật lý.
+</b>
+</p>
+
+<p>
+Go runtime thường dựa vào quan điểm này về chi phí của bộ nhớ ảo theo một số cách:
+</p>
+
+<ul>
+	<li>
+		<p>
+		Go runtime không bao giờ xóa bộ nhớ ảo mà nó ánh xạ.
+		Thay vào đó, nó sử dụng các thao tác đặc biệt mà hầu hết hệ điều hành
+		cung cấp để giải phóng rõ ràng bất kỳ tài nguyên bộ nhớ vật lý nào
+		liên quan đến một vùng bộ nhớ ảo.
+		</p>
+
+		<p>
+		Kỹ thuật này được dùng rõ ràng để quản lý
+		<a href="#Memory_limit">giới hạn bộ nhớ</a> và trả bộ nhớ về
+		hệ điều hành khi Go runtime không còn cần đến.
+		Go runtime cũng liên tục giải phóng bộ nhớ không cần thiết
+		trong nền.
+		Xem <a href="#Additional_resources">tài nguyên bổ sung</a> để biết thêm thông tin.
+		</p>
+	</li>
+	<li>
+		<p>
+		Trên các nền tảng 32-bit, Go runtime đặt trước từ 128 MiB đến 512 MiB
+		không gian địa chỉ trước cho heap để hạn chế vấn đề phân mảnh.
+		</p>
+	</li>
+	<li>
+		<p>
+		Go runtime sử dụng các vùng đặt trước không gian địa chỉ ảo lớn
+		trong triển khai một số cấu trúc dữ liệu nội bộ.
+		Trên các nền tảng 64-bit, chúng thường có footprint bộ nhớ ảo tối thiểu khoảng 700 MiB.
+		Trên các nền tảng 32-bit, footprint của chúng không đáng kể.
+		</p>
+	</li>
+</ul>
+
+<p>
+Do đó, các chỉ số bộ nhớ ảo như "VSS" trong <code>top</code>
+thường không hữu ích để hiểu footprint bộ nhớ của một chương trình Go.
+Thay vào đó, hãy tập trung vào "RSS" và các phép đo tương tự, phản ánh trực tiếp hơn
+mức sử dụng bộ nhớ vật lý.
+</p>
+
+<h2 id="Optimization_guide">Hướng dẫn tối ưu hóa</h2>
+
+<h3 id="Identifying_costs">Xác định chi phí</h3>
+
+<p>
+Trước khi cố gắng tối ưu hóa cách ứng dụng Go tương tác với GC, điều quan trọng
+là phải xác định trước rằng GC thực sự là chi phí đáng kể.
+</p>
+
+<p>
+Hệ sinh thái Go cung cấp nhiều công cụ để xác định chi phí và tối ưu hóa
+ứng dụng Go.
+Để có cái nhìn tổng quan về các công cụ này, xem
+<a href="/doc/diagnostics">hướng dẫn về chẩn đoán</a>.
+Ở đây, chúng ta sẽ tập trung vào một tập hợp con các công cụ đó và một thứ tự hợp lý để áp dụng
+chúng để hiểu tác động và hành vi của GC.
+</p>
+
+<ol>
+	<li>
+		<p>
+		<b>CPU profile</b>
+		</p>
+
+		<p>
+		Điểm khởi đầu tốt là
+		<a href="https://pkg.go.dev/runtime/pprof#hdr-Profiling_a_Go_program">CPU profiling</a>.
+		CPU profiling cung cấp cái nhìn tổng quan về nơi thời gian CPU được dùng, mặc dù
+		với người chưa quen, có thể khó xác định mức độ tác động của GC
+		trong một ứng dụng cụ thể.
+		May mắn thay, hiểu GC phù hợp như thế nào chủ yếu là biết ý nghĩa của
+		các hàm khác nhau trong package <code>runtime</code>.
+		Dưới đây là một tập hợp con hữu ích của các hàm này để diễn giải CPU profile.
+		</p>
+
+		<p>
+		Lưu ý rằng các hàm liệt kê dưới đây không phải là hàm lá, nên chúng có thể không
+		xuất hiện trong output mặc định mà công cụ <code>pprof</code> cung cấp với lệnh <code>top</code>.
+		Thay vào đó, dùng lệnh <code>top -cum</code> hoặc dùng lệnh <code>list</code>
+		trực tiếp trên các hàm này và tập trung vào cột phần trăm tích lũy.
+		</p>
+	</li>
+
+	<ul>
+		<li>
+			<p>
+			<b><code>runtime.gcBgMarkWorker</code></b>: Điểm vào cho các
+			goroutine mark worker chạy nền.
+			Thời gian dành ở đây tỷ lệ thuận với tần suất GC và độ phức tạp cũng như
+			kích thước của đồ thị đối tượng.
+			Nó đại diện cho mức nền về thời gian ứng dụng dành cho việc đánh dấu và quét.
+			</p>
+			<p>
+			Lưu ý rằng trong các goroutine này, bạn sẽ thấy các lời gọi đến
+			<code>runtime.gcDrainMarkWorkerDedicated</code>,
+			<code>runtime.gcDrainMarkWorkerFractional</code>, và
+			<code>runtime.gcDrainMarkWorkerIdle</code>,
+			cho biết loại worker.
+			Trong một ứng dụng Go gần như nhàn rỗi, Go GC sẽ sử dụng thêm
+			tài nguyên CPU nhàn rỗi để hoàn thành công việc nhanh hơn, được
+			chỉ ra bằng ký hiệu <code>runtime.gcDrainMarkWorkerIdle</code>.
+			Do đó, thời gian ở đây có thể chiếm tỷ lệ lớn các mẫu CPU,
+			mà Go GC cho là miễn phí.
+			Nếu ứng dụng trở nên bận rộn hơn, thời gian CPU trong idle worker
+			sẽ giảm.
+			Một lý do phổ biến cho điều này là nếu một ứng dụng chạy hoàn toàn
+			trong một goroutine nhưng <code>GOMAXPROCS</code> &gt;1.
+			</p>
+		</li>
+		<li>
+			<p>
+			<b><code>runtime.mallocgc</code></b>: Điểm vào cho bộ cấp phát bộ nhớ
+			heap.
+			Lượng thời gian tích lũy lớn ở đây (&gt;15%)
+			thường chỉ ra rằng có rất nhiều bộ nhớ đang được cấp phát.
+			</p>
+		</li>
+		<li>
+			<p>
+			<b><code>runtime.gcAssistAlloc</code></b>: Hàm mà các goroutine
+			vào để dành một phần thời gian giúp GC quét và đánh dấu.
+			Lượng thời gian tích lũy lớn ở đây (&gt;5%) chỉ ra
+			rằng ứng dụng có thể đang cấp phát nhanh hơn GC có thể theo kịp.
+			Đây là dấu hiệu tác động đặc biệt lớn từ GC,
+			đồng thời đại diện cho thời gian ứng dụng dành cho việc đánh dấu và quét.
+			Lưu ý rằng hàm này nằm trong cây gọi của <code>runtime.mallocgc</code>,
+			nên nó cũng làm tăng con số đó.
+			</p>
+		</li>
+	</ul>
+
+	<li>
+		<p>
+		<b>Execution trace</b>
+		</p>
+
+		<p>
+		Trong khi CPU profile rất tốt để xác định nơi thời gian được dùng
+		tổng thể, chúng kém hữu ích hơn khi chỉ ra các chi phí hiệu suất
+		tinh tế hơn, hiếm gặp hơn, hoặc liên quan cụ thể đến độ trễ.
+		Execution trace mặt khác cung cấp cái nhìn phong phú và sâu sắc vào một khoảng thời gian ngắn
+		trong quá trình thực thi của chương trình Go.
+		Chúng chứa nhiều sự kiện liên quan đến Go GC và các đường thực thi cụ thể
+		có thể được quan sát trực tiếp, cùng với cách ứng dụng tương tác với Go GC.
+		Tất cả sự kiện GC được theo dõi đều được gán nhãn rõ ràng trong
+		trình xem trace.
+		</p>
+
+		<p>
+		Xem <a href="https://pkg.go.dev/runtime/trace">tài liệu cho package
+		<code>runtime/trace</code></a> để biết cách bắt đầu với
+		execution trace.
+		</p>
+	</li>
+
+	<li>
+		<p>
+		<b>GC trace</b>
+		</p>
+
+		<p>
+		Khi mọi cách đều không hiệu quả, Go GC cung cấp một vài trace cụ thể
+		cho cái nhìn sâu sắc hơn về hành vi GC.
+		Các trace này luôn được in trực tiếp ra STDERR, một dòng mỗi chu kỳ GC,
+		và được cấu hình thông qua biến môi trường <code>GODEBUG</code>
+		mà tất cả chương trình Go nhận biết.
+		Chúng hữu ích nhất để debug GC của Go vì đòi hỏi
+		quen thuộc với các chi tiết cụ thể trong triển khai GC, nhưng
+		đôi khi vẫn có thể hữu ích để hiểu hành vi GC tốt hơn.
+		</p>
+
+		<p>
+		GC trace cơ bản được bật bằng cách đặt <code>GODEBUG=gctrace=1</code>.
+		Output do trace này tạo ra được ghi lại trong
+		<a href="https://pkg.go.dev/runtime#hdr-Environment_Variables">phần
+		biến môi trường trong tài liệu cho package <code>runtime</code>.</a>
+		</p>
+
+		<p>
+		Một GC trace bổ sung gọi là "pacer trace" cung cấp cái nhìn sâu sắc hơn
+		và được bật bằng cách đặt <code>GODEBUG=gcpacertrace=1</code>.
+		Giải thích output này đòi hỏi hiểu biết về "pacer" của GC
+		(xem <a href="#Additional_resources">tài nguyên bổ sung</a>), nằm ngoài
+		phạm vi của hướng dẫn này.
+		</p>
+	</li>
+</ol>
+
+<h3 id="Eliminating_heap_allocations">Loại bỏ cấp phát heap</h3>
+
+<p>
+Một cách để giảm chi phí từ GC là để GC quản lý ít giá trị hơn ngay từ đầu.
+Các kỹ thuật được mô tả dưới đây có thể tạo ra một số cải tiến hiệu suất lớn nhất,
+vì như <a href="#GOGC">phần GOGC</a> đã chứng minh, tốc độ cấp phát của một chương trình Go
+là nhân tố quan trọng trong tần suất GC, chỉ số chi phí chính mà hướng dẫn này sử dụng.
+</p>
+
+<h4 id="Heap_profiling">Heap profiling</h4>
+
+<p>
+Sau khi <a href="#Identifying_costs">xác định rằng GC là nguồn chi phí đáng kể</a>,
+bước tiếp theo để loại bỏ cấp phát heap là tìm ra phần lớn chúng đến từ đâu.
+Với mục đích này, memory profile (thực ra là heap memory profile) rất hữu ích.
+Xem <a href="https://pkg.go.dev/runtime/pprof#hdr-Profiling_a_Go_program">
+tài liệu</a> để biết cách bắt đầu với chúng.
+</p>
+
+<p>
+Memory profile mô tả nơi trong chương trình mà các cấp phát heap đến từ,
+xác định chúng bằng stack trace tại điểm chúng được cấp phát.
+Mỗi memory profile có thể phân tích bộ nhớ theo bốn cách.
+</p>
+
+<ul>
+	<li><code>inuse_objects</code>&mdash;Phân tích số lượng đối tượng đang sống.</li>
+	<li><code>inuse_space</code>&mdash;Phân tích các đối tượng đang sống theo lượng
+	bộ nhớ chúng sử dụng tính bằng byte.</li>
+	<li><code>alloc_objects</code>&mdash;Phân tích số lượng đối tượng
+	đã được cấp phát kể từ khi chương trình Go bắt đầu thực thi.</li>
+	<li><code>alloc_space</code>&mdash;Phân tích tổng lượng bộ nhớ
+	đã được cấp phát kể từ khi chương trình Go bắt đầu thực thi.</li>
+</ul>
+
+<p>
+Chuyển đổi giữa các góc nhìn khác nhau về heap memory có thể thực hiện bằng cờ
+<code>-sample_index</code> của công cụ <code>pprof</code>, hoặc thông qua tùy chọn
+<code>sample_index</code> khi công cụ được dùng tương tác.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: memory profile mặc định chỉ lấy mẫu một tập con các đối tượng heap nên
+sẽ không chứa thông tin về mọi cấp phát heap đơn lẻ.
+Tuy nhiên, điều này đủ để tìm ra điểm nóng.
+Để thay đổi tần suất lấy mẫu, xem
+<a href="https://pkg.go.dev/runtime#pkg-variables"><code>runtime.MemProfileRate</code></a>.
+</p>
+
+<p>
+Với mục đích giảm chi phí GC, <code>alloc_space</code> thường là
+góc nhìn hữu ích nhất vì nó trực tiếp tương ứng với tốc độ cấp phát.
+Góc nhìn này sẽ chỉ ra các điểm nóng cấp phát mang lại lợi ích lớn nhất.
+</p>
+
+<h4 id="Escape_analysis">Phân tích thoát (escape analysis)</h4>
+
+<p>
+Sau khi đã xác định được các vị trí cấp phát heap tiềm năng với sự trợ giúp của
+<a href="#Heap_profiling">heap profile</a>, làm thế nào để loại bỏ chúng?
+Chìa khóa là tận dụng phân tích thoát của trình biên dịch Go để trình biên dịch
+tìm ra bộ nhớ thay thế, hiệu quả hơn, ví dụ trong stack của goroutine.
+May mắn thay, trình biên dịch Go có khả năng mô tả lý do tại sao nó quyết định
+đưa một giá trị Go lên heap.
+Với thông tin đó, việc cần làm là sắp xếp lại source code để
+thay đổi kết quả của phân tích (thường là phần khó nhất, nhưng nằm ngoài
+phạm vi của hướng dẫn này).
+</p>
+
+<p>
+Cách đơn giản nhất để truy cập thông tin từ phân tích thoát của trình biên dịch Go là
+thông qua một cờ debug mà trình biên dịch Go hỗ trợ, mô tả tất cả các tối ưu hóa
+đã áp dụng hoặc không áp dụng cho một package dưới dạng văn bản.
+Điều này bao gồm việc các giá trị có thoát hay không.
+Thử lệnh sau đây, trong đó <code>[package]</code> là một đường dẫn package Go.
+</p>
+
+<pre>
+$ go build -gcflags=-m=3 [package]
+</pre>
+
+<p>
+Thông tin này cũng có thể được hiển thị dưới dạng overlay trong
+trình soạn thảo hỗ trợ LSP; nó được cung cấp như một code action.
+
+Ví dụ, trong VS Code, gọi lệnh "Source Action... > Show compiler
+optimization details" để bật chẩn đoán cho package hiện tại.
+(Bạn cũng có thể chạy lệnh "Go: Toggle compiler optimization details".)
+
+Dùng cài đặt cấu hình này để kiểm soát annotation nào được hiển thị:
+</p>
+
+<ol>
+	<li>
+	Bật overlay cho escape analysis bằng cách
+	<a href="https://github.com/golang/vscode-go/wiki/settings#uidiagnosticannotations">
+	đặt <code>ui.diagnostic.annotations</code> để bao gồm <code>escape</code>
+	</a>.
+	</li>
+</ol>
+
+<p>
+Cuối cùng, trình biên dịch Go cung cấp thông tin này ở định dạng có thể đọc bằng máy (JSON)
+có thể được dùng để xây dựng các công cụ tùy chỉnh bổ sung.
+Để biết thêm thông tin, xem
+<a href="https://cs.opensource.google/go/go/+/master:src/cmd/compile/internal/logopt/log_opts.go;l=25;drc=351e0f4083779d8ac91c05afebded42a302a6893">
+tài liệu trong source code Go</a>.
+<p>
+
+<h3 id="Implementation-specific_optimizations">Tối ưu hóa dành riêng cho cài đặt</h3>
+
+<p>
+Go GC nhạy cảm với đặc điểm của bộ nhớ đang sống, vì một đồ thị đối tượng và con trỏ
+phức tạp vừa hạn chế song song vừa tạo ra nhiều công việc hơn cho GC.
+Do đó, GC chứa một số tối ưu hóa cho các cấu trúc phổ biến cụ thể.
+Những cái hữu ích nhất cho tối ưu hóa hiệu suất được liệt kê dưới đây.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: Áp dụng các tối ưu hóa dưới đây có thể làm giảm khả năng đọc của code
+bằng cách che khuất ý định, và có thể không còn hiệu quả qua các bản phát hành Go.
+Ưu tiên áp dụng các tối ưu hóa này chỉ ở những nơi quan trọng nhất.
+Các nơi như vậy có thể được xác định bằng cách sử dụng các công cụ được liệt kê trong
+<a href="#Identifying_costs">phần xác định chi phí</a>.
+</p>
+
+<ul>
+	<li>
+		<p>
+		Các giá trị không có con trỏ được tách biệt khỏi các giá trị khác.
+		</p>
+		<p>
+		Do đó, việc loại bỏ con trỏ khỏi các cấu trúc dữ liệu không thực sự cần đến chúng
+		có thể có lợi, vì điều này giảm áp lực cache mà GC gây ra trên chương trình.
+		Do đó, các cấu trúc dữ liệu dựa trên chỉ số thay vì giá trị con trỏ,
+		dù kém an toàn kiểu hơn, có thể hoạt động tốt hơn.
+		Điều này chỉ đáng làm nếu rõ ràng rằng đồ thị đối tượng phức tạp
+		và GC đang dành nhiều thời gian để đánh dấu và quét.
+		</p>
+	</li>
+	<li>
+		<p>
+		GC sẽ dừng quét các giá trị tại con trỏ cuối cùng trong giá trị đó.
+		</p>
+		<p>
+		Do đó, việc nhóm các trường con trỏ trong các giá trị kiểu struct ở
+		đầu giá trị có thể có lợi.
+		Điều này chỉ đáng làm nếu rõ ràng rằng ứng dụng dành nhiều thời gian
+		để đánh dấu và quét.
+		(Về lý thuyết trình biên dịch có thể tự động làm điều này, nhưng chưa được
+		triển khai, và các trường struct được sắp xếp theo thứ tự trong source code.)
+		</p>
+	</li>
+</ul>
+
+<p>
+Hơn nữa, GC phải tương tác với gần như mọi con trỏ nó thấy, vì vậy sử dụng
+chỉ số vào một slice, ví dụ, thay vì con trỏ, có thể giúp giảm
+chi phí GC.
+</p>
+
+<h3 id="Linux_transparent_huge_pages">Transparent huge page trên Linux (THP)</h3>
+
+<p>
+Khi một chương trình truy cập bộ nhớ, CPU cần dịch các địa chỉ
+<a href="#A_note_about_virtual_memory">bộ nhớ ảo</a> mà nó sử dụng
+thành các địa chỉ bộ nhớ vật lý tham chiếu đến dữ liệu nó đang truy cập.
+Để làm điều này, CPU tham khảo "page table", một cấu trúc dữ liệu đại diện cho
+ánh xạ từ bộ nhớ ảo đến bộ nhớ vật lý, do hệ điều hành quản lý.
+Mỗi mục trong page table đại diện cho một khối bộ nhớ vật lý không thể chia nhỏ hơn
+gọi là page, do đó có cái tên này.
+</p>
+
+<p>
+Transparent huge page (THP) là một tính năng Linux thay thế trong suốt các page của
+bộ nhớ vật lý backing các vùng bộ nhớ ảo liên tiếp bằng các khối bộ nhớ lớn hơn
+gọi là huge page.
+Bằng cách dùng các khối lớn hơn, cần ít mục page table hơn để đại diện cho cùng vùng bộ nhớ,
+cải thiện thời gian tra cứu page table.
+Tuy nhiên, các khối lớn hơn đồng nghĩa với lãng phí nhiều hơn nếu chỉ một phần nhỏ của
+huge page được hệ thống sử dụng.
+</p>
+
+<p>
+Khi chạy chương trình Go trong môi trường production, việc bật transparent huge page trên Linux
+có thể cải thiện throughput và độ trễ với chi phí là sử dụng thêm bộ nhớ.
+Các ứng dụng với heap nhỏ thường không được lợi từ THP và có thể dùng thêm
+một lượng bộ nhớ đáng kể (lên đến 50%).
+Tuy nhiên, các ứng dụng với heap lớn (1 GiB trở lên) thường được lợi khá nhiều
+(lên đến 10% throughput) mà không tốn thêm nhiều bộ nhớ (1-2% hoặc ít hơn).
+Biết rõ cài đặt THP của bạn trong cả hai trường hợp đều hữu ích, và thử nghiệm
+luôn được khuyến nghị.
+</p>
+
+<p>
+Có thể bật hoặc tắt transparent huge page trong môi trường Linux bằng cách sửa
+<code>/sys/kernel/mm/transparent_hugepage/enabled</code>.
+Xem
+<a href="https://www.kernel.org/doc/html/next/admin-guide/mm/transhuge.html">hướng dẫn
+quản trị Linux chính thức</a> để biết thêm chi tiết.
+Nếu bạn chọn bật transparent huge page trong môi trường production Linux,
+chúng tôi khuyến nghị các cài đặt bổ sung sau cho chương trình Go.
+</p>
+
+<ul>
+	<li>
+		<p>
+		Đặt <code>/sys/kernel/mm/transparent_hugepage/defrag</code>
+		thành <code>defer</code> hoặc <code>defer+madvise</code>.
+		<br />
+		<br />
+		Cài đặt này kiểm soát mức độ tích cực mà kernel Linux hợp nhất các page thông thường
+		thành huge page.
+		<code>defer</code> yêu cầu kernel hợp nhất huge page một cách lười biếng
+		và trong nền.
+		Cài đặt tích cực hơn có thể gây ra stall trong các hệ thống bị giới hạn bộ nhớ
+		và thường làm tăng độ trễ của ứng dụng.
+		<code>defer+madvise</code> giống như <code>defer</code>, nhưng thân thiện hơn
+		với các ứng dụng khác trên hệ thống yêu cầu huge page một cách rõ ràng và
+		cần chúng cho hiệu suất.
+		</p>
+	</li>
+	<li>
+		<p id="Linux_THP_max_ptes_none_workaround">
+		Đặt <code>/sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none</code>
+		thành <code>0</code>.
+		<br />
+		<br />
+		Cài đặt này kiểm soát số lượng page bổ sung mà daemon kernel Linux
+		có thể cấp phát khi cố gắng cấp phát một huge page.
+		Cài đặt mặc định cực kỳ tích cực, và thường có thể
+		<a href="https://bugzilla.kernel.org/show_bug.cgi?id=93111">hoàn tác công việc
+		Go runtime thực hiện để trả bộ nhớ về OS</a>.
+		Trước Go 1.21, Go runtime cố gắng giảm thiểu tác động tiêu cực của cài đặt
+		mặc định, nhưng đi kèm với chi phí CPU.
+		Với Go 1.21+ và Linux 6.2+, Go runtime không còn thay đổi trạng thái huge page nữa.
+		<br />
+		<br />
+		Nếu bạn gặp tình trạng tăng mức sử dụng bộ nhớ khi nâng cấp lên Go 1.21.1 hoặc
+		mới hơn, hãy thử áp dụng cài đặt này; nó có thể giải quyết vấn đề của bạn.
+		Như một biện pháp giải quyết bổ sung, bạn có thể gọi
+		<a href="/pkg/golang.org/x/sys/unix#Prctl">hàm <code>Prctl</code>
+		</a> với <code>PR_SET_THP_DISABLE</code> để tắt huge page ở cấp độ process,
+		hoặc đặt <code>GODEBUG=disablethp=1</code> (sẽ được thêm trong Go 1.21.6 và Go 1.22)
+		để tắt huge page cho heap memory.
+		Lưu ý rằng cài đặt <code>GODEBUG</code> này có thể bị xóa trong bản phát hành tương lai.
+		</p>
+	</li>
+</ul>
+
+<h2 id="Appendix">Phụ lục</h2>
+
+<h3 id="Additional_notes_on_GOGC">Ghi chú bổ sung về GOGC</h3>
+
+<p>
+<a href="#GOGC">Phần GOGC</a> đã khẳng định rằng tăng gấp đôi GOGC sẽ tăng gấp đôi
+chi phí bộ nhớ heap và giảm một nửa chi phí CPU của GC.
+Để hiểu tại sao, hãy phân tích bằng toán học.
+</p>
+
+<p>
+Trước tiên, mục tiêu heap đặt ra mục tiêu cho tổng kích thước heap.
+Tuy nhiên, mục tiêu này chủ yếu ảnh hưởng đến bộ nhớ heap mới, vì
+heap đang sống là cơ bản của ứng dụng.
+</p>
+
+<p class="gc-guide-equation">
+<i>
+Target heap memory = Live heap + (Live heap + GC roots) * GOGC / 100
+</i>
+</p>
+
+<p class="gc-guide-equation">
+<i>
+Total heap memory = Live heap + New heap memory
+</i>
+</p>
+
+<p class="gc-guide-equation">
+<i>
+&rArr;
+</i>
+</p>
+
+<p class="gc-guide-equation">
+<i>
+New heap memory = (Live heap + GC roots) * GOGC / 100
+</i>
+</p>
+
+<p>
+Từ đây ta thấy rằng tăng gấp đôi GOGC cũng sẽ tăng gấp đôi lượng bộ nhớ heap mới
+mà ứng dụng sẽ cấp phát mỗi chu kỳ, nắm bắt chi phí bộ nhớ heap.
+Lưu ý rằng <i>Live heap + GC roots</i> là xấp xỉ lượng
+bộ nhớ mà GC cần quét.
+</p>
+
+<p>
+Tiếp theo, hãy xem chi phí CPU của GC.
+Tổng chi phí có thể được phân tích thành chi phí mỗi chu kỳ, nhân với tần suất GC
+trong một khoảng thời gian T.
+</p>
+
+<p class="gc-guide-equation">
+<i>
+Total GC CPU cost = (GC CPU cost per cycle) * (GC frequency) * T
+</i>
+</p>
+
+<p>
+Chi phí CPU GC mỗi chu kỳ có thể được suy ra từ
+<a href="#Understanding_costs">mô hình GC</a>:
+</p>
+
+<p class="gc-guide-equation">
+<i>
+GC CPU cost per cycle = (Live heap + GC roots) * (Cost per byte) + Fixed cost
+</i>
+</p>
+
+<p>
+Lưu ý rằng chi phí phase sweep được bỏ qua ở đây vì chi phí mark và scan chiếm ưu thế.
+</p>
+
+<p>
+Trạng thái ổn định được xác định bởi tốc độ cấp phát không đổi và chi phí mỗi byte không đổi,
+vì vậy trong trạng thái ổn định ta có thể suy ra tần suất GC từ bộ nhớ heap mới này:
+</p>
+
+<p class="gc-guide-equation">
+<i>
+GC frequency = (Allocation rate) / (New heap memory) = (Allocation rate) / ((Live heap + GC roots) * GOGC / 100)
+</i>
+</p>
+
+<p>
+Kết hợp lại, ta thu được phương trình đầy đủ cho tổng chi phí:
+</p>
+
+<p class="gc-guide-equation">
+<i>
+Total GC CPU cost = (Allocation rate) / ((Live heap + GC roots) * GOGC / 100) * ((Live heap + GC roots) * (Cost per byte) + Fixed cost) * T
+</i>
+</p>
+
+<p>
+Với heap đủ lớn (đại diện cho hầu hết các trường hợp), chi phí biên của một chu kỳ GC
+chiếm ưu thế so với chi phí cố định.
+Điều này cho phép đơn giản hóa đáng kể công thức tổng chi phí CPU của GC.
+</p>
+
+<p class="gc-guide-equation">
+<i>
+Total GC CPU cost = (Allocation rate) / (GOGC / 100) * (Cost per byte) * T
+</i>
+</p>
+
+<p>
+Từ công thức đơn giản hóa này, ta thấy rằng nếu tăng gấp đôi GOGC, tổng
+chi phí CPU của GC sẽ giảm một nửa.
+(Lưu ý rằng các hình minh họa trong hướng dẫn này có mô phỏng chi phí cố định, vì vậy
+chi phí CPU GC được báo cáo bởi chúng sẽ không giảm đúng một nửa khi GOGC tăng gấp đôi.)
+Hơn nữa, chi phí CPU GC phần lớn được xác định bởi tốc độ cấp phát và
+chi phí mỗi byte để quét bộ nhớ.
+Để biết thêm thông tin về cách giảm các chi phí này cụ thể, xem
+<a href="#Optimization_guide">hướng dẫn tối ưu hóa</a>.
+</p>
+
+<p class="gc-guide-note">
+Lưu ý: có sự khác biệt giữa kích thước của heap đang sống và
+lượng bộ nhớ đó mà GC thực sự cần quét: cùng kích thước heap đang sống nhưng
+với cấu trúc khác sẽ dẫn đến chi phí CPU khác, nhưng chi phí bộ nhớ như nhau,
+tạo ra sự đánh đổi khác nhau.
+Đây là lý do tại sao cấu trúc của heap là một phần định nghĩa của
+trạng thái ổn định.
+Mục tiêu heap lẽ ra chỉ nên bao gồm heap đang sống có thể quét như một xấp xỉ gần hơn
+của bộ nhớ GC cần quét, nhưng điều này dẫn đến hành vi suy thoái
+khi có rất ít heap đang sống có thể quét nhưng heap đang sống lại lớn.
+</p>
+
+<script src="/js/d3.js"></script>
+<script async src="/doc/gc-guide.js"></script>
