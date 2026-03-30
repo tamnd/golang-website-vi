@@ -523,19 +523,19 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/tutorial/call-module-code.html`
 - [x] `doc/tutorial/compile-install.html`
 - [x] `doc/tutorial/create-module.html`
-- [ ] `doc/tutorial/database-access.md`
-- [ ] `doc/tutorial/fuzz.md`
-- [ ] `doc/tutorial/generics.md`
+- [x] `doc/tutorial/database-access.md`
+- [x] `doc/tutorial/fuzz.md`
+- [x] `doc/tutorial/generics.md`
 - [x] `doc/tutorial/getting-started.html`
-- [ ] `doc/tutorial/govulncheck-ide.md`
-- [ ] `doc/tutorial/govulncheck.md`
+- [x] `doc/tutorial/govulncheck-ide.md`
+- [x] `doc/tutorial/govulncheck.md`
 - [x] `doc/tutorial/greetings-multiple-people.html`
 - [x] `doc/tutorial/handle-errors.html`
 - [x] `doc/tutorial/index.html`
 - [x] `doc/tutorial/module-conclusion.html`
 - [x] `doc/tutorial/random-greeting.html`
-- [ ] `doc/tutorial/web-service-gin.md`
-- [ ] `doc/tutorial/workspaces.md`
+- [x] `doc/tutorial/web-service-gin.md`
+- [x] `doc/tutorial/workspaces.md`
 
 ### (root)
 
