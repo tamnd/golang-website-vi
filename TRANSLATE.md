@@ -223,8 +223,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/gophercon.md`
 - [x] `blog/gophercon2015.md`
 - [x] `blog/gophergala.md`
-- [ ] `blog/gopls-scalability.md`
-- [ ] `blog/gopls-vscode-go.md`
+- [x] `blog/gopls-scalability.md`
+- [x] `blog/gopls-vscode-go.md`
 - [ ] `blog/gos-declaration-syntax.md`
 - [ ] `blog/gotelemetry.md`
 - [ ] `blog/gothamgo.md`
