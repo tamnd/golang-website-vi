@@ -307,9 +307,9 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/real-go-projects-smarttwitter-and-webgo.md`
 - [x] `blog/rebuild.md`
 - [x] `blog/routing-enhancements.md`
-- [ ] `blog/share-memory-by-communicating.md`
-- [ ] `blog/slices-intro.md`
-- [ ] `blog/slices.md`
+- [x] `blog/share-memory-by-communicating.md`
+- [x] `blog/slices-intro.md`
+- [x] `blog/slices.md`
 - [ ] `blog/slog.md`
 - [ ] `blog/smarttwitter.md`
 - [x] `blog/spotlight-on-external-go-libraries.md`
