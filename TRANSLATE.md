@@ -294,14 +294,14 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/playground.md`
 - [ ] `blog/ports.md`
 - [ ] `blog/pprof.md`
-- [ ] `blog/preview-of-go-version-1.md`
-- [ ] `blog/profiling-go-programs.md`
-- [ ] `blog/protobuf-apiv2.md`
-- [ ] `blog/protobuf-opaque.md`
-- [ ] `blog/protobuf.md`
-- [ ] `blog/publishing-go-modules.md`
-- [ ] `blog/qihoo.md`
-- [ ] `blog/race-detector.md`
+- [x] `blog/preview-of-go-version-1.md`
+- [x] `blog/profiling-go-programs.md`
+- [x] `blog/protobuf-apiv2.md`
+- [x] `blog/protobuf-opaque.md`
+- [x] `blog/protobuf.md`
+- [x] `blog/publishing-go-modules.md`
+- [x] `blog/qihoo.md`
+- [x] `blog/race-detector.md`
 - [ ] `blog/randv2.md`
 - [ ] `blog/range-functions.md`
 - [ ] `blog/real-go-projects-smarttwitter-and-webgo.md`
