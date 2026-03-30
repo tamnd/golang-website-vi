@@ -302,10 +302,10 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/publishing-go-modules.md`
 - [x] `blog/qihoo.md`
 - [x] `blog/race-detector.md`
-- [ ] `blog/randv2.md`
-- [ ] `blog/range-functions.md`
-- [ ] `blog/real-go-projects-smarttwitter-and-webgo.md`
-- [ ] `blog/rebuild.md`
+- [x] `blog/randv2.md`
+- [x] `blog/range-functions.md`
+- [x] `blog/real-go-projects-smarttwitter-and-webgo.md`
+- [x] `blog/rebuild.md`
 - [x] `blog/routing-enhancements.md`
 - [ ] `blog/share-memory-by-communicating.md`
 - [ ] `blog/slices-intro.md`
@@ -341,60 +341,60 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/survey2018-company.md`
 - [x] `blog/survey2018-results.md`
 - [x] `blog/survey2018.md`
-- [ ] `blog/survey2019-results.md`
-- [ ] `blog/survey2019.md`
-- [ ] `blog/survey2020-results.md`
-- [ ] `blog/survey2020.md`
-- [ ] `blog/survey2021-results.md`
-- [ ] `blog/survey2021.md`
-- [ ] `blog/survey2022-q2-results.md`
-- [ ] `blog/survey2022-q2.md`
-- [ ] `blog/survey2023-h2-results.md`
-- [ ] `blog/survey2023-h2.md`
-- [ ] `blog/survey2023-q1-results.md`
-- [ ] `blog/survey2023-q1.md`
+- [x] `blog/survey2019-results.md`
+- [x] `blog/survey2019.md`
+- [x] `blog/survey2020-results.md`
+- [x] `blog/survey2020.md`
+- [x] `blog/survey2021-results.md`
+- [x] `blog/survey2021.md`
+- [x] `blog/survey2022-q2-results.md`
+- [x] `blog/survey2022-q2.md`
+- [x] `blog/survey2023-h2-results.md`
+- [x] `blog/survey2023-h2.md`
+- [x] `blog/survey2023-q1-results.md`
+- [x] `blog/survey2023-q1.md`
 - [ ] `blog/survey2024-h1-results.md`
-- [ ] `blog/survey2024-h1.md`
+- [x] `blog/survey2024-h1.md`
 - [ ] `blog/survey2024-h2-results.md`
-- [ ] `blog/survey2024-h2.md`
-- [ ] `blog/survey2025-announce.md`
+- [x] `blog/survey2024-h2.md`
+- [x] `blog/survey2025-announce.md`
 - [ ] `blog/survey2025.md`
 - [ ] `blog/swisstable.md`
-- [ ] `blog/sydney-gtug.md`
-- [ ] `blog/synctest.md`
-- [ ] `blog/testing-b-loop.md`
-- [ ] `blog/testing-time.md`
-- [ ] `blog/the-app-engine-sdk-and-workspaces-gopath.md`
-- [ ] `blog/the-path-to-go-1.md`
-- [ ] `blog/the-vs-code-go-extension-joins-the-go-project.md`
-- [ ] `blog/third-party-libraries-goprotobuf-and.md`
-- [ ] `blog/tidy-web.md`
-- [ ] `blog/tls-cipher-suites.md`
-- [ ] `blog/tob-crypto-audit.md`
+- [x] `blog/sydney-gtug.md`
+- [x] `blog/synctest.md`
+- [x] `blog/testing-b-loop.md`
+- [x] `blog/testing-time.md`
+- [x] `blog/the-app-engine-sdk-and-workspaces-gopath.md`
+- [x] `blog/the-path-to-go-1.md`
+- [x] `blog/the-vs-code-go-extension-joins-the-go-project.md`
+- [x] `blog/third-party-libraries-goprotobuf-and.md`
+- [x] `blog/tidy-web.md`
+- [x] `blog/tls-cipher-suites.md`
+- [x] `blog/tob-crypto-audit.md`
 - [ ] `blog/toolchain.md`
 - [x] `blog/tour.md`
-- [ ] `blog/toward-go2.md`
-- [ ] `blog/turkey-doodle.md`
-- [ ] `blog/tutorials-go1.18.md`
-- [ ] `blog/two-go-talks-lexical-scanning-in-go-and.md`
-- [ ] `blog/two-recent-go-articles.md`
-- [ ] `blog/two-recent-go-talks.md`
-- [ ] `blog/type-construction-and-cycle-detection.md`
-- [ ] `blog/type-inference.md`
-- [ ] `blog/unique.md`
+- [x] `blog/toward-go2.md`
+- [x] `blog/turkey-doodle.md`
+- [x] `blog/tutorials-go1.18.md`
+- [x] `blog/two-go-talks-lexical-scanning-in-go-and.md`
+- [x] `blog/two-recent-go-articles.md`
+- [x] `blog/two-recent-go-talks.md`
+- [x] `blog/type-construction-and-cycle-detection.md`
+- [x] `blog/type-inference.md`
+- [x] `blog/unique.md`
 - [x] `blog/upcoming-google-io-go-events.md`
-- [ ] `blog/using-go-modules.md`
-- [ ] `blog/v2-go-modules.md`
-- [ ] `blog/versioning-proposal.md`
-- [ ] `blog/vscode-go.md`
-- [ ] `blog/vuln.md`
-- [ ] `blog/wasi.md`
-- [ ] `blog/wasmexport.md`
+- [x] `blog/using-go-modules.md`
+- [x] `blog/v2-go-modules.md`
+- [x] `blog/versioning-proposal.md`
+- [x] `blog/vscode-go.md`
+- [x] `blog/vuln.md`
+- [x] `blog/wasi.md`
+- [x] `blog/wasmexport.md`
 - [x] `blog/waza-talk.md`
-- [ ] `blog/when-generics.md`
+- [x] `blog/when-generics.md`
 - [ ] `blog/why-generics.md`
 - [ ] `blog/wire.md`
-- [ ] `blog/writing-scalable-app-engine.md`
+- [x] `blog/writing-scalable-app-engine.md`
 
 ### (root)
 
