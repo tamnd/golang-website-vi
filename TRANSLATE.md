@@ -253,36 +253,36 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/io2013-talk-concurrency.md`
 - [x] `blog/io2013-talks-cloud.md`
 - [x] `blog/io2014.md`
-- [ ] `blog/ismmkeynote.md`
-- [ ] `blog/json-and-go.md`
-- [ ] `blog/json-rpc-tale-of-interfaces.md`
-- [ ] `blog/json-rpc.md`
-- [ ] `blog/json.md`
+- [x] `blog/ismmkeynote.md`
+- [x] `blog/json-and-go.md`
+- [x] `blog/json-rpc-tale-of-interfaces.md`
+- [x] `blog/json-rpc.md`
+- [x] `blog/json.md`
 - [ ] `blog/jsonv2-exp.md`
 - [ ] `blog/laws-of-reflection.md`
-- [ ] `blog/learn-go-from-your-browser.md`
+- [x] `blog/learn-go-from-your-browser.md`
 - [ ] `blog/llmpowered.md`
-- [ ] `blog/loopvar-preview.md`
-- [ ] `blog/maps.md`
-- [ ] `blog/matchlang.md`
+- [x] `blog/loopvar-preview.md`
+- [x] `blog/maps.md`
+- [x] `blog/matchlang.md`
 - [ ] `blog/matchlang/tags.html`
-- [ ] `blog/meetups.md`
-- [ ] `blog/migrating-to-go-modules.md`
-- [ ] `blog/module-compatibility.md`
-- [ ] `blog/module-mirror-launch.md`
+- [x] `blog/meetups.md`
+- [x] `blog/migrating-to-go-modules.md`
+- [x] `blog/module-compatibility.md`
+- [x] `blog/module-mirror-launch.md`
 - [ ] `blog/modules2019.md`
 - [ ] `blog/new-talk-and-tutorials.md`
-- [ ] `blog/normalization.md`
+- [x] `blog/normalization.md`
 - [ ] `blog/normalization/table1.html`
 - [ ] `blog/normalization/table2.html`
 - [ ] `blog/open-source.md`
-- [ ] `blog/organizing-go-code.md`
-- [ ] `blog/oscon.md`
-- [ ] `blog/osconreport.md`
-- [ ] `blog/osroot.md`
-- [ ] `blog/package-names.md`
-- [ ] `blog/pandemic.md`
-- [ ] `blog/path-security.md`
+- [x] `blog/organizing-go-code.md`
+- [x] `blog/oscon.md`
+- [x] `blog/osconreport.md`
+- [x] `blog/osroot.md`
+- [x] `blog/package-names.md`
+- [x] `blog/pandemic.md`
+- [x] `blog/path-security.md`
 - [ ] `blog/pgo-preview.md`
 - [ ] `blog/pgo.md`
 - [ ] `blog/pipelines.md`
