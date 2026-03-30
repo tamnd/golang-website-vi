@@ -409,12 +409,12 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### doc
 
-- [ ] `doc/articles/go_command.html`
-- [ ] `doc/articles/index.html`
-- [ ] `doc/articles/race_detector.html`
-- [ ] `doc/articles/wiki/edit.html`
-- [ ] `doc/articles/wiki/index.html`
-- [ ] `doc/articles/wiki/view.html`
+- [x] `doc/articles/go_command.html`
+- [x] `doc/articles/index.html`
+- [x] `doc/articles/race_detector.html`
+- [x] `doc/articles/wiki/edit.html`
+- [x] `doc/articles/wiki/index.html`
+- [x] `doc/articles/wiki/view.html`
 - [ ] `doc/build-cover.md`
 - [ ] `doc/cmd.html`
 - [ ] `doc/code.html`
@@ -519,21 +519,21 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/telemetry.md`
 - [ ] `doc/toolchain.md`
 - [ ] `doc/tos.html`
-- [ ] `doc/tutorial/add-a-test.html`
-- [ ] `doc/tutorial/call-module-code.html`
-- [ ] `doc/tutorial/compile-install.html`
-- [ ] `doc/tutorial/create-module.html`
+- [x] `doc/tutorial/add-a-test.html`
+- [x] `doc/tutorial/call-module-code.html`
+- [x] `doc/tutorial/compile-install.html`
+- [x] `doc/tutorial/create-module.html`
 - [ ] `doc/tutorial/database-access.md`
 - [ ] `doc/tutorial/fuzz.md`
 - [ ] `doc/tutorial/generics.md`
-- [ ] `doc/tutorial/getting-started.html`
+- [x] `doc/tutorial/getting-started.html`
 - [ ] `doc/tutorial/govulncheck-ide.md`
 - [ ] `doc/tutorial/govulncheck.md`
-- [ ] `doc/tutorial/greetings-multiple-people.html`
-- [ ] `doc/tutorial/handle-errors.html`
-- [ ] `doc/tutorial/index.html`
-- [ ] `doc/tutorial/module-conclusion.html`
-- [ ] `doc/tutorial/random-greeting.html`
+- [x] `doc/tutorial/greetings-multiple-people.html`
+- [x] `doc/tutorial/handle-errors.html`
+- [x] `doc/tutorial/index.html`
+- [x] `doc/tutorial/module-conclusion.html`
+- [x] `doc/tutorial/random-greeting.html`
 - [ ] `doc/tutorial/web-service-gin.md`
 - [ ] `doc/tutorial/workspaces.md`
 

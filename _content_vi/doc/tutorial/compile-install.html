@@ -1,0 +1,179 @@
+<!--{
+    "Title": "Biên dịch và cài đặt ứng dụng",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Trong phần cuối này, bạn sẽ học thêm một vài lệnh <code>go</code> mới. Trong khi
+  lệnh <code>go run</code> là một phím tắt hữu ích để biên dịch và chạy
+  chương trình khi bạn thường xuyên thay đổi, nó không tạo ra tệp thực thi nhị phân.</p>
+
+<p>
+  Phần này giới thiệu hai lệnh bổ sung để xây dựng mã:
+</p>
+
+<ul>
+  <li>
+    <a href="/cmd/go/#hdr-Compile_packages_and_dependencies">Lệnh <code>go
+    build</code></a> biên dịch các gói cùng với các dependency của chúng,
+    nhưng không cài đặt kết quả.
+  </li>
+  <li>
+    <a href="/ref/mod#go-install">Lệnh <code>go
+    install</code></a> biên dịch và cài đặt các gói.
+  </li>
+</ul>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Phần này là một phần của hướng dẫn nhiều bước, bắt đầu từ
+  <a href="create-module.html">Tạo một module Go</a>.
+</aside>
+
+<ol>
+  <li>
+    Từ dòng lệnh trong thư mục hello, chạy lệnh <code>go build</code>
+    để biên dịch mã thành tệp thực thi.
+
+    <pre>$ go build</pre>
+  </li>
+
+  <li>
+    Từ dòng lệnh trong thư mục hello, chạy tệp thực thi <code>hello</code>
+    mới để xác nhận mã hoạt động.
+
+    <p>
+      Lưu ý rằng kết quả có thể khác nhau tùy thuộc vào việc bạn có
+      thay đổi mã greetings.go sau khi kiểm thử hay không.
+    </p>
+
+    <ul>
+      <li>
+        Trên Linux hoặc Mac:
+
+        <pre>
+$ ./hello
+map[Darrin:Great to see you, Darrin! Gladys:Hail, Gladys! Well met! Samantha:Hail, Samantha! Well met!]
+</pre>
+      </li>
+
+      <li>
+        Trên Windows:
+
+        <pre>
+$ hello.exe
+map[Darrin:Great to see you, Darrin! Gladys:Hail, Gladys! Well met! Samantha:Hail, Samantha! Well met!]
+</pre>
+      </li>
+    </ul>
+    <p>
+      Bạn đã biên dịch ứng dụng thành tệp thực thi để có thể chạy nó.
+      Tuy nhiên để chạy nó hiện tại, dấu nhắc của bạn cần phải ở trong thư mục
+      chứa tệp thực thi hoặc phải chỉ định đường dẫn đến tệp thực thi.
+    </p>
+    <p>
+      Tiếp theo, bạn sẽ cài đặt tệp thực thi để có thể chạy nó mà không cần
+      chỉ định đường dẫn.
+    </p>
+  </li>
+
+  <li>
+    Tìm hiểu đường dẫn cài đặt Go, nơi lệnh <code>go</code> sẽ cài đặt
+    gói hiện tại.
+
+    <p>
+      Bạn có thể tìm đường dẫn cài đặt bằng cách chạy
+      <a href="/cmd/go/#hdr-List_packages_or_modules">
+        lệnh <code>go list</code></a>, như trong ví dụ sau:
+    </p>
+
+    <pre>
+$ go list -f '{{.Target}}'
+</pre>
+
+    <p>
+      Ví dụ, đầu ra của lệnh có thể là <code>/home/gopher/bin/hello</code>,
+      nghĩa là các tệp nhị phân được cài đặt vào /home/gopher/bin. Bạn sẽ cần
+      thư mục cài đặt này ở bước tiếp theo.
+    </p>
+  </li>
+
+  <li>
+    Thêm thư mục cài đặt Go vào đường dẫn shell của hệ thống.
+
+    <p>
+      Như vậy, bạn có thể chạy tệp thực thi của chương trình mà không cần
+      chỉ định vị trí của nó.
+    </p>
+
+    <ul>
+      <li>
+        Trên Linux hoặc Mac, chạy lệnh sau:
+
+        <pre>
+$ export PATH=$PATH:/path/to/your/install/directory
+</pre
+        >
+      </li>
+
+      <li>
+        Trên Windows, chạy lệnh sau:
+
+        <pre>
+$ set PATH=%PATH%;C:\path\to\your\install\directory
+</pre
+        >
+      </li>
+    </ul>
+
+    <p>
+      Ngoài ra, nếu bạn đã có một thư mục như
+      <code>$HOME/bin</code> trong đường dẫn shell và muốn cài đặt
+      các chương trình Go ở đó, bạn có thể thay đổi đích cài đặt bằng cách đặt biến
+      <code>GOBIN</code> thông qua
+      <a href="/cmd/go/#hdr-Print_Go_environment_information">
+        lệnh <code>go env</code></a>:
+    </p>
+
+    <pre>
+$ go env -w GOBIN=/path/to/your/bin
+</pre>
+
+    <p>
+      hoặc
+    </p>
+
+    <pre>
+$ go env -w GOBIN=C:\path\to\your\bin
+</pre
+    >
+  </li>
+
+  <li>
+    Sau khi cập nhật đường dẫn shell, chạy lệnh <code>go install</code>
+    để biên dịch và cài đặt gói.
+
+    <pre>$ go install</pre>
+  </li>
+
+  <li>
+    Chạy ứng dụng của bạn bằng cách chỉ cần gõ tên của nó. Để thú vị hơn,
+    hãy mở một dấu nhắc lệnh mới và chạy tên tệp thực thi <code>hello</code>
+    trong một thư mục khác.
+
+    <pre>
+$ hello
+map[Darrin:Hail, Darrin! Well met! Gladys:Great to see you, Gladys! Samantha:Hail, Samantha! Well met!]
+</pre
+    >
+  </li>
+</ol>
+
+<p>
+  Vậy là kết thúc hướng dẫn Go này!
+</p>
+
+<p class="Navigation">
+  <a class="Navigation-prev" href="add-a-test.html">&lt; Thêm một bài kiểm thử</a>
+  <a class="Navigation-next" href="module-conclusion.html">Kết luận và các liên kết
+    tham khảo thêm &gt;</a>
+</p>

@@ -1,0 +1,167 @@
+<!--{
+    "Title": "Trả về lời chào ngẫu nhiên",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Trong phần này, bạn sẽ thay đổi mã của mình để thay vì trả về một lời chào
+  cố định mỗi lần, nó trả về một trong số các thông điệp lời chào được định nghĩa sẵn.
+</p>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Phần này là một phần của hướng dẫn nhiều bước, bắt đầu từ
+  <a href="/doc/tutorial/create-module.html">Tạo một module Go</a>.
+</aside>
+
+<p>
+  Để làm điều này, bạn sẽ dùng một slice trong Go. Slice giống như một mảng, ngoại trừ
+  kích thước của nó thay đổi động khi bạn thêm và xóa phần tử. Slice là một trong những
+  kiểu hữu ích nhất của Go.
+</p>
+
+<p>
+  Bạn sẽ thêm một slice nhỏ chứa ba thông điệp lời chào, rồi cho mã của bạn
+  trả về một trong các thông điệp đó ngẫu nhiên. Để biết thêm về slice,
+  xem <a href="/blog/slices-intro">Go slices</a> trên Go
+  blog.
+</p>
+
+<ol>
+  <li>
+    Trong greetings/greetings.go, thay đổi mã của bạn để trông như sau.
+
+    <pre>
+package greetings
+
+import (
+    "errors"
+    "fmt"
+    <ins>"math/rand"</ins>
+)
+
+// Hello returns a greeting for the named person.
+func Hello(name string) (string, error) {
+    // If no name was given, return an error with a message.
+    if name == "" {
+        return name, errors.New("empty name")
+    }
+    // Create a message using a random format.
+    message := fmt.Sprintf(<ins>randomFormat()</ins>, name)
+    return message, nil
+}
+
+<ins>// randomFormat returns one of a set of greeting messages. The returned
+// message is selected at random.
+func randomFormat() string {
+    // A slice of message formats.
+    formats := []string{
+        "Hi, %v. Welcome!",
+        "Great to see you, %v!",
+        "Hail, %v! Well met!",
+    }
+
+    // Return a randomly selected message format by specifying
+    // a random index for the slice of formats.
+    return formats[rand.Intn(len(formats))]
+}</ins>
+</pre>
+
+    <p>
+      Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Thêm hàm <code>randomFormat</code> trả về một định dạng được chọn ngẫu nhiên
+        cho thông điệp lời chào. Lưu ý rằng
+        <code>randomFormat</code> bắt đầu bằng chữ thường, làm cho nó
+        chỉ có thể truy cập từ mã trong cùng gói (nói cách khác, nó không được xuất).
+      </li>
+      <li>
+        Trong <code>randomFormat</code>, khai báo slice <code>formats</code> với
+        ba định dạng thông điệp. Khi khai báo một slice, bạn bỏ qua kích thước trong
+        dấu ngoặc, như sau: <code>[]string</code>. Điều này báo cho Go biết rằng kích thước
+        của mảng nằm dưới slice có thể thay đổi động.
+      </li>
+      <li>
+        Dùng
+        <a href="https://pkg.go.dev/math/rand/"
+          >gói <code>math/rand</code></a
+        >
+        để tạo số ngẫu nhiên để chọn một phần tử từ slice.
+      </li>
+      <li>
+        Trong <code>Hello</code>, gọi hàm <code>randomFormat</code> để
+        lấy một định dạng cho thông điệp bạn sẽ trả về, rồi dùng định dạng và
+        giá trị <code>name</code> cùng nhau để tạo thông điệp.
+      </li>
+      <li>Trả về thông điệp (hoặc lỗi) như bạn đã làm trước đây.</li>
+    </ul>
+
+  </li>
+
+  <li>
+    Trong hello/hello.go, thay đổi mã của bạn để trông như sau.
+
+    <p>Bạn chỉ thêm tên của Gladys (hoặc một tên khác nếu bạn thích)
+      làm đối số cho lời gọi hàm <code>Hello</code> trong hello.go.</p>
+
+    <pre>package main
+
+import (
+    "fmt"
+    "log"
+
+    "example.com/greetings"
+)
+
+func main() {
+    // Set properties of the predefined Logger, including
+    // the log entry prefix and a flag to disable printing
+    // the time, source file, and line number.
+    log.SetPrefix("greetings: ")
+    log.SetFlags(0)
+
+    // Request a greeting message.
+    <ins>message, err := greetings.Hello("Gladys")</ins>
+    // If an error was returned, print it to the console and
+    // exit the program.
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // If no error was returned, print the returned message
+    // to the console.
+    fmt.Println(message)
+}</pre>
+  </li>
+
+  <li>
+    Tại dòng lệnh, trong thư mục hello, chạy hello.go để xác nhận
+    mã hoạt động. Chạy nhiều lần và nhận thấy rằng lời chào thay đổi.
+
+    <pre>
+$ go run .
+Great to see you, Gladys!
+
+$ go run .
+Hi, Gladys. Welcome!
+
+$ go run .
+Hail, Gladys! Well met!
+</pre>
+  </li>
+</ol>
+
+<p>
+  Tiếp theo, bạn sẽ dùng một slice để chào nhiều người.
+</p>
+
+<p class="Navigation">
+  <a class="Navigation-prev" href="/doc/tutorial/handle-errors.html"
+    >&lt; Trả về và xử lý lỗi</a
+  >
+  <a class="Navigation-next" href="/doc/tutorial/greetings-multiple-people.html"
+    >Trả lời lời chào cho nhiều người &gt;</a
+  >
+</p>
