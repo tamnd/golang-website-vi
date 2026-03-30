@@ -1,0 +1,410 @@
+<!--{
+	"Title": "Lịch sử phát hành",
+	"Template": true
+}-->
+
+<p>Trang này tóm tắt các thay đổi giữa các bản phát hành ổn định chính thức của Go.
+<a href="/change">Nhật ký thay đổi</a> có đầy đủ chi tiết.</p>
+
+<p>Để cập nhật lên một bản phát hành cụ thể, dùng:</p>
+
+<pre>
+git fetch --tags
+git checkout <i>goX.Y.Z</i>
+</pre>
+
+<h2 id="policy">Chính sách phát hành</h2>
+
+<p>
+Mỗi bản phát hành chính của Go được hỗ trợ cho đến khi có hai bản phát hành chính mới hơn.
+Ví dụ, Go 1.5 được hỗ trợ cho đến bản phát hành Go 1.7, và Go 1.6 được
+hỗ trợ cho đến bản phát hành Go 1.8.
+Chúng tôi sửa các vấn đề nghiêm trọng, bao gồm <a href="/security">các vấn đề bảo mật nghiêm trọng</a>,
+trong các bản phát hành được hỗ trợ khi cần bằng cách phát hành các bản sửa đổi nhỏ
+(ví dụ: Go 1.6.1, Go 1.6.2, và các bản tương tự).
+</p>
+
+{{range releases}}
+{{if ge .Version.Y 9}}
+	<h2 id="go{{.Version}}">go{{.Version}} (released {{.Date}})</h2>
+
+	<p>
+	Go {{.Version}} là bản phát hành chính của Go.
+	Đọc <a href="/doc/go{{.Version.MajorPrefix}}">Ghi chú phát hành Go {{.Version.MajorPrefix}}</a> để biết thêm thông tin.
+	</p>
+
+	{{if .Minor}}<h3 id="go{{.Version.MajorPrefix}}.minor">Các bản sửa đổi nhỏ</h3>{{end}}
+
+	{{range .Minor}}
+		<p id="go{{.Version}}">
+		go{{.Version}}
+		({{if .Future}}dự kiến vào{{else}}phát hành{{end}} {{.Date}})
+		{{with .CustomSummary}}
+			{{.}}
+		{{else}}
+			{{if .Future}}sẽ bao gồm{{else}}bao gồm{{end}}
+			{{with .Security}}
+				{{.Quantifier}}
+				bản vá bảo mật
+				{{if (or (eq .Quantifier "a") (eq .Quantifier "one"))}}{{else}}{{end -}}
+				{{with .ComponentsAndPackages}} cho {{.}}{{end -}}
+			{{end}}
+			{{- if and .Security .Bug}}, cũng như{{end -}}
+			{{if .Bug}}
+				{{.Bug.Quantifier}}
+				{{if .Security}}bản sửa lỗi{{end}} {{/* If there are security fixes too, specify that what follows are bug fixes. */}}
+				{{if eq .Bug.Quantifier "a"}}{{else}}{{end -}}
+				{{with .Bug.ComponentsAndPackages}} cho {{.}}{{end -}}
+			{{end}}
+			{{- if or .Security .Bug}}.{{end}}
+			{{.More}}
+
+			{{if not .Future}}
+			Xem
+			<a href="https://github.com/golang/go/issues?q=milestone%3AGo{{.Version}}+label%3ACherryPickApproved">mốc Go {{.Version}}</a>
+			trên trình theo dõi vấn đề để biết chi tiết.
+			{{end}}
+		{{end}}
+		</p>
+	{{end}}
+{{end}}
+{{end}}
+
+{{/* Entries for Go 1.9 and newer are generated using data in the internal/history package. */}}
+{{/* Entries for Go 1.8.7 and older are hand-written as raw HTML below. */}}
+
+<h2 id="go1.8">go1.8 (released 2017-02-16)</h2>
+
+<p>
+Go 1.8 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.8">Ghi chú phát hành Go 1.8</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.8.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.8.1">
+go1.8.1 (released 2017-04-07) bao gồm các bản sửa lỗi cho trình biên dịch, trình liên kết, thời gian chạy,
+tài liệu, lệnh <code>go</code> và các gói <code>crypto/tls</code>,
+<code>encoding/xml</code>, <code>image/png</code>, <code>net</code>,
+<code>net/http</code>, <code>reflect</code>, <code>text/template</code>
+và <code>time</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.1">mốc Go
+1.8.1</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.8.2">
+go1.8.2 (released 2017-05-23) bao gồm một bản vá bảo mật cho gói
+<code>crypto/elliptic</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.2">mốc Go
+1.8.2</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.8.3">
+go1.8.3 (released 2017-05-24) bao gồm các bản sửa lỗi cho trình biên dịch, thời gian chạy,
+tài liệu và gói <code>database/sql</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.3">mốc Go
+1.8.3</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.8.4">
+go1.8.4 (released 2017-10-04) bao gồm hai bản vá bảo mật.
+Nó chứa các bản sửa lỗi tương tự như Go 1.9.1 và được phát hành cùng thời điểm.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.4">mốc Go
+1.8.4</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.8.5">
+go1.8.5 (released 2017-10-25) bao gồm các bản sửa lỗi cho trình biên dịch, trình liên kết, thời gian chạy,
+tài liệu, lệnh <code>go</code>
+và các gói <code>crypto/x509</code> và <code>net/smtp</code>.
+Bao gồm bản sửa lỗi cho một bug được đưa vào trong Go 1.8.4 làm hỏng <code>go</code> <code>get</code>
+trên các kho lưu trữ không phải Git trong một số điều kiện nhất định.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.5">mốc Go
+1.8.5</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.8.6">
+go1.8.6 (released 2018-01-22) bao gồm bản sửa lỗi tương tự trong <code>math/big</code>
+như Go 1.9.3 và được phát hành cùng thời điểm.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.6">mốc Go
+1.8.6</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.8.7">
+go1.8.7 (released 2018-02-07) bao gồm một bản vá bảo mật cho "go get".
+Nó chứa bản sửa lỗi tương tự như Go 1.9.4 và được phát hành cùng thời điểm.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.7">mốc Go
+1.8.7</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<h2 id="go1.7">go1.7 (released 2016-08-15)</h2>
+
+<p>
+Go 1.7 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.7">Ghi chú phát hành Go 1.7</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.7.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.7.1">
+go1.7.1 (released 2016-09-07) bao gồm các bản sửa lỗi cho trình biên dịch, thời gian chạy,
+tài liệu và các gói <code>compress/flate</code>, <code>hash/crc32</code>,
+<code>io</code>, <code>net</code>, <code>net/http</code>,
+<code>path/filepath</code>, <code>reflect</code> và <code>syscall</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.7.1">mốc Go
+1.7.1</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.7.2">
+go1.7.2 không nên được sử dụng. Nó đã được gắn tag nhưng chưa được phát hành đầy đủ.
+Bản phát hành bị hoãn lại do một báo cáo lỗi vào phút chót.
+Hãy dùng go1.7.3 thay thế và tham khảo tóm tắt thay đổi bên dưới.
+</p>
+
+<p id="go1.7.3">
+go1.7.3 (released 2016-10-19) bao gồm các bản sửa lỗi cho trình biên dịch, thời gian chạy
+và các gói <code>crypto/cipher</code>, <code>crypto/tls</code>,
+<code>net/http</code> và <code>strings</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.7.3">mốc Go
+1.7.3</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.7.4">
+go1.7.4 (released 2016-12-01) bao gồm hai bản vá bảo mật.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.7.4">mốc Go
+1.7.4</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.7.5">
+go1.7.5 (released 2017-01-26) bao gồm các bản sửa lỗi cho trình biên dịch, thời gian chạy
+và các gói <code>crypto/x509</code> và <code>time</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.7.5">mốc Go
+1.7.5</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.7.6">
+go1.7.6 (released 2017-05-23) bao gồm bản vá bảo mật tương tự như Go 1.8.2 và
+được phát hành cùng thời điểm.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.8.2">mốc Go
+1.8.2</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<h2 id="go1.6">go1.6 (released 2016-02-17)</h2>
+
+<p>
+Go 1.6 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.6">Ghi chú phát hành Go 1.6</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.6.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.6.1">
+go1.6.1 (released 2016-04-12) bao gồm hai bản vá bảo mật.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.6.1">mốc Go
+1.6.1</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.6.2">
+go1.6.2 (released 2016-04-20) bao gồm các bản sửa lỗi cho trình biên dịch, thời gian chạy, công cụ,
+tài liệu và các gói <code>mime/multipart</code>, <code>net/http</code> và
+<code>sort</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.6.2">mốc Go
+1.6.2</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.6.3">
+go1.6.3 (released 2016-07-17) bao gồm các bản vá bảo mật cho gói
+<code>net/http/cgi</code> và gói <code>net/http</code> khi được sử dụng trong
+môi trường CGI.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.6.3">mốc Go
+1.6.3</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.6.4">
+go1.6.4 (released 2016-12-01) bao gồm hai bản vá bảo mật.
+Nó chứa các bản sửa lỗi tương tự như Go 1.7.4 và được phát hành cùng thời điểm.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.7.4">mốc Go
+1.7.4</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<h2 id="go1.5">go1.5 (released 2015-08-19)</h2>
+
+<p>
+Go 1.5 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.5">Ghi chú phát hành Go 1.5</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.5.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.5.1">
+go1.5.1 (released 2015-09-08) bao gồm các bản sửa lỗi cho trình biên dịch, trình hợp dịch và
+các gói <code>fmt</code>, <code>net/textproto</code>, <code>net/http</code> và
+<code>runtime</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.5.1">mốc Go
+1.5.1</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.5.2">
+go1.5.2 (released 2015-12-02) bao gồm các bản sửa lỗi cho trình biên dịch, trình liên kết và
+các gói <code>mime/multipart</code>, <code>net</code> và <code>runtime</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.5.2">mốc Go
+1.5.2</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<p id="go1.5.3">
+go1.5.3 (released 2016-01-13) bao gồm một bản vá bảo mật cho gói <code>math/big</code>
+ảnh hưởng đến gói <code>crypto/tls</code>.
+Xem <a href="/s/go153announce">thông báo phát hành</a> để biết chi tiết.
+</p>
+
+<p id="go1.5.4">
+go1.5.4 (released 2016-04-12) bao gồm hai bản vá bảo mật.
+Nó chứa các bản sửa lỗi tương tự như Go 1.6.1 và được phát hành cùng thời điểm.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.6.1">mốc Go
+1.6.1</a> trên trình theo dõi vấn đề để biết chi tiết.
+</p>
+
+<h2 id="go1.4">go1.4 (released 2014-12-10)</h2>
+
+<p>
+Go 1.4 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.4">Ghi chú phát hành Go 1.4</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.4.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.4.1">
+go1.4.1 (released 2015-01-15) bao gồm các bản sửa lỗi cho trình liên kết và các gói <code>log</code>, <code>syscall</code> và <code>runtime</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.4.1">mốc Go 1.4.1 trên trình theo dõi vấn đề</a> để biết chi tiết.
+</p>
+
+<p id="go1.4.2">
+go1.4.2 (released 2015-02-17) bao gồm các bản vá bảo mật cho trình biên dịch và các bản sửa lỗi cho lệnh <code>go</code>, trình biên dịch và trình liên kết, và các gói <code>runtime</code>, <code>syscall</code>, <code>reflect</code> và <code>math/big</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.4.2">mốc Go 1.4.2 trên trình theo dõi vấn đề</a> để biết chi tiết.
+</p>
+
+<p id="go1.4.3">
+go1.4.3 (released 2015-09-22) bao gồm các bản vá bảo mật cho gói <code>net/http</code> và các bản sửa lỗi cho gói <code>runtime</code>.
+Xem <a href="https://github.com/golang/go/issues?q=milestone%3AGo1.4.3">mốc Go 1.4.3 trên trình theo dõi vấn đề</a> để biết chi tiết.
+</p>
+
+<h2 id="go1.3">go1.3 (released 2014-06-18)</h2>
+
+<p>
+Go 1.3 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.3">Ghi chú phát hành Go 1.3</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.3.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.3.1">
+go1.3.1 (released 2014-08-13) bao gồm các bản sửa lỗi cho trình biên dịch và các gói <code>runtime</code>, <code>net</code> và <code>crypto/rsa</code>.
+Xem <a href="https://github.com/golang/go/commits/go1.3.1">lịch sử thay đổi</a> để biết chi tiết.
+</p>
+
+<p id="go1.3.2">
+go1.3.2 (released 2014-09-25) bao gồm các bản vá bảo mật cho gói <code>crypto/tls</code> và các bản sửa lỗi cho cgo.
+Xem <a href="https://github.com/golang/go/commits/go1.3.2">lịch sử thay đổi</a> để biết chi tiết.
+</p>
+
+<p id="go1.3.3">
+go1.3.3 (released 2014-09-30) bao gồm thêm các bản sửa lỗi cho cgo, gói runtime và cổng nacl.
+Xem <a href="https://github.com/golang/go/commits/go1.3.3">lịch sử thay đổi</a> để biết chi tiết.
+</p>
+
+<h2 id="go1.2">go1.2 (released 2013-12-01)</h2>
+
+<p>
+Go 1.2 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.2">Ghi chú phát hành Go 1.2</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.2.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.2.1">
+go1.2.1 (released 2014-03-02) bao gồm các bản sửa lỗi cho các gói <code>runtime</code>, <code>net</code> và <code>database/sql</code>.
+Xem <a href="https://github.com/golang/go/commits/go1.2.1">lịch sử thay đổi</a> để biết chi tiết.
+</p>
+
+<p id="go1.2.2">
+go1.2.2 (released 2014-05-05) bao gồm một
+<a href="https://github.com/golang/go/commits/go1.2.2">bản vá bảo mật</a>
+ảnh hưởng đến tệp nhị phân tour được đưa vào trong các bản phân phối nhị phân (cảm ơn Guillaume T).
+</p>
+
+<h2 id="go1.1">go1.1 (released 2013-05-13)</h2>
+
+<p>
+Go 1.1 là bản phát hành chính của Go.
+Đọc <a href="/doc/go1.1">Ghi chú phát hành Go 1.1</a> để biết thêm thông tin.
+</p>
+
+<h3 id="go1.1.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.1.1">
+go1.1.1 (released 2013-06-13) bao gồm một bản vá bảo mật cho trình biên dịch và một số bản sửa lỗi cho trình biên dịch và thời gian chạy.
+Xem <a href="https://github.com/golang/go/commits/go1.1.1">lịch sử thay đổi</a> để biết chi tiết.
+</p>
+
+<p id="go1.1.2">
+go1.1.2 (released 2013-08-13) bao gồm các bản sửa lỗi cho trình biên dịch <code>gc</code>
+và <code>cgo</code>, và các gói <code>bufio</code>, <code>runtime</code>,
+<code>syscall</code> và <code>time</code>.
+Xem <a href="https://github.com/golang/go/commits/go1.1.2">lịch sử thay đổi</a> để biết chi tiết.
+Nếu bạn sử dụng các hàm <code>Getrlimit</code> và <code>Setrlimit</code> của gói syscall
+trên Linux với kiến trúc ARM hoặc 386, hãy lưu ý thay đổi
+<a href="/cl/11803043">11803043</a>
+sửa <a href="/issue/5949">vấn đề 5949</a>.
+</p>
+
+<h2 id="go1">go1 (released 2012-03-28)</h2>
+
+<p>
+Go 1 là bản phát hành chính của Go, ổn định lâu dài.
+Đọc <a href="/doc/go1.html">Ghi chú phát hành Go 1</a> để biết thêm thông tin.
+</p>
+
+<p>
+Mục đích là các chương trình được viết cho Go 1 sẽ tiếp tục biên dịch và chạy
+đúng, không thay đổi, trong các phiên bản Go 1 tương lai.
+Đọc <a href="/doc/go1compat.html">tài liệu tương thích Go 1</a> để biết thêm
+về tương lai của Go 1.
+</p>
+
+<p>
+Bản phát hành go1 tương ứng với
+<code><a href="weekly.html#2012-03-27">weekly.2012-03-27</a></code>.
+</p>
+
+<h3 id="go1.minor">Các bản sửa đổi nhỏ</h3>
+
+<p id="go1.0.1">
+go1.0.1 (released 2012-04-25) được phát hành để
+<a href="/cl/6061043">sửa</a> một
+<a href="/issue/3545">lỗi phân tích thoát</a>
+có thể dẫn đến lỗi bộ nhớ.
+Nó cũng bao gồm một số bản sửa lỗi nhỏ về mã và tài liệu.
+</p>
+
+<p id="go1.0.2">
+go1.0.2 (released 2012-06-13) được phát hành để sửa hai lỗi trong triển khai
+các map sử dụng khóa kiểu struct hoặc mảng:
+<a href="/issue/3695">vấn đề 3695</a> và
+<a href="/issue/3573">vấn đề 3573</a>.
+Nó cũng bao gồm nhiều bản sửa lỗi nhỏ về mã và tài liệu.
+</p>
+
+<p id="go1.0.3">
+go1.0.3 (released 2012-09-21) bao gồm các bản sửa lỗi nhỏ về mã và tài liệu.
+</p>
+
+<p>
+Xem <a href="https://github.com/golang/go/commits/release-branch.go1">lịch sử nhánh phát hành go1</a> để biết danh sách đầy đủ các thay đổi.
+</p>
+
+<h2 id="pre.go1">Các bản phát hành cũ hơn</h2>
+
+<p>
+Xem trang <a href="pre_go1.html">Lịch sử phát hành trước Go 1</a> để biết ghi chú
+về các bản phát hành trước đó.
+</p>

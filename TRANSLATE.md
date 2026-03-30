@@ -434,11 +434,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/database/sql-injection.md`
 - [ ] `doc/debugging_with_gdb.md`
 - [x] `doc/default.tmpl`
-- [ ] `doc/devel/pre_go1.html`
-- [ ] `doc/devel/release.html`
-- [ ] `doc/devel/weekly.html`
+- [x] `doc/devel/pre_go1.html`
+- [x] `doc/devel/release.html`
+- [x] `doc/devel/weekly.html`
 - [ ] `doc/diagnostics.html`
-- [ ] `doc/docs.md`
+- [x] `doc/docs.md`
 - [ ] `doc/editors.html`
 - [ ] `doc/effective_go.html`
 - [ ] `doc/faq.md`
@@ -483,8 +483,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/index.html`
 - [ ] `doc/install-source.md`
 - [ ] `doc/install.html`
-- [ ] `doc/install/gccgo.html`
-- [ ] `doc/install/source.html`
+- [x] `doc/install/gccgo.html`
+- [x] `doc/install/source.html`
 - [ ] `doc/manage-install.html`
 - [x] `doc/modules/developing.md`
 - [x] `doc/modules/gomod-ref.md`
@@ -498,8 +498,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/modules/version-numbers.md`
 - [ ] `doc/next.md`
 - [ ] `doc/pgo.md`
-- [ ] `doc/play/index-dev.txt`
-- [ ] `doc/play/multi.txt`
+- [x] `doc/play/index-dev.txt`
+- [x] `doc/play/multi.txt`
 - [ ] `doc/root.md`
 - [x] `doc/security/best-practices.md`
 - [x] `doc/security/fips140.md`
@@ -539,11 +539,11 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### (root)
 
-- [ ] `error.tmpl`
+- [x] `error.tmpl`
 
 ### gopls
 
-- [ ] `gopls/doc/default.tmpl`
+- [x] `gopls/doc/default.tmpl`
 - [x] `gopls/doc/index.md`
 - [x] `gopls/doc/settings.md`
 
@@ -574,14 +574,14 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### ref
 
-- [ ] `ref/default.tmpl`
+- [x] `ref/default.tmpl`
 - [x] `ref/index.md`
 - [ ] `ref/mod.md`
 
 ### (root)
 
 - [x] `resources.yaml`
-- [ ] `robots.txt`
+- [x] `robots.txt`
 - [ ] `site.tmpl`
 
 ### solutions
@@ -632,7 +632,7 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### src
 
-- [ ] `src/default.tmpl`
+- [x] `src/default.tmpl`
 
 ### talks
 
@@ -747,7 +747,7 @@ This checklist tracks files that likely require localization work. It excludes s
 ### (root)
 
 - [x] `testimonials.yaml`
-- [ ] `texthtml.tmpl`
+- [x] `texthtml.tmpl`
 - [x] `tos.md`
 
 ### tour

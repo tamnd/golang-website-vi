@@ -1,0 +1,446 @@
+<!--{
+	"Title": "Lịch sử phát hành trước Go 1"
+}-->
+
+<p>
+Trang này tóm tắt các thay đổi giữa các bản phát hành ổn định của Go trước Go 1.
+Xem trang <a href="release.html">Lịch sử phát hành</a> để biết ghi chú về các bản phát hành gần đây.
+</p>
+
+<h2 id="r60">r60 (released 2011/09/07)</h2>
+
+<p>
+Bản phát hành r60 tương ứng với
+<code><a href="weekly.html#2011-08-17">weekly.2011-08-17</a></code>.
+Phần này nêu bật những thay đổi quan trọng nhất trong bản phát hành này.
+Để xem tóm tắt chi tiết hơn, xem
+<a href="weekly.html#2011-08-17">ghi chú phát hành hàng tuần</a>.
+Để xem thông tin đầy đủ, xem
+<a href="https://code.google.com/p/go/source/list?r=release-branch.r60">danh sách thay đổi Mercurial</a>.
+</p>
+
+<h3 id="r60.lang">Ngôn ngữ</h3>
+
+<p>
+Khối "else" hiện được yêu cầu phải có dấu ngoặc nhọn ngoại trừ khi phần thân của "else"
+là một "if" khác. Vì gofmt luôn đặt những dấu ngoặc nhọn đó vào,
+các chương trình được định dạng bằng gofmt sẽ không bị ảnh hưởng.
+Để sửa các chương trình khác, hãy chạy gofmt.
+</p>
+
+<h3 id="r60.pkg">Các gói</h3>
+
+<p>
+Mã phân tích URL và thoát truy vấn của <a href="/pkg/http/">Package http</a>
+(như <code>ParseURL</code> và <code>URLEscape</code>) đã được chuyển sang
+<a href="/pkg/url/">gói url</a> mới, với một số đơn giản hóa tên.
+Mã client có thể được cập nhật tự động bằng gofix.
+</p>
+
+<p>
+<a href="/pkg/image/">Package image</a> đã có những thay đổi đáng kể đối với
+trường <code>Pix</code> của các kiểu struct như
+<a href="/pkg/image/#RGBA">image.RGBA</a> và
+<a href="/pkg/image/#NRGBA">image.NRGBA</a>.
+Tuy nhiên, kiểu interface <a href="/pkg/image/#Image">image.Image</a> không thay đổi,
+và bạn không cần thay đổi mã của mình nếu bạn không tham chiếu rõ ràng đến các trường <code>Pix</code>.
+Ví dụ, nếu bạn giải mã một số hình ảnh
+bằng gói <a href="/pkg/image/jpeg/">image/jpeg</a>, kết hợp chúng bằng
+<a href="/pkg/image/draw/">image/draw</a>, rồi mã hóa kết quả bằng
+<a href="/pkg/img/png">image/png</a>, thì mã của bạn vẫn hoạt động như
+trước.
+Nếu mã của bạn <i>có</i> tham chiếu đến các trường <code>Pix</code>, xem
+<a href="/doc/devel/weekly.html#2011-07-19">weekly.2011-07-19</a>
+trong ghi chú snapshot để biết cách cập nhật mã của bạn.
+</p>
+
+<p>
+<a href="/pkg/template/">Package template</a> đã được thay thế bằng một
+gói tạo template mới (trước đây là <code>exp/template</code>). Gói template
+gốc vẫn còn có dạng <a href="/pkg/old/template/">old/template</a>.
+Gói <code>old/template</code> đã bị deprecated và sẽ bị xóa.
+Cây Go đã được cập nhật để sử dụng gói template mới. Chúng tôi khuyến khích
+người dùng gói template cũ chuyển sang gói mới. Mã sử dụng
+<code>template</code> hoặc <code>exp/template</code> sẽ cần thay đổi dòng
+import thành <code>"old/template"</code> hoặc <code>"template"</code>,
+tương ứng.
+</p>
+
+<h3 id="r60.cmd">Công cụ</h3>
+
+<p>
+<a href="/cmd/goinstall/">Goinstall</a> hiện sử dụng cơ chế chọn tag mới.
+Khi tải xuống hoặc cập nhật, goinstall tìm kiếm tag hoặc nhánh có tiền tố
+<code>"go."</code> tương ứng với phiên bản Go cục bộ. Đối với Go
+<code>release.r58</code>, nó tìm <code>go.r58</code>. Đối với
+<code>weekly.2011-06-03</code>, nó tìm <code>go.weekly.2011-06-03</code>.
+Nếu tag hoặc nhánh <code>go.X</code> cụ thể không được tìm thấy, nó chọn phiên bản
+gần nhất trước đó. Nếu tìm thấy tag hoặc nhánh phù hợp, goinstall
+sử dụng phiên bản mã đó. Nếu không, nó sử dụng phiên bản mặc định được chọn
+bởi hệ thống kiểm soát phiên bản. Các tác giả thư viện được khuyến khích sử dụng
+các tên tag hoặc nhánh phù hợp trong kho lưu trữ của họ để làm cho thư viện
+dễ tiếp cận hơn.
+</p>
+
+<h3 id="r60.minor">Các bản sửa đổi nhỏ</h3>
+
+<p>
+r60.1 bao gồm một
+<a href="/change/1824581bf62d">bản sửa lỗi trình liên kết</a>, một cặp
+<a href="/change/9ef4429c2c64">bản sửa lỗi goplay</a>
+<a href="/change/d42ed8c3098e"></a>,
+một <a href="/change/d5e97874fe84">bản sửa lỗi</a> gói <code>json</code> và
+một <a href="/change/4f0e6269213f">tùy chọn thẻ struct</a> mới.
+</p>
+
+<p>
+r60.2
+<a href="/change/ff19536042ac">sửa</a>
+một rò rỉ bộ nhớ liên quan đến map.
+</p>
+
+<p>
+r60.3 sửa một <a href="/change/01fa62f5e4e5">lỗi reflect</a>.
+</p>
+
+<h2 id="r59">r59 (released 2011/08/01)</h2>
+
+<p>
+Bản phát hành r59 tương ứng với
+<code><a href="weekly.html#2011-07-07">weekly.2011-07-07</a></code>.
+Phần này nêu bật những thay đổi quan trọng nhất trong bản phát hành này.
+Để xem tóm tắt chi tiết hơn, xem
+<a href="weekly.html#2011-07-07">ghi chú phát hành hàng tuần</a>.
+Để xem thông tin đầy đủ, xem
+<a href="https://code.google.com/p/go/source/list?r=release-branch.r59">danh sách thay đổi Mercurial</a>.
+</p>
+
+<h3 id="r59.lang">Ngôn ngữ</h3>
+
+<p>
+Bản phát hành này bao gồm một thay đổi ngôn ngữ hạn chế việc sử dụng
+<code>goto</code>. Về cơ bản, một câu lệnh <code>goto</code> bên ngoài một khối
+không thể nhảy đến nhãn bên trong khối đó. Mã của bạn có thể cần thay đổi nếu nó
+sử dụng <code>goto</code>.
+Xem <a href="/change/dc6d3cf9279d">changeset này</a> để biết quy tắc mới ảnh hưởng đến cây Go như thế nào.
+</p>
+
+<h3 id="r59.pkg">Các gói</h3>
+
+<p>
+Như thường lệ, <a href="/cmd/gofix/">gofix</a> sẽ xử lý phần lớn các việc viết lại
+cần thiết cho những thay đổi đối với API gói.
+</p>
+
+<p>
+<a href="/pkg/http">Package http</a> có một
+<a href="/pkg/http/#FileSystem">interface FileSystem</a> mới cung cấp quyền truy cập
+vào các tệp. Hàm trợ giúp <a href="/pkg/http/#FileServer">FileServer</a> hiện nhận một
+đối số <code>FileSystem</code> thay vì thư mục gốc tệp hệ thống rõ ràng. Bằng cách
+triển khai <code>FileSystem</code> của riêng bạn, bạn có thể sử dụng
+<code>FileServer</code> để phục vụ dữ liệu tùy ý.
+</p>
+
+<p>
+Kiểu <code>ErrorString</code> của <a href="/pkg/os/">Package os</a> đã bị
+ẩn. Hầu hết các lần sử dụng <code>os.ErrorString</code> có thể được thay thế bằng
+<a href="/pkg/os/#NewError">os.NewError</a>.
+</p>
+
+<p>
+<a href="/pkg/reflect/">Package reflect</a> hỗ trợ cơ chế thẻ struct mới
+cho phép chia sẻ thẻ struct giữa nhiều gói.
+Trong cơ chế này, các thẻ phải có dạng:
+</p>
+<pre>
+	`key:"value" key2:"value2"`
+</pre>
+<p>
+Trường Tag của kiểu <a href="/pkg/reflect/#StructField">StructField</a> hiện
+có kiểu <a href="/pkg/reflect/#StructTag">StructTag</a>, có
+phương thức <code>Get</code>. Các client của <a href="/pkg/json">json</a> và
+<a href="/pkg/xml">xml</a> sẽ cần được cập nhật. Mã viết như thế này
+</p>
+<pre>
+	type T struct {
+		X int "name"
+	}
+</pre>
+<p>
+nên được chuyển thành
+</p>
+<pre>
+	type T struct {
+		X int `json:"name"`  // or `xml:"name"`
+	}
+</pre>
+<p>
+Sử dụng <a href="/cmd/govet/">govet</a> để xác định các thẻ struct cần được
+thay đổi để sử dụng cú pháp mới.
+</p>
+
+<p>
+Kiểu <code>IntArray</code> của <a href="/pkg/sort/">Package sort</a> đã được
+đổi tên thành <a href="/pkg/sort/#IntSlice">IntSlice</a>, và tương tự cho
+<a href="/pkg/sort/#Float64Slice">Float64Slice</a> và
+<a href="/pkg/sort/#StringSlice">StringSlice</a>.
+</p>
+
+<p>
+Hàm <code>Split</code> của <a href="/pkg/strings/">Package strings</a>
+đã được tách thành <a href="/pkg/strings/#Split">Split</a> và
+<a href="/pkg/strings/#SplitN">SplitN</a>.
+<code>SplitN</code> giống như <code>Split</code> cũ.
+<code>Split</code> mới tương đương với <code>SplitN</code> với đối số cuối cùng là -1.
+</p>
+
+<a href="/pkg/image/draw/">Package image/draw</a>'s
+<a href="/pkg/image/draw/#Draw">hàm Draw</a> hiện nhận thêm một
+đối số, toán tử kết hợp.
+Nếu không chắc, hãy sử dụng <a href="/pkg/image/draw/#Op">draw.Over</a>.
+</p>
+
+<h3 id="r59.cmd">Công cụ</h3>
+
+<p>
+<a href="/cmd/goinstall/">Goinstall</a> hiện cài đặt các gói và lệnh từ
+các kho lưu trữ từ xa tùy ý (không chỉ Google Code, GitHub, v.v.).
+Xem <a href="/cmd/goinstall/">tài liệu goinstall</a> để biết chi tiết.
+</p>
+
+<h2 id="r58">r58 (released 2011/06/29)</h2>
+
+<p>
+Bản phát hành r58 tương ứng với
+<code><a href="weekly.html#2011-06-09">weekly.2011-06-09</a></code>
+cùng với các bản sửa lỗi bổ sung.
+Phần này nêu bật những thay đổi quan trọng nhất trong bản phát hành này.
+Để xem tóm tắt chi tiết hơn, xem
+<a href="weekly.html#2011-06-09">ghi chú phát hành hàng tuần</a>.
+Để xem thông tin đầy đủ, xem
+<a href="https://code.google.com/p/go/source/list?r=release-branch.r58">danh sách thay đổi Mercurial</a>.
+</p>
+
+<h3 id="r58.lang">Ngôn ngữ</h3>
+
+<p>
+Bản phát hành này sửa một <a href="/change/b720749486e1">lỗi sử dụng bộ nhớ chưa được khởi tạo trong các chương trình dùng sai <code>goto</code></a>.
+</p>
+
+<h3 id="r58.pkg">Các gói</h3>
+
+<p>
+Như thường lệ, <a href="/cmd/gofix/">gofix</a> sẽ xử lý phần lớn các việc viết lại
+cần thiết cho những thay đổi đối với API gói.
+</p>
+
+<p>
+<a href="/pkg/http/">Package http</a> bỏ giá trị trả về <code>finalURL</code>
+khỏi phương thức <a href="/pkg/http/#Client.Get">Client.Get</a>. Giá trị
+hiện có thể truy cập qua trường <code>Request</code> mới trên <a
+href="/pkg/http/#Response">http.Response</a>.
+Hầu hết các trường hợp sử dụng kiểu map[string][]string đã được
+thay thế bằng kiểu <a href="/pkg/http/#Values">Values</a> mới.
+</p>
+
+<p>
+<a href="/pkg/exec/">Package exec</a> đã được thiết kế lại với API
+tiện lợi và súc tích hơn.
+</p>
+
+<p>
+Hàm <a href="/pkg/strconv/#Quote">Quote</a> của <a href="/pkg/strconv/">Package strconv</a>
+hiện chỉ thoát những điểm mã Unicode không được phân loại là có thể in
+bởi <a href="/pkg/unicode/#IsPrint">unicode.IsPrint</a>.
+Trước đây Quote sẽ thoát tất cả các ký tự không phải ASCII.
+Điều này cũng ảnh hưởng đến chỉ thị định dạng <code>"%q"</code> của gói <a href="/pkg/fmt/">fmt</a>.
+Hành vi trích dẫn trước đây vẫn có thể dùng qua
+hàm <a href="/pkg/strconv/#QuoteToASCII">QuoteToASCII</a> mới của strconv.
+</p>
+
+<p>
+Các kiểu <a href="/pkg/os/#Signal">Signal</a> và
+<a href="/pkg/os/#UnixSignal">UnixSignal</a> của
+<a href="/pkg/os/signal/">Package os/signal</a> đã được chuyển sang
+gói <a href="/pkg/os/">os</a>.
+</p>
+
+<p>
+<a href="/pkg/image/draw/">Package image/draw</a> là tên mới của
+<code>exp/draw</code>. Mã liên quan đến GUI từ <code>exp/draw</code> hiện
+nằm trong gói <a href="/pkg/exp/gui/">exp/gui</a>.
+</p>
+
+<h3 id="r58.cmd">Công cụ</h3>
+
+<p>
+<a href="/cmd/goinstall/">Goinstall</a> hiện tuân theo biến môi trường GOPATH để biên dịch
+và cài đặt mã của riêng bạn và các thư viện bên ngoài bên ngoài
+cây Go (và tránh phải viết Makefile).
+</p>
+
+
+<h3 id="r58.minor">Các bản sửa đổi nhỏ</h3>
+
+<p>r58.1 thêm các thay đổi
+<a href="/change/293c25943586">biên dịch</a> và
+<a href="/change/bf17e96b6582">thời gian chạy</a>
+để Go chạy trên OS X 10.7 Lion.
+</p>
+
+<h2 id="r57">r57 (released 2011/05/03)</h2>
+
+<p>
+Bản phát hành r57 tương ứng với
+<code><a href="weekly.html#2011-04-27">weekly.2011-04-27</a></code>
+cùng với các bản sửa lỗi bổ sung.
+Phần này nêu bật những thay đổi quan trọng nhất trong bản phát hành này.
+Để xem tóm tắt chi tiết hơn, xem
+<a href="weekly.html#2011-04-27">ghi chú phát hành hàng tuần</a>.
+Để xem thông tin đầy đủ, xem
+<a href="https://code.google.com/p/go/source/list?r=release-branch.r57">danh sách thay đổi Mercurial</a>.
+</p>
+
+<p>Công cụ <a href="/cmd/gofix">gofix</a> mới tìm các chương trình Go sử dụng API cũ và viết lại chúng để sử dụng
+các API mới hơn. Sau khi bạn cập nhật lên bản phát hành Go mới, gofix giúp thực hiện những
+thay đổi cần thiết cho chương trình của bạn. Gofix sẽ xử lý các thay đổi gói http, os và syscall
+được mô tả bên dưới, và chúng tôi sẽ cập nhật chương trình để theo kịp
+các thay đổi thư viện trong tương lai.
+Gofix không thể
+xử lý tất cả các tình huống một cách hoàn hảo, vì vậy hãy đọc và kiểm tra các thay đổi nó tạo ra trước khi
+commit chúng.
+Xem <a href="/blog/introducing-gofix">bài đăng blog về gofix</a> để biết thêm
+thông tin.</p>
+
+<h3 id="r57.lang">Ngôn ngữ</h3>
+
+<p>
+<a href="/doc/go_spec.html#Receive_operator">Cú pháp gán nhiều biến</a> thay thế hàm <code>closed</code>.
+Cú pháp nhận giá trị từ channel
+cho phép giá trị được gán thứ hai tùy chọn, một giá trị boolean
+cho biết channel có bị đóng hay không. Mã này:
+</p>
+
+<pre>
+	v := &lt;-ch
+	if closed(ch) {
+		// channel is closed
+	}
+</pre>
+
+<p>nay nên được viết như:</p>
+
+<pre>
+	v, ok := &lt;-ch
+	if !ok {
+		// channel is closed
+	}
+</pre>
+
+<p><a href="/doc/go_spec.html#Label_scopes">Các nhãn chưa được sử dụng hiện bị bất hợp lệ</a>, giống như các biến cục bộ chưa được sử dụng.</p>
+
+<h3 id="r57.pkg">Các gói</h3>
+
+<p>
+<a href="/pkg/gob/">Package gob</a> sẽ mã hóa và giải mã các giá trị của các kiểu triển khai
+các interface <a href="/pkg/gob/#GobEncoder">GobEncoder</a> và
+<a href="/pkg/gob/#GobDecoder">GobDecoder</a>. Điều này cho phép các kiểu có
+các trường không được xuất truyền các mô tả nhất quán; ví dụ bao gồm
+<a href="/pkg/big/#Int.GobDecode">big.Int</a> và <a href="/pkg/big/#Rat.GobDecode">big.Rat</a>.
+</p>
+
+<p>
+<a href="/pkg/http/">Package http</a> đã được thiết kế lại.
+Đối với client, có các
+abstraction <a href="/pkg/http/#Client">Client</a> và <a href="/pkg/http/#Transport">Transport</a> mới
+cho phép kiểm soát nhiều hơn các chi tiết HTTP như header được gửi
+và chuyển hướng được theo dõi. Các abstraction này giúp dễ dàng triển khai
+các client tùy chỉnh bổ sung chức năng như <a href="https://code.google.com/p/goauth2/source/browse/oauth/oauth.go">OAuth2</a>.
+Đối với server, <a href="/pkg/http/#ResponseWriter">ResponseWriter</a>
+đã bỏ các phương thức không cần thiết.
+Các phương thức Hijack và Flush không còn bắt buộc nữa;
+mã có thể kiểm tra chúng bằng cách kiểm tra xem một giá trị cụ thể có triển khai
+<a href="/pkg/http/#Hijacker">Hijacker</a> hay <a href="/pkg/http/#Flusher">Flusher</a> hay không.
+Các phương thức RemoteAddr và UsingTLS được thay thế bằng các trường
+RemoteAddr và TLS của <a href="/pkg/http/#Request">Request</a>.
+Phương thức SetHeader được thay thế bằng phương thức Header;
+kết quả của nó, kiểu <a href="/pkg/http/#Header">Header</a>,
+triển khai Set và các phương thức khác.
+</p>
+
+<p>
+<a href="/pkg/net/">Package net</a>
+bỏ đối số <code>laddr</code> khỏi <a href="/pkg/net/#Conn.Dial">Dial</a>
+và bỏ giá trị trả về <code>cname</code>
+khỏi <a href="/pkg/net/#LookupHost">LookupHost</a>.
+Triển khai hiện sử dụng <a href="/cmd/cgo/">cgo</a> để triển khai
+tra cứu tên mạng bằng hàm getaddrinfo(3) của thư viện C
+khi có thể. Điều này đảm bảo rằng chương trình Go và C
+phân giải tên theo cùng một cách và cũng tránh được
+tường lửa cấp ứng dụng OS X.
+</p>
+
+<p>
+<a href="/pkg/os/">Package os</a>
+giới thiệu các hàm <a href="/pkg/os/#File.Open">Open</a>
+và <a href="/pkg/os/#File.Create">Create</a> đơn giản hóa.
+Open ban đầu hiện có thể dùng dưới dạng <a href="/pkg/os/#File.OpenFile">OpenFile</a>.
+Ba đối số cuối của <a href="/pkg/os/#Process.StartProcess">StartProcess</a>
+đã được thay thế bằng một con trỏ đến <a href="/pkg/os/#ProcAttr">ProcAttr</a>.
+</p>
+
+<p>
+<a href="/pkg/reflect/">Package reflect</a> đã được thiết kế lại.
+<a href="/pkg/reflect/#Type">Type</a> hiện là một interface triển khai
+tất cả các phương thức kiểu có thể có.
+Thay vì một type switch trên một Type <code>t</code>, hãy switch trên <code>t.Kind()</code>.
+<a href="/pkg/reflect/#Value">Value</a> hiện là một giá trị struct
+triển khai tất cả các phương thức giá trị có thể có.
+Thay vì một type switch trên một Value <code>v</code>, hãy switch trên <code>v.Kind()</code>.
+Typeof và NewValue nay được gọi là <a href="/pkg/reflect/#Type.TypeOf">TypeOf</a> và <a href="/pkg/reflect/#Value.ValueOf">ValueOf</a>.
+Để tạo một Value có thể ghi, dùng <code>New(t).Elem()</code> thay vì <code>Zero(t)</code>.
+Xem <a href="/change/843855f3c026">mô tả thay đổi</a>
+để biết đầy đủ chi tiết.
+API mới cho phép triển khai Value hiệu quả hơn
+tránh được nhiều phân bổ bộ nhớ mà API trước yêu cầu.
+</p>
+
+<p>
+Hãy nhớ rằng gofix sẽ xử lý phần lớn các việc viết lại
+cần thiết cho những thay đổi đối với API gói.
+</p>
+
+<h3 id="r57.cmd">Công cụ</h3>
+
+<p><a href="/cmd/gofix/">Gofix</a>, một lệnh mới, được mô tả ở trên.</p>
+
+<p>
+<a href="/cmd/gotest/">Gotest</a> hiện là chương trình Go thay vì shell script.
+Cờ <code>-test.short</code> mới kết hợp với hàm Short của gói testing
+cho phép bạn viết các bài kiểm thử có thể chạy ở chế độ bình thường hoặc &ldquo;ngắn&rdquo;;
+all.bash chạy kiểm thử ở chế độ ngắn để giảm thời gian cài đặt.
+Các Makefile biết về cờ này: dùng <code>make testshort</code>.
+</p>
+
+<p>
+Hỗ trợ thời gian chạy hiện triển khai profiling CPU và bộ nhớ.
+Các <a href="/cmd/gotest/"><code>cờ -test.cpuprofile</code> và
+<code>-test.memprofile</code> mới của Gotest</a> giúp dễ dàng
+profiling các bài kiểm thử.
+Để thêm profiling vào web server, xem tài liệu <a href="/pkg/http/pprof/">http/pprof</a>.
+Cho các mục đích sử dụng khác, xem tài liệu <a href="/pkg/runtime/pprof/">runtime/pprof</a>.
+</p>
+
+<h3 id="r57.minor">Các bản sửa đổi nhỏ</h3>
+
+<p>r57.1 sửa một <a href="/change/ff2bc62726e7145eb2ecc1e0f076998e4a8f86f0">lỗi tham chiếu con trỏ nil trong http.FormFile</a>.</p>
+<p>r57.2 sửa một <a href="/change/063b0ff67d8277df03c956208abc068076818dae">lỗi sử dụng bộ nhớ chưa được khởi tạo trong các chương trình dùng sai <code>goto</code></a>.</p>
+
+<h2 id="r56">r56 (released 2011/03/16)</h2>
+
+<p>
+Bản phát hành r56 là bản phát hành ổn định đầu tiên và tương ứng với
+<code><a href="weekly.html#2011-03-07">weekly.2011-03-07.1</a></code>.
+Việc đánh số bắt đầu từ 56 vì trước bản phát hành này,
+những gì chúng tôi hiện gọi là snapshot hàng tuần được gọi là bản phát hành.
+</p>
