@@ -1,0 +1,522 @@
+Tình Trạng của Go
+Chúng ta đang ở đâu vào tháng 2 năm 2017
+
+Francesc Campoy
+Google Developer Advocate
+@francesc
+campoy@golang.org
+
+* Thời gian trôi nhanh
+
+Go 1.6 đã một tuổi (Chúc mừng Sinh nhật!)
+
+Go 1.7 đã được 6 tháng!
+
+Go 1.8 được phát hành vào ngày 16 tháng 2.
+
+.image state-of-go/img/flying.png
+
+* Ghi chú
+
+Các slide có tại [[/talks/2017/state-of-go.slide]]
+
+Hầu hết các ví dụ code sẽ không chạy ngoại trừ cục bộ và sử dụng Go 1.8.
+
+Playground vẫn chạy Go 1.7.
+
+* Chương trình
+
+Các thay đổi từ Go 1.7:
+
+- Ngôn ngữ
+- Thư viện Chuẩn
+- Runtime
+- Công cụ
+- Cộng đồng
+
+* Thay đổi ngôn ngữ
+
+* Quy tắc chuyển đổi
+
+Bạn đã bao nhiêu lần thấy mình có hai kiểu gần như bằng nhau?
+
+Giả sử bạn định nghĩa `Person`:
+
+.code state-of-go/stdlib/json_old.go /type Person/,/^}/
+
+Và vì lý do nào đó, như JSON, bạn cũng có:
+
+.code state-of-go/stdlib/json_old.go /var aux/,/}/
+
+* Quy tắc chuyển đổi
+
+Để chuyển đổi `aux` thành kiểu `Person` bạn cần làm:
+
+.code state-of-go/stdlib/json_old.go /type Person/,/}/
+
+    return Person{
+        Name:     aux.Name,
+        AgeYears: aux.AgeYears,
+        SSN:      aux.SSN
+    }
+
+* Quy tắc chuyển đổi
+
+Kể từ Go 1.8 bạn có thể đơn giản làm:
+
+    return Person(aux)
+
+Cả hai kiểu vẫn cần có:
+
+- cùng *thứ tự* các trường (thứ tự quan trọng)
+- các trường tương ứng có cùng kiểu.
+
+* Quy tắc chuyển đổi
+
+Một giá trị không hằng x có thể được chuyển đổi thành kiểu T trong bất kỳ trường hợp nào:
+
+- x có thể gán cho T.
+- kiểu của x và T có cùng kiểu cơ bản.
+- kiểu của x và T là các kiểu con trỏ không tên và kiểu cơ bản con trỏ của chúng có cùng kiểu cơ bản.
+- ...
+
+* Quy tắc chuyển đổi
+
+Một giá trị không hằng x có thể được chuyển đổi thành kiểu T trong bất kỳ trường hợp nào:
+
+- x có thể gán cho T.
+- *bỏ*qua*tag*struct*, kiểu của x và T có cùng kiểu cơ bản.
+- *bỏ*qua*tag*struct*, kiểu của x và T là các kiểu con trỏ không tên và kiểu cơ bản con trỏ của chúng có cùng kiểu cơ bản.
+- ...
+
+* Cổng sang các nền tảng khác
+
+* Cổng sang các nền tảng khác
+
+MIPS 32-bit
+
+- big-endian (`linux/mips`)
+- little-endian (`linux/mipsle`) - yêu cầu Floating Point Unit
+
+Go trên DragonFly BSD bây giờ yêu cầu DragonFly 4.4.4+.
+
+Go trên OpenBSD bây giờ yêu cầu OpenBSD 5.9+.
+
+Plan 9 bây giờ tốt hơn!
+
+* Cổng sang các nền tảng khác
+
+Go 1.8 hỗ trợ OS X 10.8+. Có thể là lần cuối chúng tôi hỗ trợ 10.8.
+
+ARM:
+
+- Go 1.8 là phiên bản cuối cùng hỗ trợ bộ xử lý ARMv5E và ARMv6.
+
+- Go 1.9 sẽ yêu cầu ARMv6K. Nó có hoạt động trên nền tảng của tôi không?
+
+    go tool dist -check-armv6k
+
+* Công cụ
+
+* Fix
+
+Sửa đường dẫn import `"golang.org/x/net/context"` thành `"context"`.
+
+.code state-of-go/tools/gofix.go
+
+Đơn giản chạy lệnh bên dưới:
+
+.play state-of-go/tools/gofix.sh /go tool/
+
+Bỏ cờ `-diff` để viết lại các tệp.
+
+* Vet
+
+"Vet nghiêm ngặt hơn trong một số cách và lỏng hơn ở những nơi trước đây gây ra kết quả dương tính giả."
+
+Ví dụ kiểm tra thêm:
+
+.play -edit state-of-go/tools/govet.go /func main/,
+
+`govet` phát hiện vấn đề tĩnh:
+
+.play state-of-go/tools/govet.sh /go vet/
+
+* SSA ở mọi nơi!
+
+Backend SSA:
+
+- tạo ra code gọn và hiệu quả hơn
+- là nền tảng tốt hơn cho các tối ưu hóa
+
+Đối với các hệ thống ARM 32-bit điều này có nghĩa là tăng tốc 20-30%!
+
+Đối với các hệ thống khác (nơi SSA đã được sử dụng) lợi ích là 0-10%.
+
+* SSA ở mọi nơi
+
+.image state-of-go/img/benchmark.png _ 800
+
+* GOPATH mặc định
+
+Yay!
+
+Khi `GOPATH` không được định nghĩa, công cụ sẽ sử dụng:
+
+- `$HOME/go` trên Unix
+- `%USERPROFILE%\go` trên Windows
+
+* go bug
+
+Cách dễ hơn để tạo các bug bao gồm tất cả thông tin liên quan.
+
+Ví dụ:
+
+.play state-of-go/tools/gobug.sh /go bug/
+
+* Runtime
+
+* Phát hiện truy cập map đồng thời
+
+Cải tiến trên Go 1.6.
+
+.play state-of-go/runtime/mapcrash.go /const/,/Wait\(\)/
+
+Đầu ra:
+
+	fatal error: concurrent map read and map write
+	fatal error: concurrent map writes
+
+* Phân tích Tranh chấp Mutex
+
+Phân tích benchmark của bạn và tranh chấp trên các mutex của bạn.
+
+    go test bench=. -mutexprofile=mutex.out
+
+
+Ngoài ra, kích hoạt phân tích tranh chấp với phương thức mới này.
+
+    runtime.SetMutexProfileFraction
+
+_Lưu*ý_: Hiện tại `sync.RWMutex` chưa được phân tích.
+
+* Phân tích Tranh chấp Mutex
+
+Hãy viết chương trình đếm bao nhiêu lần mỗi thừa số xuất hiện từ 2 đến N.
+
+Ví dụ N = 10:
+
+    Factorizations:
+
+        2:  2
+        3:  3
+        4:  2 2
+        5:  5
+        6:  2 3
+        7:  7
+        8:  2 2 2
+        9:  3 3
+        10: 2 5
+
+    Count:
+
+        2: 8
+        3: 4
+        5: 2
+        7: 1
+
+* Phân tích Tranh chấp Mutex
+
+Lựa chọn nào tốt hơn?
+
+Vùng được bảo vệ rộng:
+
+.play state-of-go/runtime/mutex/main.go /WIDE/,/Unlock/
+
+Vùng được bảo vệ hẹp:
+
+.play state-of-go/runtime/mutex/main.go /NARROW/,/}/
+
+* Benchmark
+
+    $ go test -bench=.
+
+#    BenchmarkNarrowSection/10-8         	  300000	      5085 ns/op
+#    BenchmarkNarrowSection/100-8        	   20000	     77458 ns/op
+#    BenchmarkNarrowSection/1000-8       	    2000	    909658 ns/op
+#    BenchmarkNarrowSection/10000-8      	     100	  21230633 ns/op
+#
+#    BenchmarkWideSection/10-8           	  200000	      5323 ns/op
+#    BenchmarkWideSection/100-8          	   10000	    103228 ns/op
+#    BenchmarkWideSection/1000-8         	    1000	   2131861 ns/op
+#    BenchmarkWideSection/10000-8        	      10	 103575793 ns/op
+
+.image state-of-go/img/mutex_noprofile.png _ 1000
+
+* Benchmark với Tranh chấp Mutex
+
+    $ go test -bench=. -mutexprofile=mutex.out
+
+#    BenchmarkNarrowSection/10-8         	  300000	      5464 ns/op
+#    BenchmarkNarrowSection/100-8        	   10000	    108583 ns/op
+#    BenchmarkNarrowSection/1000-8       	    1000	   1378379 ns/op
+#    BenchmarkNarrowSection/10000-8      	     100	  32828827 ns/op
+#
+#    BenchmarkWideSection/10-8           	  200000	      7155 ns/op
+#    BenchmarkWideSection/100-8          	   10000	    197001 ns/op
+#    BenchmarkWideSection/1000-8         	     300	   4339571 ns/op
+#    BenchmarkWideSection/10000-8        	       5	 303559562 ns/op
+
+.image state-of-go/img/mutex_profile.png _ 1000
+
+* Phân tích Hồ sơ Tranh chấp Mutex
+
+    $ go tool pprof runtime.test mutex.out
+    Entering interactive mode (type "help" for commands)
+    (pprof) list
+
+    0      5.38s (flat, cum) 43.97% of Total
+    .          .     34:				mu.Lock()
+    .          .     35:				m[f]++
+    .      5.38s     36:				mu.Unlock()
+
+    0      6.86s (flat, cum) 56.03% of Total
+    .          .     53:			mu.Lock()
+    .          .     54:			for _, f := range factors(i) {
+    .          .     55:				m[f]++
+    .          .     56:			}
+    .      6.86s     57:			mu.Unlock()
+
+* Quá nhiều tranh chấp ...
+
+* Tranh chấp theo CPU
+
+.image state-of-go/img/mutex_procs.png _ 1000
+
+* So sánh với thuật toán tuần tự
+
+.image state-of-go/img/mutex_all.png _ 1000
+
+* So sánh với thuật toán tuần tự (thu phóng)
+
+.image state-of-go/img/mutex_all_zoom.png _ 1000
+
+* Hiệu năng
+
+* Lịch sử GC trong tweet
+
+* go 1.5
+
+.image state-of-go/img/gct1.png _ 900
+
+* go 1.6
+
+.image state-of-go/img/gct2.png _ 900
+
+* go 1.7
+
+.image state-of-go/img/gct4.png _ 900
+
+* go 1.8 (beta 1)
+
+.image state-of-go/img/gct5.png _ 700
+
+* go 1.8 (beta 1) CPU
+
+.image state-of-go/img/gctcpu.png _ 800
+
+* defer nhanh hơn
+
+    name         old time/op  new time/op  delta
+    Defer-4       101ns ± 1%    66ns ± 0%  -34.73%  (p=0.000 n=20+20)
+    Defer10-4    93.2ns ± 1%  62.5ns ± 8%  -33.02%  (p=0.000 n=20+20)
+    DeferMany-4   148ns ± 3%   131ns ± 3%  -11.42%  (p=0.000 n=19+19)
+
+.image state-of-go/img/defer.png _ 500
+
+* cgo cũng nhanh hơn!
+
+    name       old time/op  new time/op  delta
+    CgoNoop-8  93.5ns ± 0%  51.1ns ± 1%  -45.34%  (p=0.016 n=4+5)
+
+.image state-of-go/img/cgo.png _ 500
+
+Nguồn: [[https://dave.cheney.net/2016/11/19/go-1-8-toolchain-improvements][dave.cheney.net]]
+
+* Thay đổi thư viện chuẩn
+
+* Sắp xếp
+
+Bài tập:
+
+Cho một slice `Person`
+
+    var p []Person
+
+In slice được sắp xếp theo tên, tuổi và SSN.
+
+.code state-of-go/stdlib/sort/sort_test.go /sort.Sort/,/bySSN/
+
+Dễ phải không?
+
+* Sắp xếp
+
+Thực ra, bạn đã quên phần này.
+
+.code state-of-go/stdlib/sort/sort_test.go /byName/,/bySSN\) Swap/
+
+* sort.Slice
+
+Kể từ Go 1.8 bạn có thể đơn giản viết:
+
+.code state-of-go/stdlib/sort/sort_test.go /sort\.Slice/,/SSN/
+
+Cũng có thêm `SliceStable` và `SliceIsSorted`.
+
+* Benchmark
+
+    N=1 go test -bench=.
+        BenchmarkSortSort-8     10000000               145 ns/op
+        BenchmarkSortSlice-8    10000000               190 ns/op
+    N=10 go test -bench=.
+        BenchmarkSortSort-8      2000000               918 ns/op
+        BenchmarkSortSlice-8     1000000              1776 ns/op
+    N=100 go test -bench=.
+        BenchmarkSortSort-8       100000             16588 ns/op
+        BenchmarkSortSlice-8       50000             39035 ns/op
+    N=1000 go test -bench=.
+        BenchmarkSortSort-8         5000            320951 ns/op
+        BenchmarkSortSlice-8        3000            446677 ns/op
+    N=10000 go test -bench=.
+        BenchmarkSortSort-8          500           3644480 ns/op
+        BenchmarkSortSlice-8         300           4962263 ns/op
+    N=100000 go test -bench=.
+        BenchmarkSortSort-8           30          43573572 ns/op
+        BenchmarkSortSlice-8          20          60861706 ns/op
+
+.caption Benchmark chạy trên MacBook Pro của tôi (8 lõi), chỉ mang tính chỉ dẫn.
+
+* Benchmark
+
+.image state-of-go/img/bench.png _ 800
+
+* Benchmark (log/log)
+
+.image state-of-go/img/bench_log.png _ 800
+
+
+* Plugin
+
+Định nghĩa một plugin:
+
+.code state-of-go/stdlib/plugin/plugin.go
+
+Sau đó build nó:
+
+    go build -buildmode=plugin
+
+_Lưu*ý_: Hiện tại điều này chỉ hoạt động trên Linux.
+
+* Plugin
+
+.code state-of-go/stdlib/plugin/main.go /plugin.Open/,/Hello/
+
+* Demo plugin
+
+Video demo: [[https://twitter.com/francesc/status/827851085943566336][twitter.com/francesc]]
+
+Mã nguồn: [[https://github.com/campoy/golang-plugins][github.com/campoy/golang-plugins]]
+
+* Shutdown HTTP
+
+Thêm phương thức `Shutdown` vào `http.Server`.
+
+Ví dụ:
+
+Gọi `Shutdown` khi nhận được tín hiệu:
+
+.code state-of-go/stdlib/shutdown.go /subscribe/,/}\(\)/
+
+* Shutdown HTTP
+
+Kiểm tra lý do tại sao máy chủ dừng.
+
+.code state-of-go/stdlib/shutdown.go /HandleFunc/,/gracefully/
+
+
+* HTTP/2
+
+`http.Response` bây giờ thỏa mãn interface `http.Pusher`.
+
+    type Pusher interface {
+        Push(target string, opts *PushOptions) error
+    }
+
+Một ví dụ đơn giản:
+
+.code state-of-go/stdlib/http2/http2.go /func rootHandler/,/^}/
+
+* HTTP/2
+
+.play state-of-go/stdlib/http2/http2.go /func main/,/^}/
+
+HTTP: [[http://localhost:8080]]
+HTTP/2: [[https://localhost:8081]]
+
+* HTTP/2
+
+HTTP
+
+.image state-of-go/img/http.png _ 800
+
+HTTP/2
+
+.image state-of-go/img/http2.png _ 800
+
+* Hỗ trợ context nhiều hơn
+
+Kể từ Go 1.7:
+
+- net
+- net/http
+- os/exec
+
+Kể từ Go 1.8:
+
+- http.Server.Shutdown
+- database/sql
+- net.Resolver
+
+* Thêm một vài thay đổi nữa
+
+.image state-of-go/img/more.png _ 1000
+.caption [[https://beta.golang.org/doc/go1.8][Ghi chú phát hành Go 1.8]]
+
+* Cộng đồng
+
+* Women Who Go
+
+.image state-of-go/img/wwg.png _ 800
+.caption 16 chương đã có! [[http://www.womenwhogo.org]]
+
+* Các buổi gặp mặt Go
+
+.image state-of-go/img/meetups.png _ 900
+.caption Gopher trên khắp thế giới! [[http://go-meetups.appspot.com]]
+
+* Hội nghị:
+
+- [[https://fosdem.org/2017/][FOSDEM]], ngay tại đây ngay bây giờ!
+- [[http://www.gophercon.in/][GopherCon India]], 25-25 tháng 2
+- [[https://gophercon.com/][Gophercon Denver]], 12-15 tháng 7
+- [[http://golanguk.com/][Golang UK]], 16-18 tháng 8
+- [[http://2017.dotgo.eu/][dotGo]], 6 tháng 11
+
+* Tiệc phát hành Go 1.8, ngày 16 tháng 2
+
+Go 1.8 sắp ra mắt!
+
+Các buổi gặp mặt Go đang tổ chức [[/wiki/Go-1.8-release-party][tiệc phát hành]] vào ngày 16 tháng 2.
+
+.image state-of-go/img/party-gopher.png _ 300
+.caption Tham gia tiệc!!!
