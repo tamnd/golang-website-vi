@@ -226,15 +226,15 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/gopls-scalability.md`
 - [x] `blog/gopls-vscode-go.md`
 - [x] `blog/gos-declaration-syntax.md`
-- [ ] `blog/gotelemetry.md`
+- [x] `blog/gotelemetry.md`
 - [x] `blog/gothamgo.md`
 - [x] `blog/gouk15.md`
-- [ ] `blog/govulncheck.md`
-- [ ] `blog/greenteagc.md`
-- [ ] `blog/h2push.md`
-- [ ] `blog/hello-china.md`
-- [ ] `blog/hello-world.md`
-- [ ] `blog/heroku.md`
+- [x] `blog/govulncheck.md`
+- [x] `blog/greenteagc.md`
+- [x] `blog/h2push.md`
+- [x] `blog/hello-china.md`
+- [x] `blog/hello-world.md`
+- [x] `blog/heroku.md`
 - [ ] `blog/http-tracing.md`
 - [ ] `blog/image-draw.md`
 - [ ] `blog/image.md`
