@@ -320,9 +320,9 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/strings.md`
 - [x] `blog/subtests.md`
 - [x] `blog/supply-chain.md`
-- [ ] `blog/survey2011.md`
-- [ ] `blog/survey2016-results.md`
-- [ ] `blog/survey2016.md`
+- [x] `blog/survey2011.md`
+- [x] `blog/survey2016-results.md`
+- [x] `blog/survey2016.md`
 - [ ] `blog/survey2016/background.html`
 - [ ] `blog/survey2016/community.html`
 - [ ] `blog/survey2016/dev.html`
@@ -330,17 +330,17 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/survey2016/project.html`
 - [ ] `blog/survey2016/quotes.html`
 - [ ] `blog/survey2016/usage.html`
-- [ ] `blog/survey2017-results.md`
-- [ ] `blog/survey2017.md`
+- [x] `blog/survey2017-results.md`
+- [x] `blog/survey2017.md`
 - [ ] `blog/survey2017/background.html`
 - [ ] `blog/survey2017/community.html`
 - [ ] `blog/survey2017/dev.html`
 - [ ] `blog/survey2017/effective.html`
 - [ ] `blog/survey2017/project.html`
 - [ ] `blog/survey2017/usage.html`
-- [ ] `blog/survey2018-company.md`
-- [ ] `blog/survey2018-results.md`
-- [ ] `blog/survey2018.md`
+- [x] `blog/survey2018-company.md`
+- [x] `blog/survey2018-results.md`
+- [x] `blog/survey2018.md`
 - [ ] `blog/survey2019-results.md`
 - [ ] `blog/survey2019.md`
 - [ ] `blog/survey2020-results.md`
