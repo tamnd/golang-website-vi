@@ -1,0 +1,387 @@
+Thiết Kế của Trình Hợp Dịch Go
+
+Gophercon
+12 July 2016
+
+Rob Pike
+Google
+https://go.dev/
+
+* Bài trình bày trên youtube.com
+
+Video [[https://www.youtube.com/watch?v=KINIAgRpkDA][ở đây]].
+
+
+* Động lực
+
+_Tại_sao_học_Ngôn_ngữ_Hợp_Dịch?_
+
+_Điều_quan_trọng_nhất_cần_nhận_ra_về_ngôn_ngữ_hợp_dịch_là_nó_cho_phép_lập_trình_viên_sử_dụng_tất_cả_các_chức_năng_máy_System/360_như_thể_đang_lập_trình_bằng_ngôn_ngữ_máy_System/360._
+
+— Giới thiệu Ngôn ngữ Hợp dịch IBM System/360 cho Lập trình viên, 1970, trang 4
+
+* Chúng ta vẫn cần ngôn ngữ hợp dịch
+
+Ngày xưa đó là tất cả những gì bạn cần, sau đó các ngôn ngữ cấp cao như FORTRAN và COBOL xuất hiện.
+
+Nhưng vẫn cần thiết ngày nay:
+
+- khởi động môi trường (khởi động hệ điều hành và chương trình, runtime)
+- code thư viện cấp thấp như quản lý stack và chuyển đổi ngữ cảnh
+- hiệu năng (`math/big`)
+- truy cập các tính năng không được hiển thị trong ngôn ngữ như các lệnh crypto
+
+Ngoài ra, có lẽ quan trọng nhất: Đó là cách chúng ta nói về máy tính.
+
+Biết hợp dịch, dù chỉ một chút, có nghĩa là hiểu máy tính tốt hơn.
+
+* Nó trông như thế nào?
+
+Một số ví dụ...
+
+* IBM System/360
+
+.code asm/360.s.txt
+
+* Apollo 11 Guidance Computer
+
+.code asm/apollo.s.txt
+
+* PDP-10
+
+.code asm/pdp10.s.txt
+
+(Từ tệp PDP-10 Info của MIT)
+
+* PDP-11
+
+.code asm/pdp11.s.txt
+
+(Từ Unix v6 `as/as13.s`)
+
+* Motorola 68000
+
+.code asm/68000.s.txt
+
+(Từ Wikipedia)
+
+* CRAY-1
+
+.code asm/cray1.s.txt
+
+(Từ luận án tiến sĩ của Robert Griesemer)
+
+
+* Cấu trúc chung
+
+Bố cục dạng cột với khai báo hàm và biến, nhãn, lệnh.
+
+Lệnh:
+
+	subroutine header
+	label:
+		instruction operand...	; comment
+		...
+
+Toán hạng:
+
+	register
+	literal constant
+	address
+	register indirection (register as address)
+	...
+
+Có các ngoại lệ như Cray (`A5` `A5+A14`) nhưng chúng không khác biệt về mặt khái niệm.
+
+Các CPU đều khá giống nhau.
+
+* Sử dụng sự đồng nhất đó
+
+Chúng ta có thể sử dụng cấu trúc chung của tất cả các trình hợp dịch (CPU, thực ra) để xây dựng một ngữ pháp chung cho tất cả kiến trúc.
+
+Nhận ra điều này mất một thời gian.
+
+Hạt giống đã được gieo từ lâu.
+
+* Hợp dịch Plan 9
+
+Khoảng năm 1986, Ken Thompson viết một trình biên dịch C cho National 32000 (Sequent SMP).
+Trình biên dịch tạo ra pseudo-code, trình liên kết thực hiện gán lệnh.
+
+"Trình hợp dịch" chỉ là cách viết pseudo-code đó theo dạng văn bản.
+
+	MOVW    $0, var
+
+có thể trở thành (ví dụ giả thuyết)
+
+	XORW    R1, R1
+	STORE   R1, var
+
+Lưu ý trình hợp dịch phát ra `MOVW`; trình liên kết tạo ra `XORW` và `STORE`.
+Chúng tôi gọi đây là _lựa_chọn_lệnh_.
+
+Hoặc xem xét `RET`, trở thành `RET` hoặc `JMP` `LR` hoặc `JMP` `(R31)` hoặc ...
+
+Trình hợp dịch chỉ là cách viết tay đầu ra mà trình biên dịch tạo ra.
+(Trình biên dịch không cung cấp cho trình hợp dịch, không giống nhiều hệ thống khác.)
+
+* Các thành phần
+
+.image asm/arch1.png
+
+* Các trình hợp dịch Plan 9
+
+Trình hợp dịch cho mỗi kiến trúc là một chương trình C riêng biệt với ngữ pháp Yacc,
+được điều chỉnh và viết lại một phần cho mỗi kiến trúc.
+
+`8a`, `6a`, `va` v.v. tương ứng với `8c`, `6c` `vc`, v.v.
+(Mã một chữ cái: `8` cho 386, `6` cho AMD64, `v` cho MIPS, v.v.)
+
+Tất cả rất giống nhau về phần đầu nhưng khác nhau về chi tiết.
+
+Các triển khai Go ban đầu sử dụng thiết kế này, thêm trình biên dịch Go `8g`, `6g` nhưng sử dụng các trình hợp dịch Plan 9 không thay đổi.
+
+Việc tách (trình biên dịch/trình hợp dịch)⇒trình liên kết cho phép trình liên kết Go làm nhiều hơn, bao gồm hỗ trợ khởi động runtime.
+
+* Go 1.3: Sắp xếp lại các thành phần
+
+Mục tiêu: Chuyển sang triển khai Go thuần túy.
+Chuẩn bị bắt đầu trong Go 1.3
+
+Thư viện mới (một phần) thực hiện lựa chọn lệnh: `"liblink"` (từ 1.5, `"obj"`).
+Gọi nó từ trình biên dịch.
+
+Vì vậy phần đầu của trình liên kết cũ hiện nằm trong trình biên dịch.
+Trình biên dịch bây giờ phát ra (hầu hết) các lệnh thực, không phải pseudo-lệnh.
+
+Kết quả: Trình biên dịch chậm hơn, nhưng build nhanh hơn.
+Lựa chọn lệnh cho code thư viện thực hiện một lần, không phải mỗi lần liên kết chương trình.
+
+Các trình hợp dịch cũng sử dụng `obj`.
+
+Đối với cả trình biên dịch và trình hợp dịch, _đầu_vào_ không thay đổi.
+Thực ra toàn bộ _quá_trình_ giống nhau, chỉ được sắp xếp khác.
+
+* Các thành phần cũ
+
+.image asm/arch1.png
+
+
+* Các thành phần mới
+
+.image asm/arch2.png
+
+
+* Go 1.5: C phải ra đi
+
+Chuẩn bị thêm trong Go 1.4, sau đó trong Go 1.5, tất cả công cụ chuyển sang Go.
+
+Trình biên dịch và trình liên kết được dịch máy từ C sang Go.
+`liblink` cũ trở thành một bộ thư viện mới, `obj/...`:
+
+- `cmd/internal/obj`  (phần di động)
+- `cmd/internal/obj/x86`    (phần dành riêng cho kiến trúc)
+- `cmd/internal/obj/arm`    (phần dành riêng cho kiến trúc)
+- ...
+
+Các bài trình bày trước đây về công việc này:
+
+- Russ Cox tại Gophercon 2014 (lỗi thời): [[https://youtube.com/watch?v=QIE5nV5fDwA]]
+- Rob Pike tại Gopherfest 2015: [[https://youtube.com/watch?v=cF1zJYkBW4A]]
+* Go 1.5: Trình biên dịch và trình liên kết như các chương trình đơn
+
+Nhiều trình biên dịch (`6g`, `8g` v.v.) được thay thế bằng một công cụ duy nhất: `compile`.
+`GOOS` và `GOARCH` (chỉ!) xác định hệ điều hành và kiến trúc đích.
+
+	GOOS=darwin GOARCH=arm go tool compile prog.go
+
+Tương tự cho trình liên kết: `6l`, `8l`, v.v. trở thành `go` `tool` `link`.
+
+Làm thế nào một binary duy nhất có thể xử lý tất cả các kiến trúc này?
+
+Chỉ một ngôn ngữ đầu vào, chỉ một bộ tạo đầu ra (thư viện `obj`).
+Đích được cấu hình khi công cụ khởi động.
+
+* Trình hợp dịch Go 1.5
+
+Không giống các trình biên dịch cũ, chia sẻ nhiều code, các trình hợp dịch cũ là các chương trình khác nhau.
+(Mặc dù chúng rất giống nhau bên trong, chúng chia sẻ gần như không có code.)
+
+Đề xuất: Viết một `go` `tool` `asm` đơn từ đầu bằng Go, thay thế tất cả các trình hợp dịch cũ.
+
+`GOOS` và `GOARCH` cho bạn biết đích là gì.
+
+Nhưng ngôn ngữ hợp dịch không phải là Go. Mỗi máy có một ngôn ngữ hợp dịch khác nhau.
+
+Thực ra không phải vậy! Không hoàn toàn phổ quát trên các máy, nhưng...
+
+* Một chương trình ví dụ
+
+Xem hợp ngữ được tạo ra cho chương trình đơn giản này:
+
+.code asm/add.go
+
+Cho mỗi kiến trúc, với một số nhiễu được chỉnh sửa:
+
+* 32-bit x86 (386)
+
+.code asm/386.s.txt
+
+* 64-bit x86 (amd64)
+
+.code asm/amd64.s.txt
+
+* 32-bit arm
+
+.code asm/arm.s.txt
+
+* 64-bit arm (arm64)
+
+.code asm/arm64.s.txt
+
+* S390 (s390x)
+
+.code asm/s390x.s.txt
+
+* 64-bit MIPS (mips64)
+
+.code asm/mips64.s.txt
+
+* 64-bit Power (ppc64le)
+
+.code asm/ppc64le.s.txt
+
+* Ngữ pháp chung
+
+Chúng đều trông giống nhau. (Một phần do thiết kế, một phần vì chúng _là_ như vậy.)
+
+Sự biến đổi đáng kể duy nhất là tên của lệnh và thanh ghi.
+Nhiều chi tiết bị ẩn, chẳng hạn như `RET` là gì. (Đó là pseudo-lệnh.)
+
+(Offset được xác định bởi kích thước của `int`, trong số những thứ khác.)
+
+Cú pháp may mắn bắt nguồn từ trình hợp dịch National 32000 của Ken.
+
+Với cú pháp chung và thư viện `obj`, có thể xây dựng một trình hợp dịch đơn cho tất cả CPU.
+
+* Ngoài lề: Nhược điểm
+
+Không phải ký hiệu hợp ngữ giống như của các nhà sản xuất.
+Có thể gây khó chịu cho người ngoài.
+
+Mặt khác, cách tiếp cận này sử dụng cùng ký hiệu trên tất cả các máy.
+Các kiến trúc mới có thể đến mà không cần tạo hoặc học ký hiệu mới.
+
+Đây là đánh đổi đáng thực hiện.
+
+* Thiết kế của trình hợp dịch Go 1.5
+
+Đỉnh cao của các trình hợp dịch.
+
+Chương trình mới, hoàn toàn bằng Go.
+
+Lexer và parser chung cho tất cả kiến trúc.
+Mỗi lệnh được phân tích thành một mô tả lệnh.
+Điều đó trở thành một cấu trúc dữ liệu được truyền cho thư viện `obj` mới.
+
+Phần lõi của trình hợp dịch có rất ít thông tin theo máy.
+Thay vào đó, các bảng được xây dựng tại thời gian chạy, được định hướng bởi `$GOARCH`.
+
+Một gói nội bộ, `cmd/asm/internal/arch`, tạo ra các bảng này khi cần.
+Chi tiết máy được tải từ `obj`.
+
+* Ví dụ: khởi tạo 386
+
+.code asm/arch386._go /^import/,$
+
+Parser chỉ thực hiện so khớp chuỗi để tìm lệnh.
+
+* Ví dụ: ADDW trên 386
+
+Cho một lần chạy hợp ngữ với `GOOS=386`, lệnh
+
+	ADDW AX, BX
+
+được phân tích thành một cấu trúc dữ liệu dạng sơ đồ như:
+
+	&obj.Prog{
+		As: arch.Instructions["ADDW"],
+		From: obj.Addr{Reg: arch.Register["AX"]},
+		To: obj.Addr{Reg: arch.Register["BX"]},
+		...
+	}
+
+Điều đó được truyền cho thư viện `obj` để mã hóa thành lệnh 386.
+
+Đây là một quá trình hoàn toàn cơ học không có ngữ nghĩa.
+
+* Kiểm tra
+
+Trình hợp dịch thực hiện một số kiểm tra:
+
+- tính đúng đắn từ vựng và cú pháp
+- cú pháp toán hạng
+- (với một số biến đổi. ví dụ: `[R2,R5,R8,g]` chỉ hợp pháp trên ARM)
+
+Nhưng tất cả kiểm tra ngữ nghĩa được thực hiện bởi thư viện `obj`.
+
+Nếu nó có thể được chuyển thành lệnh thực, nó hợp lệ!
+
+* Kiểm thử
+
+Trình hợp dịch mới được kiểm thử so với các trình hợp dịch cũ (viết bằng C).
+
+Kiểm thử A/B ở cấp độ bit: Cùng đầu vào phải cho cùng đầu ra.
+Cũng làm lại một số phần của các gói `obj` để chuẩn đoán và debug tốt hơn.
+
+Làm `386` trước, sau đó `amd64`, `arm` và `ppc`. Mỗi cái dễ hơn cái trước.
+
+Không có tài liệu hướng dẫn phần cứng nào được mở trong quá trình này.
+
+* Kết quả
+
+Một chương trình Go thay thế nhiều chương trình C/Yacc, nên dễ bảo trì hơn.
+Là chương trình Go, nó có thể có các bài kiểm thử đúng nghĩa.
+
+Phụ thuộc vào `obj`, vì vậy tính đúng đắn và đầy đủ tương đối đơn giản để đảm bảo.
+
+Trình hợp dịch mới gần như 100% tương thích với các trình hợp dịch trước.
+Các không tương thích hầu hết là các không nhất quán.
+
+Tính di động bây giờ dễ dàng.
+
+Một tập lệnh mới chỉ cần kết nối nó với thư viện `obj`,
+cộng với một lượng nhỏ điều chỉnh và kiểm tra dành riêng cho kiến trúc.
+
+Một số kiến trúc đã được thêm vào từ khi trình hợp dịch được tạo ra,
+hầu hết bởi cộng đồng mã nguồn mở.
+
+* Bảng
+
+Ở một mức độ lớn, trình hợp dịch bây giờ được điều khiển bởi bảng.
+Chúng ta có thể tạo ra những bảng đó không?
+
+Các trình phân tích hợp ngữ (được sử dụng bởi `go` `tool` `pprof`) được tạo ra bằng cách xử lý máy từ các PDF.
+Định nghĩa kiến trúc có thể đọc được bởi máy, vì vậy hãy sử dụng nó!
+
+Kế hoạch đi theo chiều ngược lại:
+
+Đọc PDF vào, ghi ra định nghĩa thư viện `obj` và liên kết với trình hợp dịch.
+Tại sao viết tay khi có thể tự động hóa?
+
+Hy vọng sẽ có điều này hoạt động sớm; các phần cơ bản đã có sẵn.
+
+Kết quả: một trình hợp dịch được tạo ra phần lớn bởi máy.
+
+* Kết luận
+
+Ngôn ngữ hợp dịch về cơ bản là giống nhau ở khắp nơi.
+
+Sử dụng điều đó để xây dựng một ngôn ngữ hợp dịch *thực sự* chung.
+
+Tùy chỉnh nó khi cần sử dụng các bảng được tải động.
+
+Và một ngày nào đó: tạo ra những bảng đó một cách tự động.
+
+
+Một giải pháp di động cho một vấn đề đặc biệt không di động.

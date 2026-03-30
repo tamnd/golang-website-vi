@@ -1,0 +1,287 @@
+Tình Trạng của Go
+Chúng ta đang ở đâu vào tháng 5 năm 2015
+27 May 2015
+
+Andrew Gerrand
+adg@golang.org
+
+
+* Tình Trạng của Tình Trạng Go
+
+Tôi đã có một bài nói tương tự tại FOSDEM vào tháng 2 năm 2015.
+
+.link /talks/2015/state-of-go.slide go.dev/talks/2015/state-of-go.slide
+
+Bài nói này xây dựng trên bài nói đó.
+
+
+* Go 1.5
+
+
+* Lịch phát hành
+
+Go 1.5 được lên kế hoạch phát hành vào tháng 8 năm 2015.
+
+Công việc chính đã hoàn thành.
+Chúng tôi hiện đang trong giai đoạn "đóng băng tính năng".
+
+
+* Từ C sang Go
+
+Chuỗi công cụ `gc` đã được chuyển đổi từ C sang Go.
+
+Công cụ `compile` dịch máy thay thế `6g`, `8g`, v.v.
+Công cụ `link` dịch máy thay thế `6l`, `8l`, v.v.
+Công cụ `asm` mới thay thế `6a`, `8a`, v.v.
+
+Go 1.5 *không* có code C trong chuỗi công cụ hay runtime.
+
+Rob sẽ nói thêm về điều này.
+
+
+* Bộ Thu Gom Rác Đồng Thời
+
+Mục tiêu:
+
+- Giới hạn độ trễ GC xuống dưới 10 mili giây.
+- Chạy code ứng dụng Go ít nhất 40ms trong mỗi 50ms.
+
+.image state-of-go-may/gc.png
+
+.link /s/go14gc go.dev/s/go14gc
+
+
+* Đánh đổi của GC đồng thời
+
+GC mới tiêu tốn thêm một ít bộ nhớ và thời gian CPU
+để đổi lấy thời gian dừng GC ngắn hơn đáng kể.
+
+.image state-of-go-may/gc2.png
+
+
+* Hiệu năng đồng thời tốt hơn
+
+Đặt `GOMAXPROCS=N` (trong đó `N` là số CPU của bạn) hoạt động tốt trong Go 1.5.
+
+Hiệu năng tốt hơn khi thực thi goroutine song song:
+
+.image state-of-go-may/conc-sieve.png _ 800
+
+Hiệu năng tốt hơn khi chuyển đổi giữa các goroutine tuần tự:
+
+.image state-of-go-may/conc-chain.png _ 800
+
+
+* Hiệu năng đồng thời tốt hơn (kết quả cuối cùng)
+
+Hiệu năng tốt hơn trong các workload thực tế:
+
+.image state-of-go-may/conc-practical.png _ 800
+
+Và bộ benchmark của chúng tôi:
+
+.image state-of-go-may/conc-bench.png _ 500
+
+
+* Hiệu năng tổng thể Go 1.5
+
+.image state-of-go-may/gcperf.png
+
+
+* Hiệu năng tổng thể Go 1.5 (tiếp theo)
+
+.image state-of-go-may/perfchart.png
+
+
+* Các cổng OS/Arch
+
+Go 1.5 hỗ trợ một số tổ hợp `GOOS/GOARCH` mới:
+
+- `darwin/arm`, tức là iOS
+- `darwin/arm64` (các thiết bị iDevice mới hơn)
+- `linux/arm64` (cgo được hỗ trợ, nhưng chỉ với liên kết ngoài)
+- `openbsd/arm` (không có cgo hay liên kết ngoài)
+
+Và loại bỏ một số cũ:
+
+DragonflyBSD đã bỏ hỗ trợ i386; `dragonfly/386` đã bị xóa khỏi Go.
+
+Apple không còn hỗ trợ OS X 10.6 (không có bản cập nhật bảo mật từ năm 2013);
+cổng Go cho OS X 10.6 (Snow Leopard) không còn được duy trì tích cực.
+
+
+* Thư viện chia sẻ
+
+Go 1.5 có thể tạo ra các thư viện chia sẻ Go mà chương trình Go có thể sử dụng.
+
+Build thư viện chuẩn dưới dạng thư viện chia sẻ:
+
+	$ go install -buildmode=shared std
+
+Build chương trình "Hello, world" liên kết với các thư viện chia sẻ:
+
+	$ go build -linkshared hello.go
+	$ ls -l hello
+	-rwxr-xr-x 1 adg adg 13926 May 26 02:13 hello
+
+
+Go 1.5 cũng có thể build chương trình Go dưới dạng tệp lưu trữ C (để liên kết tĩnh)
+hoặc thư viện chia sẻ (để liên kết động) mà chương trình C có thể sử dụng.
+
+.link /s/execmodes go.dev/s/execmodes
+
+(Demo)
+
+
+* Chương trình Go dưới dạng thư viện C
+
+Cho một gói:
+
+	package p // import "p"
+
+	import "C"
+
+	//export Foo
+	func Foo() int32 { return 42 }
+
+Và một gói main import nó:
+
+	package main // import "m"
+
+	import _ "p"
+
+	func main() {} // ignored
+
+Bạn có thể build tệp lưu trữ có thể được liên kết vào chương trình C:
+
+	$ go build -buildmode=c-archive m
+	$ ls $GOPATH/pkg/linux_amd64
+	m.a  p.a  p.h
+
+
+* Một thay đổi ngôn ngữ nhỏ
+
+Bây giờ bạn có thể bỏ qua kiểu key trong literal map.
+
+Literal map này
+
+	m := map[Point]string{
+		Point{29.935523, 52.891566}:   "Persepolis",
+		Point{-25.352594, 131.034361}: "Uluru",
+		Point{37.422455, -122.084306}: "Googleplex",
+	}
+
+bây giờ có thể viết là:
+
+	m := map[Point]string{
+		{29.935523, 52.891566}:   "Persepolis",
+		{-25.352594, 131.034361}: "Uluru",
+		{37.422455, -122.084306}: "Googleplex",
+	}
+
+
+* "go doc"
+
+Công cụ `go` có triển khai mới của lệnh con `doc` cũ,
+với giao diện dòng lệnh được cải thiện nhiều:
+
+	$ go doc zip.reader
+	package zip // import "archive/zip"
+
+	type Reader struct {
+		File    []*File
+		Comment string
+		// Has unexported fields.
+	}
+
+	func NewReader(r io.ReaderAt, size int64) (*Reader, error)
+
+	$ cd $GOROOT/src/archive/zip
+	$ go doc reader
+	# same output as above
+
+(Demo)
+
+
+* Theo dõi thực thi
+
+Trình theo dõi thực thi mới thu thập dữ liệu để tạo ra sơ đồ thực thi quy trình.
+
+.image state-of-go/trace.png 350 _
+
+Giao diện người dùng là trình xem trace Android/Chrome. ([[https://github.com/google/trace-viewer][github.com/google/trace-viewer]])
+
+.link /s/go15trace go.dev/s/go15trace
+
+
+* Công cụ Phân tích và Tái cấu trúc
+
+Chúng tôi đã làm việc trên các công cụ để phân tích và thao tác mã nguồn Go.
+
+Công cụ phân tích:
+
+- `oracle`: công cụ trả lời các câu hỏi về mã nguồn Go (có plugin cho Sublime Text và Emacs).
+- `callgraph`: hiển thị đồ thị lời gọi của chương trình Go.
+- `godoc`-analysis=pointer:` xem chi tiết phân tích con trỏ trong godoc.
+
+Công cụ tái cấu trúc:
+
+- `eg`: công cụ tái cấu trúc dựa trên mẫu
+- `gorename`: đổi tên an toàn kiểu của định danh trong mã nguồn Go.
+
+
+* Cơ sở hạ tầng Builder
+
+Chúng tôi đã làm việc nhiều với cơ sở hạ tầng build liên tục của mình.
+
+Hiện đang chạy các builder Linux, Windows, OS X, FreeBSD, OpenBSD và Plan 9
+trên Google Compute Engine.
+
+Khởi động các builder để làm việc, khởi động nhiều builder song song.
+Cho kết quả nhanh hơn nhiều.
+
+Sharding kiểm thử trên các nền tảng chậm hơn (ví dụ: ARM).
+
+Trybot kiểm thử các thay đổi đang chờ xử lý. (Demo)
+
+
+* Di động
+
+Go 1.5 cung cấp hỗ trợ cho Android và hỗ trợ thử nghiệm cho iOS.
+
+.image state-of-go-may/iphone.jpg 500 _
+
+
+* Công cụ gomobile
+
+Công cụ `gomobile` đơn giản hóa việc cài đặt toolchain và triển khai ứng dụng.
+(Hiện tại nó chỉ hỗ trợ Android.)
+
+Để cài đặt toolchain trình biên dịch Android:
+
+	$ gomobile init
+
+Để build APK Android và cài đặt trên thiết bị:
+
+	$ gomobile install
+
+Để build thư viện chia sẻ cho ứng dụng Android hoặc iOS:
+
+	$ gomobile bind
+
+(Demo)
+
+
+* Sự kiện cộng đồng Go
+
+- GoCon, Tokyo, tháng 6
+- GopherCon, Denver, tháng 7
+- GolangUK, London, tháng 8
+- GothamGo, New York, tháng 10
+- dotGo, Paris, tháng 11
+
+Và nhiều sự kiện khác sẽ được thông báo.
+
+.image state-of-go-may/gophercon.png
+
+

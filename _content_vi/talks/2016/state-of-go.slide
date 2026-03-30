@@ -1,0 +1,509 @@
+Tình Trạng của Go
+Chúng ta đang ở đâu vào tháng 2 năm 2016
+
+Francesc Campoy
+Gopher tại Google
+@francesc
+campoy@golang.org
+
+* Thời gian trôi nhanh
+
+Go 1.4 đã một tuổi (chúc mừng sinh nhật!)
+
+Go 1.5 đã được 6 tháng!
+
+Go 1.6 sẽ được phát hành vào tháng 2.
+
+Go 1.6 Candidate Release 1 đã được phát hành vào ngày 28 tháng 1
+
+* Ghi chú
+
+Các slide có tại [[/talks/2016/state-of-go.slide]]
+
+Hầu hết các ví dụ code sẽ không chạy ngoại trừ cục bộ và sử dụng Go 1.6.
+
+Playground vẫn chạy Go 1.5.
+
+* Chương trình
+
+Các thay đổi từ Go 1.5:
+
+- ngôn ngữ
+- thư viện chuẩn
+- runtime
+- công cụ
+- cộng đồng
+
+* Thay đổi ngôn ngữ
+
+* Thay đổi ngôn ngữ
+
+Không có.
+
+Đây là một tính năng.
+
+* Thay đổi thư viện chuẩn
+
+* Thay đổi thư viện chuẩn
+
+Một vài điều mới, theo thứ tự hứng thú.
+
+- net/http
+
+- {text,html}/template
+
+- sort
+
+Ngoài ra còn nhanh hơn và ít lỗi hơn.
+
+* net/http
+
+Nếu:
+
+- bạn đang sử dụng HTTPS
+
+- và Go 1.6
+
+bạn đang sử dụng HTTP/2!
+
+* HTTP/2
+
+Ở mức cao, HTTP/2:
+
+- là nhị phân, thay vì văn bản
+- được ghép kênh hoàn toàn, thay vì có thứ tự và chặn
+- do đó có thể sử dụng một kết nối để song song
+- sử dụng nén header để giảm overhead
+- cho phép máy chủ "đẩy" phản hồi chủ động vào bộ nhớ cache client
+
+.link https://http2.golang.org/gophertiles
+
+* text/template
+
+Hãy tưởng tượng rằng cho một slice chuỗi:
+
+	[]string{"one", "two", "three"}
+
+Chúng ta muốn viết một template sẽ tạo ra:
+
+	<ul>
+	<li>one</li>
+	<li>two</li>
+	<li>three</li>
+	</ul>
+
+Bạn sẽ viết template gì?
+
+* text/template: lần thử đầu tiên
+
+Tự nhiên, tôi viết cái này:
+
+.play state-of-go/template/old.go /`/,/`/
+
+Nhưng tiếc là không chính xác như tôi muốn!
+
+* text/template: hãy sửa nó
+
+Chúng ta cần cẩn thận với các ký tự xuống dòng.
+
+.play state-of-go/template/fixed.go /`/,/`/
+
+Bây giờ hoạt động, nhưng... Tôi không thực sự thích code của mình!
+
+* text/template: gặp {{- và -}}
+
+Go 1.6 mang đến hai delimiter mới:
+
+- `{{-`
+- `-}}`
+
+Tương tự như `{{` và `}}`, nhưng _tất cả_ khoảng trắng ở phía `-` sẽ bị cắt.
+
+Template:
+
+	{{23 -}}
+	<
+	{{- 45}}
+
+tạo ra:
+
+	23<45
+
+* text/template: quay lại vấn đề của chúng ta
+
+Bây giờ chúng ta có thể có:
+
+- kết quả như mong đợi
+- mà không hy sinh khả năng đọc template của chúng ta.
+
+.play state-of-go/template/new.go /`/,/`/
+
+* text/template: hành động block
+
+Go 1.6 cũng mang đến một hành động mới tên là `block`.
+
+Hãy xem nó hữu ích cho điều gì.
+
+* Rút gọn sự lặp lại trong template
+
+Cả hai `<ul>` đều có cùng cấu trúc.
+
+	{{define "presentation"}}
+		Authors:
+		<ul>
+		{{range .Authors}}
+			<li>{{.}}</li>
+		{{end}}
+		</ul>
+
+		Topics:
+		<ul>
+		{{range .Topics}}
+			<li>{{.}}</li>
+		{{end}}
+		</ul>
+	{{end}}
+
+Template có thể được sử dụng để tránh lặp lại.
+
+* Rút gọn sự lặp lại với template (tiếp theo)
+
+Chúng ta có thể định nghĩa một template mới:
+
+.code state-of-go/template/define.go /define "list"/,/^{{end}}/
+
+Và sử dụng nó khi cần:
+
+.code state-of-go/template/define.go /define "presentation"/,/^{{end}}/
+
+* Rút gọn sự lặp lại với template (tiếp theo)
+
+Chúng ta có thể phân tích template đó và thực thi nó.
+
+.play state-of-go/template/define.go /func main/,/^}/
+
+* Tái định nghĩa template
+
+Chúng ta cũng làm cho template dễ tái sử dụng hơn, vì chúng ta có thể tái định nghĩa `list`.
+
+.play state-of-go/template/redefine.go /func main/,/^}/
+
+* Gặp hành động block
+
+Hành động `block` định nghĩa và thực thi một template tại chỗ.
+
+.code state-of-go/template/blocks.go /define/,/`/
+
+Template được định nghĩa bởi `block` có thể được:
+
+- tham chiếu sau bởi cùng template,
+- tái định nghĩa với `define`.
+
+* Tại sao chúng ta cần nó?
+
+Nó gọn hơn khi
+
+- chúng ta không rút gọn sự lặp lại,
+- nhưng chúng ta cần cung cấp một điểm mở rộng.
+
+Chúng ta có thể làm cho template sau gọn hơn với `block`.
+
+	{{define "content" .}}
+		<h1>{{.Heading}}<h1>
+		<p>{{.Content}}</p>
+	{{end}}
+
+	{{define "page"}}
+		<title>{{.Title}}</title>
+		<body>
+		{{template "content" .}}
+		</body>
+	{{end}}
+
+* Tại sao chúng ta cần nó? (tiếp theo)
+
+Chúng ta có thể làm cho template sau gọn hơn với `block`.
+
+	{{define "page"}}
+		<title>{{.Title}}</title>
+		<body>
+		{{block "content" .}}
+			<h1>{{.Heading}}<h1>
+			<p>{{.Content}}</p>
+		{{end}}
+		</body>
+	{{end}}
+
+Và vẫn dễ dàng tái định nghĩa `content`.
+
+* sort.Sort nhanh hơn
+
+`Sort` sắp xếp dữ liệu của bạn bằng cách gọi `Less`, `Swap` và `Len`.
+
+Chúng tôi đã giảm số lượng so sánh và hoán đổi khoảng 10%.
+
+Sắp xếp `[]int` với Go 1.5
+
+	BenchmarkSort_1-4       20000000              67.2 ns/op
+	BenchmarkSort_10-4      10000000               227 ns/op
+	BenchmarkSort_100-4       500000              3863 ns/op
+	BenchmarkSort_1000-4       30000             52189 ns/op
+
+Sắp xếp `[]int` với Go 1.6
+
+	BenchmarkSort_1-4       20000000              64.7 ns/op
+	BenchmarkSort_10-4      10000000               137 ns/op
+	BenchmarkSort_100-4       500000              2849 ns/op
+	BenchmarkSort_1000-4       30000             46949 ns/op
+
+* sort.Sort nhanh hơn - biểu đồ
+
+.image state-of-go/img/bench-sort.png _ 800
+
+* Thứ tự sắp xếp và sort.Stable
+
+Nhắc nhở: sort.Sort không phải là sắp xếp _ổn định_.
+
+.play state-of-go/sort/unstable.go /byLength/,
+
+Sử dụng `sort.Stable`:
+
+.play state-of-go/sort/stable.go /func main/,
+
+* Các thay đổi nhỏ
+
+.image state-of-go/img/minorchanges.png _ 900
+.caption quá nhiều để thảo luận: tìm chúng [[/doc/go1.6#minor_library_changes][ở đây]]
+
+* Hãy chỉ thảo luận một cái
+
+`time.Parse` thông minh hơn!
+
+.play state-of-go/time/time.go /func main/,/^}/
+
+
+* Thay đổi runtime
+
+* Phát hiện truy cập map đồng thời
+
+Phát hiện truy cập không an toàn đồng thời vào map.
+
+.play state-of-go/runtime/crash.go /const/,/Wait\(\)/
+
+Đầu ra:
+
+	fatal error: concurrent map read and map write
+	fatal error: concurrent map writes
+
+* Nó có làm chậm không?
+
+Không!
+
+Hãy benchmark nó - với một giải pháp đúng.
+
+.code state-of-go/runtime/good/good.go /func count/,/^}/
+
+* Kết quả benchmark
+
+Go 1.4 - GOMAXPROCS = 4
+
+	BenchmarkCount_1         1000000              1862 ns/op
+	BenchmarkCount_10         100000             21214 ns/op
+	BenchmarkCount_100          1000           1602507 ns/op
+	BenchmarkCount_1000           10         141712948 ns/op
+
+Go 1.5 - GOMAXPROCS = 4
+
+	BenchmarkCount_1-4       2000000               867 ns/op
+	BenchmarkCount_10-4       200000              6909 ns/op
+	BenchmarkCount_100-4        1000           1025092 ns/op
+	BenchmarkCount_1000-4         20          94093719 ns/op
+
+Go 1.6 - GOMAXPROCS = 4
+
+	BenchmarkCount_1-4       2000000               750 ns/op
+	BenchmarkCount_10-4       200000              6582 ns/op
+	BenchmarkCount_100-4        2000           1113790 ns/op
+	BenchmarkCount_1000-4         20          87998054 ns/op
+
+* Biểu đồ kết quả benchmark
+
+.image state-of-go/img/bench4.png _ 800
+
+* Kết quả benchmark
+
+Go 1.4 - GOMAXPROCS = 1
+
+	BenchmarkCount_1         100000               1370 ns/op
+	BenchmarkCount_10         20000               8622 ns/op
+	BenchmarkCount_100          500             362725 ns/op
+	BenchmarkCount_1000          50           31378803 ns/op
+
+Go 1.5 - GOMAXPROCS = 1
+
+	BenchmarkCount_1-4      2000000                776 ns/op
+	BenchmarkCount_10-4      200000               6288 ns/op
+	BenchmarkCount_100-4       3000             345037 ns/op
+	BenchmarkCount_1000-4        50           31751625 ns/op
+
+Go 1.6 - GOMAXPROCS = 1
+
+	BenchmarkCount_1-4       2000000               767 ns/op
+	BenchmarkCount_10-4       200000              6041 ns/op
+	BenchmarkCount_100-4        5000            329328 ns/op
+	BenchmarkCount_1000-4         50          30176034 ns/op
+
+* Biểu đồ kết quả benchmark
+
+.image state-of-go/img/bench1.png _ 800
+
+* Bộ Thu Gom Rác trong Go 1.5
+
+Tại [[https://www.youtube.com/watch?v=aiv1JOfMjm0][GopherCon 2015 Rick Hudson đã trình bày]] về bộ thu gom có độ trễ thấp Go 1.5
+
+.image state-of-go/img/gc345.png 500 _
+
+* Bộ Thu Gom Rác trong Go 1.6
+
+Tại [[http://www.infoq.com/presentations/go-gc-performance][QCon SF vào tháng 11 Rick Hudson]] đã đưa ra một bài trình bày cập nhật cho thấy so sánh này giữa Go 1.5 và Go 1.6 sắp tới
+
+.image state-of-go/img/gc56.png 400 _
+
+_Vâng,_đó_là_gigabyte_trên_trục_X_
+
+* Bộ Thu Gom Rác trên tip
+
+Ngay lúc này còn tốt hơn!
+
+.image state-of-go/img/gcgotip.png _ 600
+
+* Mọi người yêu thích nó với Go 1.5
+
+.image state-of-go/img/twitter1.png _ 550
+.caption [[https://twitter.com/brianhatfield/status/634166123605331968][tweet gốc]]
+
+* Mọi người yêu thích nó hơn với Go 1.6
+
+.image state-of-go/img/twitter2.png _ 600
+.caption [[https://twitter.com/brianhatfield/status/692778741567721473][tweet gốc]]
+
+* Ối
+
+.image state-of-go/img/twitter3.png _ 600
+.caption [[https://twitter.com/bradfitz/status/692787593558118400][tweet gốc]] và [[https://www.youtube.com/watch?v=CduA0TULnow&t=1m29s][video]]
+
+* Các cổng mới
+
+Cổng thử nghiệm cho Linux trên MIPS 64-bit (linux/mips64 và linux/mips64le).
+
+Cổng thử nghiệm cho Android trên x86 32-bit (android/386).
+
+Trên Linux trên PowerPC 64-bit little-endian (linux/ppc64le), Go 1.6 hiện hỗ trợ cgo với liên kết ngoài và gần như hoàn chỉnh tính năng.
+
+Trên NaCl, Go 1.5 yêu cầu SDK phiên bản pepper-41. Go 1.6 thêm hỗ trợ cho các phiên bản SDK mới hơn.
+
+* Thay đổi công cụ
+
+* Công cụ cgo
+
+Go được thu gom rác, C và Go có thể chia sẻ bộ nhớ không?
+
+Tóm lại:
+
+- Go có thể truyền con trỏ đến C
+- bộ nhớ được tham chiếu không thể có con trỏ đến bộ nhớ được Go phân bổ
+- C không thể giữ con trỏ đến bộ nhớ sau khi lời gọi trả về
+
+Chi tiết hơn:
+
+- [[https://tip.golang.org/cmd/cgo/#hdr-Passing_pointers][tài liệu]] `cgo`.
+
+Điều này được kiểm tra bởi runtime khi thực thi.
+
+Bạn có thể vô hiệu hóa các kiểm tra, nhưng có lẽ không nên.
+
+* Chia sẻ con trỏ giữa Go và C
+
+.code state-of-go/cgo/main.go
+
+Đầu ra:
+
+	panic: runtime error: cgo argument has Go pointer to Go pointer
+
+* Công cụ go
+
+GO15VENDOREXPERIMENT bây giờ được bật theo mặc định.
+
+Cách hoạt động?
+
+	/home/user/gocode/
+	    src/
+	        server-one/
+	            main.go            (import "github.com/gorilla/mux")
+	        server-two/
+	            main.go            (import "github.com/gorilla/mux")
+	            vendor/
+	                github.com/
+	                    gorilla/
+	                        mux/
+	                            ...
+
+`server-one` sử dụng gói `mux` trong `$GOPATH/src/github.com/gorilla/mux`.
+
+`server-two` sử dụng gói `mux` trong `vendor`.
+
+* Demo Vendoring
+
+* go doc
+
+Go 1.5 đã thêm khả năng tìm kiếm theo tên
+
+	go doc math Pi
+
+Go 1.6 định nghĩa ưu tiên của các gói có đường dẫn import với ít phần tử hơn.
+
+Các gói không vendor xuất hiện trước.
+
+* go vet
+
+Go vet cảnh báo nếu code in một hàm thay vì kết quả của nó.
+
+.play state-of-go/govet/main.go
+
+Đầu ra của `go`vet`:
+
+	main.go:8: arg foo in Println call is a function value, not a function call
+
+Cảnh báo có thể bị loại bỏ bằng cách sử dụng `%p` trong chuỗi định dạng.
+
+* Cộng đồng
+
+* Cộng đồng
+
+Quy tắc Ứng xử được thông báo vào ngày 24 tháng 11 năm 2015
+
+Các buổi gặp mặt Go:
+
+- [[http://go-meetups.appspot.com]]
+
+Women Who Go - 7 chương đã có!
+
+- [[http://www.womenwhogo.org]]
+
+* Hội nghị:
+
+- [[http://gophergala.com/][GopherGala]] 22-24 tháng 1 (hiện đang xem xét đề xuất)
+- [[https://fosdem.org/2016/][FOSDEM]] Ngay tại đây, ngay bây giờ. Xin chào!
+- [[http://gophercon.ae][GopherCon Dubai]], 23 tháng 2
+- [[http://www.gophercon.in/][GopherCon India]], 19-20 tháng 2
+- [[https://gophercon.com/][Gophercon Denver]], 11-13 tháng 7
+- [[http://2016.dotgo.eu/][dotGo]], 9 tháng 11
+
+* Tiệc phát hành Go 1.6, ngày 17 tháng 2
+
+Go 1.6 sắp ra mắt!
+
+Các buổi gặp mặt Go đang tổ chức [[/wiki/Go-1.6-release-party][tiệc phát hành]] vào ngày 17 tháng 2.
+
+.image state-of-go/img/party-gopher.png _ 300
+.caption Tham gia tiệc!!!

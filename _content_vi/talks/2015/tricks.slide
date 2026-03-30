@@ -1,0 +1,787 @@
+Những Mẹo Hay của Gopher
+GolangUK
+21 Aug 2015
+
+Andrew Gerrand
+adg@golang.org
+
+
+* Video
+
+Một video của bài nói này được ghi lại tại GolangUK ở London.
+
+.link https://www.youtube.com/watch?v=UECh7X07m6E Xem bài nói trên YouTube
+
+
+* Bài nói này
+
+Bài nói này nói về những điều bạn có thể chưa biết về Go.
+
+Một số điều bạn có thể thêm vào vốn từ vựng Go của mình.
+
+Những điều khác có lẽ tốt nhất nên để dành cho những dịp đặc biệt.
+
+
+* Ngôn ngữ
+
+
+* Literal kiểu (1/2)
+
+Đây là khai báo kiểu quen thuộc:
+
+	type Foo struct {
+		i int
+		s string
+	}
+
+Phần sau của khai báo kiểu là *literal*kiểu*:
+
+	struct {
+		i int
+		s string
+	}
+
+Các ví dụ khác về literal kiểu là `int` và `[]string`,
+cũng có thể được khai báo là kiểu có tên:
+
+	type Bar int
+	type Qux []string
+
+
+* Literal kiểu (2/2)
+
+Trong khi chúng ta thường sử dụng `int` và `[]string` trong khai báo biến:
+
+	var i int
+	var s []string
+
+Ít phổ biến hơn (nhưng cũng hợp lệ) khi làm tương tự với struct:
+
+	var t struct {
+		i int
+		s string
+	}
+
+Một literal struct không tên thường được gọi là *struct*ẩn*danh*.
+
+
+* Struct ẩn danh: dữ liệu template
+
+Cách sử dụng phổ biến là cung cấp dữ liệu cho template:
+
+.play tricks/template.go /BEGIN/,/END/
+
+Bạn cũng có thể sử dụng `map[string]interface{}`,
+nhưng khi đó bạn đánh đổi hiệu năng và an toàn kiểu.
+
+
+* Struct ẩn danh: JSON (1/2)
+
+Kỹ thuật tương tự có thể được sử dụng để mã hóa đối tượng JSON:
+
+.play tricks/json-encode.go /Marshal/,/Print/
+
+Và cũng để giải mã:
+
+.play tricks/json-decode.go /data/,/Print/
+
+
+* Struct ẩn danh: JSON (2/2)
+
+Struct có thể được lồng nhau để mô tả các đối tượng JSON phức tạp hơn:
+
+.play tricks/json-nest.go /data/,/Print/
+
+
+* Literal lặp lại và tên struct
+
+Trong các literal lặp lại như slice và map, Go cho phép bạn bỏ qua tên kiểu bên trong:
+
+.code tricks/repeated.go /BEGIN/,/END/
+
+
+* Literal lặp lại và struct ẩn danh
+
+Kết hợp với struct ẩn danh, tính tiện lợi này rút ngắn code đáng kể:
+
+.code tricks/repeated2.go /BEGIN/,/END/
+
+
+* Struct ẩn danh: test case (1/2)
+
+Những tính chất này cho phép một cách hay để biểu diễn các test case:
+
+.code tricks/string_test.go /TestIndex/,/^}/
+
+
+* Struct ẩn danh: test case (2/2)
+
+Bạn có thể đi xa hơn và đặt literal composite vào chính câu lệnh range:
+
+.code tricks/string_test2.go /TestIndex/,/^}/
+
+Nhưng điều này khó đọc hơn.
+
+
+* Trường nhúng
+
+Trường struct không có tên là *trường*nhúng*.
+Các phương thức (và trường, nếu là struct) của kiểu được nhúng
+có thể truy cập như thể chúng là một phần của struct nhúng.
+
+.play tricks/embed.go /BEGIN/,$
+
+
+* Struct ẩn danh: mutex nhúng
+
+Tất nhiên, bạn có thể nhúng trường vào struct ẩn danh.
+
+Thông thường để bảo vệ biến toàn cục với biến mutex:
+
+	var (
+		viewCount   int64
+		viewCountMu sync.Mutex
+	)
+
+Bằng cách nhúng mutex vào struct ẩn danh, chúng ta có thể nhóm các giá trị liên quan:
+
+	var viewCount struct {
+		sync.Mutex
+		n int64
+	}
+
+Người dùng `viewCount` truy cập nó như sau:
+
+	viewCount.Lock()
+	viewCount.n++
+	viewCount.Unlock()
+
+
+
+* Struct ẩn danh: triển khai interface
+
+Và bạn cũng có thể nhúng interface.
+
+Đây là một ví dụ thực từ [[https://camlistore.org/][Camlistore]]:
+
+Hàm được kỳ vọng trả về `ReadSeekCloser`,
+nhưng lập trình viên chỉ có một chuỗi.
+
+Struct ẩn danh (và bạn bè từ thư viện chuẩn) đến giải cứu!
+
+	return struct {
+		io.ReadSeeker
+		io.Closer
+	}{
+		io.NewSectionReader(strings.NewReader(s), 0, int64(len(s))),
+		ioutil.NopCloser(nil),
+	}
+
+
+* Interface ẩn danh
+
+Interface có thể ẩn danh, phổ biến nhất là `interface{}`.
+
+Nhưng interface không nhất thiết phải rỗng:
+
+.play tricks/anon-interface.go /var s/,/Println/
+
+Hữu ích cho kiểm tra kiểu khéo léo (từ `src/os/exec/exec_test.go`):
+
+	// Check that we can access methods of the underlying os.File.
+	if _, ok := stdin.(interface {
+		Fd() uintptr
+	}); !ok {
+		t.Error("can't access methods of underlying *os.File")
+	}
+
+
+* Giá trị phương thức
+
+"Giá trị phương thức" là thứ bạn nhận được khi bạn đánh giá một phương thức như một biểu thức.
+Kết quả là một giá trị hàm.
+
+Đánh giá một phương thức từ một _kiểu_ cho ra một hàm:
+
+.play tricks/method-values-1.go /var f/,/Stdout/
+
+Đánh giá một phương thức từ một _giá*trị_ tạo ra một closure giữ giá trị đó:
+
+.play tricks/method-values-2.go /var /,/Stdout/
+
+
+* Giá trị phương thức: sync.Once
+
+Kiểu `sync.Once` được sử dụng để thực hiện một tác vụ một lần với an toàn đồng thời.
+
+	// Once is an object that will perform exactly one action.
+	type Once struct { /* Has unexported fields. */ }
+
+	func (o *Once) Do(f func())
+
+Kiểu `LazyPrimes` này tính toán một slice số nguyên tố lần đầu tiên nó được sử dụng:
+
+.code tricks/method-once.go /type/,$
+
+
+* Giá trị phương thức: HTTP handler
+
+Bạn có thể sử dụng giá trị phương thức để triển khai nhiều HTTP handler với một kiểu:
+
+.code tricks/method-http.go /type Server/,$
+
+
+* Giá trị phương thức: một ví dụ khác
+
+Trong gói `os/exec`, kiểu `Cmd` triển khai các phương thức để thiết lập
+đầu vào, đầu ra và lỗi chuẩn:
+
+	func (c *Cmd) stdin() (f *os.File, err error)
+	func (c *Cmd) stdout() (f *os.File, err error)
+	func (c *Cmd) stderr() (f *os.File, err error)
+
+Người gọi xử lý mỗi cái theo cách giống nhau,
+vì vậy nó lặp lại qua một slice các giá trị phương thức:
+
+	type F func(*Cmd) (*os.File, error)
+	for _, setupFd := range []F{(*Cmd).stdin, (*Cmd).stdout, (*Cmd).stderr} {
+		fd, err := setupFd(c)
+		if err != nil {
+			c.closeDescriptors(c.closeAfterStart)
+			c.closeDescriptors(c.closeAfterWait)
+			return err
+		}
+		c.childFiles = append(c.childFiles, fd)
+	}
+
+
+* Các kiểu so sánh được
+
+Đặc tả Go định nghĩa một tập hợp các kiểu là "so sánh được";
+chúng có thể được so sánh với == và !=.
+
+Bool, int, float, số phức, string, con trỏ,
+channel, *struct* và *interface* đều so sánh được.
+
+.play tricks/compare.go /BEGIN/,/END/
+
+Struct chỉ có thể so sánh được nếu các trường của nó có thể so sánh được:
+
+.play tricks/compare2.go /BEGIN/,/END/
+
+
+* Các kiểu so sánh được và key map
+
+Bất kỳ kiểu so sánh được nào đều có thể được sử dụng làm key map.
+
+.code tricks/compare-map.go /BEGIN/,/END/
+
+
+* Struct làm key map
+
+Một ví dụ từ cơ sở hạ tầng build liên tục của Go:
+
+	type builderRev struct {
+		builder, rev string
+	}
+
+	var br = builderRev{"linux-amd64", "0cd299"}
+
+Chúng tôi theo dõi các build đang thực hiện trong một map.
+Cách trước Go 1 là làm phẳng dữ liệu thành chuỗi trước:
+
+	inflight := map[string]bool{}
+
+	inflight[br.builder + "-" + br.rev] = true
+
+Nhưng với key struct, bạn có thể tránh phân bổ và có code gọn hơn:
+
+	inflight := map[builderRev]bool{}
+
+	inflight[br] = true
+
+
+* Interface làm key map
+
+Một ví dụ về key map interface từ gói `broadcastwriter` của Docker:
+
+.code tricks/broadcastwriter/broadcastwriter.go /type/,/END/
+
+
+* Struct và interface cùng làm key map
+
+Một ví dụ (rất) bịa đặt: (Đừng làm thế này! Bao giờ!)
+
+.play tricks/cons.go /type/,$
+
+
+* Thư viện
+
+* sync/atomic
+
+Đối với một bộ đếm đơn giản, bạn có thể sử dụng các hàm của gói `sync/atomic`
+để thực hiện cập nhật nguyên tử mà không cần khóa.
+
+	func AddInt64(addr *int64, delta int64) (new int64)
+	func CompareAndSwapInt64(addr *int64, old, new int64) (swapped bool)
+	func LoadInt64(addr *int64) (val int64)
+	func StoreInt64(addr *int64, val int64)
+	func SwapInt64(addr *int64, new int64) (old int64)
+
+Đầu tiên, định nghĩa biến toàn cục (được ghi lại đầy đủ!):
+
+	// viewCount must be updated atomically.
+	var viewCount int64
+
+Sau đó tăng nó với `AddInt64`:
+
+	count := atomic.AddInt64(&viewCount, 1)
+
+Tập hợp có sẵn cho `Int32`, `Uint32`, `Int64`, `Uint64`, `Pointer` và `Uintptr`.
+
+
+* sync/atomic.Value
+
+Một lựa chọn khác để chia sẻ trạng thái là `atomic.Value`.
+
+Ví dụ, để chia sẻ cấu hình giữa nhiều goroutine:
+
+	type Config struct {
+		Timeout time.Duration
+	}
+
+	var config atomic.Value
+
+Để đặt hoặc cập nhật, sử dụng phương thức `Store`:
+
+	config.Store(&Config{Timeout: 2*time.Second})
+
+Để đọc, mỗi goroutine gọi phương thức `Load`:
+
+	cfg := config.Load().(*Config)
+
+Lưu ý rằng lưu trữ các kiểu khác nhau trong cùng một `Value` sẽ gây ra panic.
+
+
+* sync/atomic.Value: cách hoạt động (1/5)
+
+Nguyên thủy `atomic.Value` có kích thước bằng một giá trị interface đơn:
+
+	package atomic
+
+	type Value struct {
+		v interface{}
+	}
+
+Giá trị interface được runtime biểu diễn bằng hai con trỏ:
+một cho kiểu và một cho giá trị.
+
+	// ifaceWords is interface{} internal representation.
+	type ifaceWords struct {
+		typ  unsafe.Pointer
+		data unsafe.Pointer
+	}
+
+Để load và store một giá trị interface một cách nguyên tử, nó hoạt động trên các phần của giá trị interface với `atomic.LoadPointer` và `atomic.StorePointer`.
+
+
+* sync/atomic.Value: cách hoạt động (2/5)
+
+Phương thức `Store` đầu tiên kiểm tra đầu vào:
+
+	func (v *Value) Store(x interface{}) {
+		if x == nil {
+			panic("sync/atomic: store of nil value into Value")
+		}
+
+Sau đó sử dụng `unsafe` để cast giá trị `interface{}` hiện tại và mới thành `ifaceWords`:
+
+	// ...
+		vp := (*ifaceWords)(unsafe.Pointer(v))
+		xp := (*ifaceWords)(unsafe.Pointer(&x))
+
+(Điều này cho phép chúng ta tiếp cận các nội tại của những giá trị interface đó.)
+
+
+* sync/atomic.Value: cách hoạt động (3/5)
+
+Quay vòng khi load trường kiểu:
+
+	// ...
+		for {
+			typ := LoadPointer(&vp.typ)
+
+Nếu nó là `nil` thì đây là lần đầu tiên giá trị được lưu trữ.
+Đặt giá trị sentinel (max uintptr) vào trường kiểu để "khóa" nó trong khi chúng ta làm việc:
+
+	// ...
+			if typ == nil {
+				if !CompareAndSwapPointer(&vp.typ, nil, unsafe.Pointer(^uintptr(0))) {
+					continue // Someone beat us to it. Wait.
+				}
+
+Lưu trường data, sau đó trường type, và chúng ta xong!
+
+	// ...
+				StorePointer(&vp.data, xp.data)
+				StorePointer(&vp.typ, xp.typ)
+				return
+			}
+
+* sync/atomic.Value: cách hoạt động (4/5)
+
+Nếu đây không phải lần store đầu tiên, kiểm tra xem có store nào đang xảy ra không:
+
+	// ...
+			if uintptr(typ) == ^uintptr(0) {
+				continue // First store in progress. Wait.
+			}
+
+Kiểm tra xem kiểu có thay đổi không:
+
+	// ...
+			if typ != xp.typ {
+				panic("sync/atomic: store of inconsistently typed value into Value")
+			}
+
+Nếu trường type là như mong đợi, tiến hành lưu trữ giá trị một cách nguyên tử:
+
+	// ...
+			StorePointer(&vp.data, xp.data)
+			return
+		}
+	}
+
+* sync/atomic.Value: cách hoạt động (5/5)
+
+Phương thức `Load` đầu tiên load trường type của interface:
+
+	func (v *Value) Load() (x interface{}) {
+		vp := (*ifaceWords)(unsafe.Pointer(v))
+		typ := LoadPointer(&vp.typ)
+
+Sau đó, kiểm tra xem có store nào đã xảy ra, hoặc đang xảy ra không:
+
+	// ...
+		if typ == nil || uintptr(typ) == ^uintptr(0) {
+			return nil
+		}
+
+Nếu không, load trường data và trả về cả type và data như một giá trị interface mới:
+
+	// ...
+		data := LoadPointer(&vp.data)
+		xp := (*ifaceWords)(unsafe.Pointer(&x))
+		xp.typ = typ
+		xp.data = data
+		return
+	}
+
+
+* Ghi chú về sync/atomic
+
+Thường thì bạn không muốn hoặc không cần thứ trong gói này.
+
+Hãy thử channel hoặc gói `sync` trước.
+
+Bạn gần như chắc chắn không nên viết code như triển khai `atomic.Value`.
+(Và tôi chưa hiển thị tất cả; code thực có móc vào runtime.)
+
+
+* Công cụ
+
+
+* Kiểm thử
+
+* Kiểm thử subprocess
+
+Đôi khi bạn cần kiểm thử hành vi của một tiến trình, không chỉ một hàm.
+
+.code tricks/subprocess/subprocess.go /func Crasher/,/^}/
+
+Để kiểm thử code này, chúng ta gọi chính binary kiểm thử như một subprocess:
+
+.code tricks/subprocess/subprocess_test.go /func TestCrasher/,/^}/
+
+
+* Benchmark subprocess (1/2)
+
+Trình đo hiệu suất CPU và bộ nhớ của Go báo cáo dữ liệu cho toàn bộ tiến trình.
+Để đo hiệu suất chỉ một phía của một thao tác đồng thời, bạn có thể sử dụng subprocess.
+
+Benchmark này từ gói `net/http` tạo ra một tiến trình con để thực hiện
+các yêu cầu đến máy chủ đang chạy trong tiến trình chính.
+
+	func BenchmarkServer(b *testing.B) {
+		b.ReportAllocs()
+		// Child process mode;
+		if url := os.Getenv("TEST_BENCH_SERVER_URL"); url != "" {
+			n, err := strconv.Atoi(os.Getenv("TEST_BENCH_CLIENT_N"))
+			if err != nil {
+				panic(err)
+			}
+			for i := 0; i < n; i++ {
+				res, err := Get(url)
+				// ...
+			}
+			os.Exit(0)
+			return
+		}
+	// ...
+
+* Benchmark subprocess (2/2)
+
+	// ...
+		res := []byte("Hello world.\n")
+		ts := httptest.NewServer(HandlerFunc(func(rw ResponseWriter, r *Request) {
+			rw.Header().Set("Content-Type", "text/html; charset=utf-8")
+			rw.Write(res)
+		}))
+		defer ts.Close()
+
+		cmd := exec.Command(os.Args[0], "-test.run=XXXX", "-test.bench=BenchmarkServer$")
+		cmd.Env = append([]string{
+			fmt.Sprintf("TEST_BENCH_CLIENT_N=%d", b.N),
+			fmt.Sprintf("TEST_BENCH_SERVER_URL=%s", ts.URL),
+		}, os.Environ()...)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			b.Errorf("Test failure: %v, with output: %s", err, out)
+		}
+	}
+
+Để chạy:
+
+	$ go test -run=XX -bench=BenchmarkServer -benchtime=15s -cpuprofile=http.prof
+	$ go tool pprof http.test http.prof
+
+
+* go list
+
+* go list
+
+	$ go help list
+	usage: go list [-e] [-f format] [-json] [build flags] [packages]
+
+	List lists the packages named by the import paths, one per line.
+
+Hiển thị các gói dưới một đường dẫn:
+
+	$ go list golang.org/x/oauth2/...
+	golang.org/x/oauth2
+	...
+	golang.org/x/oauth2/vk
+
+Hiển thị thư viện chuẩn:
+
+	$ go list std
+	archive/tar
+	...
+	unsafe
+
+Hiển thị tất cả gói:
+
+	$ go list all
+
+* go list -json
+
+Cờ `-json` cho bạn biết mọi thứ công cụ go biết về một gói:
+
+	$ go list -json bytes
+	{
+		"Dir": "/Users/adg/go/src/bytes",
+		"ImportPath": "bytes",
+		"Name": "bytes",
+		"Doc": "Package bytes implements functions for the manipulation of byte slices.",
+		"Target": "/Users/adg/go/pkg/darwin_amd64/bytes.a",
+		"Goroot": true,
+		"Standard": true,
+		"Stale": true,
+		"Root": "/Users/adg/go",
+		"GoFiles": [
+			"buffer.go",
+			"bytes.go",
+			"bytes_decl.go",
+			"reader.go"
+		],
+		...
+	}
+
+Dễ dàng viết các chương trình sử dụng dữ liệu này.
+
+* Struct Package của go list (1/3)
+
+Struct `Package` được tài liệu hóa của công cụ go mô tả tất cả các trường có thể:
+
+	type Package struct {
+		Dir           string // directory containing package sources
+		ImportPath    string // import path of package in dir
+		ImportComment string // path in import comment on package statement
+		Name          string // package name
+		Doc           string // package documentation string
+		Target        string // install path
+		Shlib         string // the shared library that contains this package (only set when -linkshared)
+		Goroot        bool   // is this package in the Go root?
+		Standard      bool   // is this package part of the standard Go library?
+		Stale         bool   // would 'go install' do anything for this package?
+		Root          string // Go root or Go path dir containing this package
+
+		// (more fields on next slide)
+	}
+
+* Struct Package của go list (2/3)
+
+	type Package struct {
+		// (more fields on previous slide)
+
+		// Source files
+		GoFiles        []string // .go source files (excluding CgoFiles, TestGoFiles, XTestGoFiles)
+		CgoFiles       []string // .go sources files that import "C"
+		IgnoredGoFiles []string // .go sources ignored due to build constraints
+		CFiles         []string // .c source files
+		CXXFiles       []string // .cc, .cxx and .cpp source files
+		MFiles         []string // .m source files
+		HFiles         []string // .h, .hh, .hpp and .hxx source files
+		SFiles         []string // .s source files
+		SwigFiles      []string // .swig files
+		SwigCXXFiles   []string // .swigcxx files
+		SysoFiles      []string // .syso object files to add to archive
+
+		// (more fields on next slide)
+	}
+
+* Struct Package của go list (3/3)
+
+	type Package struct {
+		// (more fields on previous slide)
+
+		// Cgo directives
+		CgoCFLAGS    []string // cgo: flags for C compiler
+		CgoCPPFLAGS  []string // cgo: flags for C preprocessor
+		CgoCXXFLAGS  []string // cgo: flags for C++ compiler
+		CgoLDFLAGS   []string // cgo: flags for linker
+		CgoPkgConfig []string // cgo: pkg-config names
+
+		// Dependency information
+		Imports []string // import paths used by this package
+		Deps    []string // all (recursively) imported dependencies
+
+		// Error information
+		Incomplete bool            // this package or a dependency has an error
+		Error      *PackageError   // error loading package
+		DepsErrors []*PackageError // errors loading dependencies
+
+		TestGoFiles  []string // _test.go files in package
+		TestImports  []string // imports from TestGoFiles
+		XTestGoFiles []string // _test.go files outside package
+		XTestImports []string // imports from XTestGoFiles
+	}
+
+* go list -f (1/2)
+
+Đó là rất nhiều thông tin, vậy chúng ta có thể làm gì với nó?
+
+Cờ `-f` cho phép bạn sử dụng gói `text/template` của Go để định dạng đầu ra.
+
+Hiển thị chuỗi doc của gói:
+
+	$ go list -f '{{.Doc}}' golang.org/x/oauth2/...
+	Package oauth2 provides support for making OAuth2 authorized and authenticated HTTP requests.
+	Package jwt implements the OAuth 2.0 JSON Web Token flow, commonly known as "two-legged OAuth 2.0".
+	...
+
+Hiển thị các tệp Go trong một gói:
+
+	$ go list -f '{{.GoFiles}}' bytes
+	[buffer.go bytes.go bytes_decl.go reader.go]
+
+Làm cho đầu ra gọn hơn với `join`:
+
+	$ go list -f '{{join .GoFiles " "}}' bytes
+	buffer.go bytes.go bytes_decl.go reader.go
+
+* go list -f (2/2)
+
+Với logic template chúng ta có thể kiểm tra các gói theo điều kiện nhất định.
+
+Tìm các thư viện chuẩn thiếu tài liệu:
+
+	$ go list -f '{{if not .Doc}}{{.ImportPath}}{{end}}' std
+	internal/format
+	internal/trace
+
+Tìm các gói phụ thuộc (trực tiếp hoặc gián tiếp) vào một gói nhất định:
+
+	$ go list -f '{{range .Deps}}{{if eq . "golang.org/x/oauth2"}}{{$.ImportPath}}{{end}}{{end}}' all
+	golang.org/x/build/auth
+	golang.org/x/build/buildlet
+	golang.org/x/build/cmd/buildlet
+	...
+
+Tìm các gói bị lỗi (lưu ý `-e`):
+
+	$ go list -e -f '{{with .Error}}{{.}}{{end}}' all
+	package github.com/golang/oauth2: code in directory /Users/adg/src/github.com/golang/oauth2
+		expects import "golang.org/x/oauth2"
+	...
+
+* go list và shell
+
+Mọi thứ trở nên thú vị khi chúng ta bắt đầu sử dụng shell.
+
+Ví dụ, chúng ta có thể sử dụng đầu ra `go`list` làm đầu vào cho công cụ go.
+
+Kiểm thử tất cả gói trừ các gói vendor:
+
+	$ go test $(go list ./... | grep -v '/vendor/')
+
+Kiểm thử các phụ thuộc của một gói cụ thể:
+
+	$ go test $(go list -f '{{join .Deps " "}}' golang.org/x/oauth2)
+
+Tương tự, nhưng không kiểm thử thư viện chuẩn:
+
+	$ go test $(
+		go list -f '{{if (not .Goroot)}}{{.ImportPath}}{{end}}' $(
+			go list -f '{{join .Deps " "}}' golang.org/x/oauth2
+		)
+	)
+
+* go list in đếm dòng
+
+	for pkg in $(go list golang.org/x/oauth2/...); do
+		wc -l $(go list -f '{{range .GoFiles}}{{$.Dir}}/{{.}} {{end}}' $pkg) | \
+			tail -1 | awk '{ print $1 " '$pkg'" }'
+	done | sort -nr
+
+Đầu ra:
+
+	617 golang.org/x/oauth2/google
+	600 golang.org/x/oauth2
+	357 golang.org/x/oauth2/internal
+	160 golang.org/x/oauth2/jws
+	147 golang.org/x/oauth2/jwt
+	112 golang.org/x/oauth2/clientcredentials
+	22 golang.org/x/oauth2/paypal
+	16 golang.org/x/oauth2/vk
+	16 golang.org/x/oauth2/odnoklassniki
+	16 golang.org/x/oauth2/linkedin
+	16 golang.org/x/oauth2/github
+	16 golang.org/x/oauth2/facebook
+
+* go list tạo đồ thị phụ thuộc
+
+	(   echo "digraph G {"
+		go list -f '{{range .Imports}}{{printf "\t%q -> %q;\n" $.ImportPath .}}{{end}}' \
+			$(go list -f '{{join .Deps " "}}' time) time
+		echo "}"
+	) | dot -Tsvg -o time-deps.svg
+
+.image tricks/time-deps.png 400 _
+
+
+* Và còn nhiều hơn nữa!
+
+Có nhiều góc thú vị hơn của Go.
+Bạn có thể tìm thấy tất cả không? :-)
+
+Đọc tài liệu, khám phá và vui vẻ!

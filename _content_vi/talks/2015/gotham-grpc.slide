@@ -1,0 +1,241 @@
+gRPC Go
+GothamGo 2015
+
+Sameer Ajmani
+Tech Lead Manager, Go team, Google
+@Sajma
+sameer@golang.org
+
+* Video
+
+Bài nói chuyện này được trình bày tại GothamGo ở Thành phố New York, tháng 10 năm 2015.
+
+.link https://www.youtube.com/watch?v=vTIyz2QfExc&index=7&list=PLeGxIOPLk9ELh9tsPZMzau6CzMjfMzp9- Xem bài nói trên YouTube
+
+* RPC không chỉ là Remote Procedure Call
+
+Trong Go, một RPC *khởi*động*một*goroutine* chạy trên máy chủ và cung cấp _truyền_thông_điệp_ giữa các goroutine của client và server.
+
+*RPC*đơn*hướng:* client gửi một _yêu*cầu_ đến server, sau đó server gửi lại _phản*hồi_.
+
+*RPC*phát*trực*tuyến:* client và server mỗi bên có thể gửi một hoặc nhiều thông điệp.
+
+Một RPC kết thúc khi:
+
+- cả hai bên đã gửi xong thông điệp
+- một trong hai bên ngắt kết nối
+- RPC bị hủy hoặc hết thời gian chờ
+
+Bài nói này sẽ trình bày cách chúng ta kết nối các RPC và stream với goroutine và channel.
+
+* RPC đơn hướng: một yêu cầu, một phản hồi
+
+Ví dụ: ứng dụng Maps trên di động yêu cầu tuyến đường từ điểm A đến điểm B.
+
+Ở phía client, một RPC chặn cho đến khi hoàn thành hoặc bị hủy.
+
+Client sử dụng nhiều goroutine để chạy nhiều RPC đồng thời.
+
+Mỗi RPC là sự trao đổi giữa một goroutine client và một goroutine server.
+
+* RPC phát trực tuyến cung cấp truyền thông điệp hai chiều
+
+Client bắt đầu một stream với server.
+
+Các thông điệp gửi trên stream được chuyển theo thứ tự FIFO.
+
+Nhiều stream có thể chạy đồng thời giữa cùng một client và server.
+
+Lớp truyền tải cung cấp bộ đệm và kiểm soát luồng.
+
+Ví dụ:
+
+- stream hai chiều: phiên trò chuyện
+- stream server → client: bảng giá cổ phiếu
+- stream client → server: tổng hợp cảm biến
+
+* gRPC là hệ thống RPC mới từ Google
+
+.link http://grpc.io
+
+Cung cấp RPC và RPC phát trực tuyến
+
+Mười ngôn ngữ: *C*, *Java*, *Go*, C++, Node.js, Python, Ruby, Objective-C, PHP và C#
+IDL: *Proto3*
+Truyền tải: *HTTP2*
+
+[[https://pkg.go.dev/golang.org/x/net/context][golang.org/x/net/context]] cho deadline, hủy bỏ và các giá trị theo phạm vi yêu cầu
+[[https://pkg.go.dev/golang.org/x/net/trace][golang.org/x/net/trace]] cho các trace yêu cầu theo thời gian thực và ghi nhật ký kết nối
+
+* Người dùng gRPC
+
+150+ lần import [[https://pkg.go.dev/google.golang.org/grpc?tab=imports][google.golang.org/grpc]] trên [[https://pkg.go.dev][pkg.go.dev]]
+
+- [[https://github.com/apcera/kurma][Apcera/Kurma]]: hệ điều hành container
+- [[http://bazil.org][Bazil]]: hệ thống tệp phân tán
+- [[http://coreos.com/etcd/][CoreOS/Etcd]]: kho lưu trữ khóa-giá trị nhất quán phân tán
+- [[https://pkg.go.dev/google.golang.org/cloud/bigtable][Google Cloud Bigtable]]: lưu trữ bảng thưa
+- [[https://github.com/monetas/bmd][Monetas/Bitmessage]]: nền tảng giao dịch
+- [[http://www.pachyderm.io/][Pachyderm]]: phân tích dữ liệu trong container
+- [[http://vitess.io/][YouTube/Vitess]]: nền tảng lưu trữ để mở rộng MySQL
+
+* Demo và Code: Google Search
+
+* Định nghĩa giao thức
+
+.code gotham-grpc/search-only/search-only.proto
+
+* Code được tạo ra
+
+.code gotham-grpc/search/README /protoc/
+.code gotham-grpc/search-only/search-only.pb.go /type GoogleClient/,/^}/
+.code gotham-grpc/search-only/search-only.pb.go /type GoogleServer/,/^}/
+.code gotham-grpc/search-only/search-only.pb.go /type Request/,/^}/
+.code gotham-grpc/search-only/search-only.pb.go /type Result/,/^}/
+
+* Sơ đồ hệ thống
+
+.image gotham-grpc/system.svg _ 1000
+
+* Frontend chạy Search trên cả hai backend và trả về kết quả đầu tiên
+
+.image gotham-grpc/search.svg _ 1000
+
+* Demo client --mode=search
+
+- Trace yêu cầu Frontend
+- Trace yêu cầu Backend
+- Nhật ký sự kiện kết nối
+
+* Code Client
+
+.image gotham-grpc/client.svg _ 1000
+
+* Code Client (main)
+
+  import pb "golang.org/x/talks/content/2015/gotham-grpc/search"
+
+.code gotham-grpc/client/client.go /func main/,/^}/
+
+* Code Client (search)
+
+.code gotham-grpc/client/client.go /func search/,/^}/
+
+Các RPC chặn nhưng có thể bị hủy bằng Context.
+
+gRPC lan truyền việc hủy từ client đến server.
+
+* Code Backend
+
+.image gotham-grpc/backend.svg _ 1000
+
+* Code Backend (main)
+
+.code gotham-grpc/backend/backend.go /net.Listen/,/g.Serve/
+
+`new(server)` phải triển khai interface `GoogleServer`:
+
+.code gotham-grpc/search/search.pb.go /type GoogleServer/,/^}/
+
+Mỗi lần gọi `Search` hoặc `Watch` chạy trong goroutine riêng của nó.
+
+* Code Backend (search)
+
+`ctx.Done` bị đóng khi RPC bị hủy, hết thời gian chờ hoặc trả về:
+
+.code gotham-grpc/backend/backend.go /[)] Search/,/^}/
+
+Nếu tracing được bật, ghi lại thời gian ngủ:
+
+.code gotham-grpc/backend/backend.go /func logSleep/,/^}/
+
+* Code Frontend
+
+.image gotham-grpc/frontend.svg _ 1000
+
+* Code Frontend (search)
+
+`Search` trả về ngay khi nhận được kết quả đầu tiên.
+gRPC hủy các RPC `backend.Search` còn lại thông qua `ctx`:
+
+.code gotham-grpc/frontend/frontend.go /[)] Search/,/^}/
+
+.code gotham-grpc/frontend/frontend.go /type result/,/^}/
+
+* RPC Phát Trực Tuyến
+
+* Thêm Watch vào dịch vụ Google
+
+.code gotham-grpc/search/search.proto
+
+* Code được tạo ra
+
+.code gotham-grpc/search/search.pb.go /type GoogleClient/,/^}/
+.code gotham-grpc/search/search.pb.go /type GoogleServer/,/^}/
+.code gotham-grpc/search/search.pb.go /type Google_WatchClient/,/^}/
+.code gotham-grpc/search/search.pb.go /type Google_WatchServer/,/^}/
+
+* Frontend chạy Watch trên cả hai backend và gộp kết quả
+
+.image gotham-grpc/watch.svg _ 1000
+
+* Demo client --mode=watch
+
+- Trace stream đang hoạt động
+- Hủy bỏ
+
+* Code Client
+
+.image gotham-grpc/client.svg _ 1000
+
+* Code Client (watch)
+
+.code gotham-grpc/client/client.go /func watch/,/^}/
+
+* Code Backend
+
+.image gotham-grpc/backend.svg _ 1000
+
+* Code Backend (watch)
+
+.code gotham-grpc/backend/backend.go /[)] Watch/,/^}/
+
+* Code Frontend
+
+.image gotham-grpc/frontend.svg _ 1000
+
+* Code Frontend (watch)
+
+.code gotham-grpc/frontend/frontend.go /[)] Watch/,/return nil/
+
+* Code Frontend (watchBackend)
+
+`Watch` trả về khi gặp lỗi đầu tiên; điều này đóng `ctx.Done` và báo hiệu `watchBackend` thoát.
+
+.code gotham-grpc/frontend/frontend.go /func watch/,/^}/
+
+* gRPC mở rộng mô hình lập trình Go qua mạng
+
+gRPC Go hoạt động trơn tru với goroutine, channel và tính năng hủy bỏ.
+
+Đây là lựa chọn tuyệt vời để xây dựng các hệ thống song song, phân tán và phát trực tuyến.
+
+.image gotham-grpc/watch.svg _ 1000
+
+* Tài liệu tham khảo
+
+- [[http://grpc.io][grpc.io]] - tài liệu tham khảo và hướng dẫn gRPC
+- [[https://github.com/golang/protobuf][github.com/golang/protobuf]] - Protocol buffers
+- [[https://pkg.go.dev/golang.org/x/net/http2][golang.org/x/net/http2]] - HTTP2
+- [[https://pkg.go.dev/golang.org/x/net/trace][golang.org/x/net/trace]] - Trace yêu cầu và nhật ký sự kiện
+- [[https://pkg.go.dev/golang.org/x/net/context][golang.org/x/net/context]] - Hủy bỏ và dữ liệu theo phạm vi yêu cầu
+- [[/blog/pipelines][blog.golang.org/pipelines]] - Đường ống dữ liệu phát trực tuyến
+
+*Cảm*ơn* Qi Zhao, David Symonds, Brad Fitzpatrick và những người khác.
+
+*Câu*hỏi?*
+
+Sameer Ajmani
+Tech Lead Manager, Go team, Google
+[[https://twitter.com/Sajma][@Sajma]]
+[[mailto:sameer@golang.org][sameer@golang.org]]
