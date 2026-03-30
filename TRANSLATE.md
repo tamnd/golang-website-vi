@@ -270,8 +270,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/migrating-to-go-modules.md`
 - [x] `blog/module-compatibility.md`
 - [x] `blog/module-mirror-launch.md`
-- [ ] `blog/modules2019.md`
-- [ ] `blog/new-talk-and-tutorials.md`
+- [x] `blog/modules2019.md`
+- [x] `blog/new-talk-and-tutorials.md`
 - [x] `blog/normalization.md`
 - [ ] `blog/normalization/table1.html`
 - [ ] `blog/normalization/table2.html`
