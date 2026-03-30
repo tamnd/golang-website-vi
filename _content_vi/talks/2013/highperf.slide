@@ -1,0 +1,233 @@
+Ứng dụng hiệu suất cao với Go trên App Engine
+Google I/O, tháng 5 năm 2013
+
+David Symonds
+Kỹ sư phần mềm, Google
+dsymonds@golang.org
+
+* Video
+
+Bài nói chuyện này đã được trình bày tại Google I/O vào tháng 5 năm 2013.
+
+.link http://www.youtube.com/watch?v=fc25ihfXhbg Xem bài nói chuyện trên YouTube
+
+* Tổng quan
+
+- Tại sao Go + App Engine
+- Lịch sử, Trạng thái
+- Gopher Mart
+- Tìm các điểm nghẽn hiệu suất
+- Trì hoãn công việc
+- Batching
+- Caching
+- Đồng thời
+- Kiểm soát phương sai
+
+* Tại sao Go + App Engine
+
+- Go biên dịch thành code gốc
+- App Engine là nền tảng tự mở rộng quy mô ít bảo trì
+- Runtime nhanh nhất trên App Engine: khởi động nhanh, chạy nhanh
+
+.image highperf/aegopher.jpg
+
+* Lịch sử
+
+- Go runtime cho App Engine ra mắt tại Google I/O 2011
+- Tăng trưởng ổn định, nhiều người dùng nổi tiếng
+
+.image highperf/appenginegophercolor.jpg
+
+* Turkey doodle (tháng 11 năm 2011)
+
+.image highperf/turkey.png
+
+- Được viết bởi một người mới học Go, ra mắt trong chưa đầy 24 giờ
+- Độ trễ bằng một nửa phiên bản Python 2.7
+- Ra mắt trên trang đầu google.com
+
+[[/s/turkey-doodle][go.dev/s/turkey-doodle]]
+
+* Santa Tracker (tháng 12 năm 2012)
+
+.html highperf/santaembed.html
+
+- Gần 5000 truy vấn mỗi giây
+- Không làm bất kỳ đứa trẻ nào khóc
+
+.image highperf/santagraph.png
+
+* Gopher Mart
+
+* Gopher Mart
+
+- Hãy tưởng tượng ứng dụng của bạn là Gopher Mart, cửa hàng một cửa cho mọi nhu cầu gopher
+
+.image highperf/gophermart.png
+
+* Gopher Mart
+
+- Mỗi gopher thanh toán là một phiên bản ứng dụng
+- Mỗi gopher mua sắm là một yêu cầu người dùng
+- Bộ lập lịch điều hướng yêu cầu đến các phiên bản
+- Một gopher thanh toán có thể phục vụ một khách hàng tại một thời điểm
+- Gopher thanh toán (phiên bản) có thể được thuê/sa thải, nhưng có chi phí
+
+.image highperf/gophermart2.png
+
+* Gopher Mart
+
+- Các gopher chờ đợi trong hàng đợi trở nên cáu kỉnh
+- Hãy làm cho nó nhanh hơn
+
+* Tìm các điểm nghẽn hiệu suất
+
+- _Hiểu_tại_sao_gopher_thanh_toán_của_bạn_có_thể_làm_việc_chậm_
+- Đo lường trước
+
+.image highperf/gopherrulespanner.png
+
+- Đo lường định kỳ; đặc tính hiệu suất thay đổi theo thời gian
+- Go 1.1 mang lại nhiều cải tiến hiệu suất
+
+* Appstats
+
+- Appstats theo dõi API RPC, hiển thị timeline
+- `github.com/mjibson/appstats`
+
+- Gopher Mart baseline:
+.image highperf/appstats1.png
+
+* Các kỹ thuật hiệu suất
+
+* Trì hoãn công việc
+
+- Không phải tất cả công việc cần được thực hiện trong request
+- Sử dụng `appengine/taskqueue` hoặc `appengine/delay` để chuyển công việc không quan trọng ra ngoài phạm vi request
+- _Gopher_Mart_có_thể_thay_thế_ `mail.Send` _chậm_bằng_ `taskqueue.Add` _nhanh_
+
+* Trì hoãn công việc II
+
+Import `"appengine/delay"` và chuyển đổi
+
+.code highperf/mart/1/mart.go /sendReceipt/
+.code highperf/mart/1/mart.go /func sendReceipt/
+
+thành
+
+.code highperf/mart/2/mart.go /sendReceipt/
+.code highperf/mart/2/mart.go /var sendReceipt/
+
+.image highperf/appstats2.png
+
+* Batching
+
+- _Mua_10_hộp_Gopher_Flakes_dễ_hơn_mua_một_hộp_10_lần_
+- _Gọi_kiểm_tra_giá_cho_ba_mặt_hàng_nhanh_hơn_ba_lần_kiểm_tra_giá_riêng_
+- Sử dụng `GetMulti` thay vì `Get`, `PutMulti` thay vì `Put`, v.v.
+
+.code highperf/mart/2/mart.go /Dumb load/+1,/Print items/-1
+
+* Batching II
+
+.code highperf/mart/3/mart.go /Batch get/+1,/}/
+
+.image highperf/appstats3.png
+
+* Caching
+
+- _Gopher_thanh_toán_có_thể_ghi_chú_và_ghi_nhớ_mọi_thứ_
+- Sử dụng datastore là ổn, nhưng có thể chậm
+- Sử dụng memcache là tốt (chia sẻ giữa các phiên bản), nhưng hãy nhớ nó có thể biến mất
+- Sử dụng bộ nhớ cục bộ cũng được, nhưng nó cũng có thể biến mất
+
+.html highperf/cachingembed.html
+
+* Đồng thời
+
+- _Kiểm_tra_giá_có_thể_làm_chậm_việc_xử_lý_gopher_mua_sắm_
+- Các request bị ràng buộc RPC rất phổ biến, và thường ít được cache nhất
+- _Cho_gopher_thanh_toán_của_bạn_làm_gì_đó_khác_trong_khi_chờ_đợi_
+
+* Đồng thời II
+
+.code highperf/concurrency.go.notouch /func serial/+1,/^}/-1
+
+* Đồng thời III
+
+- Chạy các truy vấn đồng thời
+- Cách dễ dàng để tăng tốc các request bị ràng buộc RPC
+
+.code highperf/concurrency.go.notouch /func parallel/+1,/^}/-1
+
+- Hãy xem bài nói chuyện của Sameer Ajmani (hôm nay, 4:25PM, Phòng 7)
+
+* Kiểm soát phương sai
+
+- _Một_số_gopher_mua_sắm_có_thể_mất_nhiều_thời_gian_hơn_những_gopher_khác_
+- Phương sai trong xử lý request rất phổ biến (ví dụ 99% mất 10ms, 1% mất 100ms)
+- Một số request khó hơn những request khác
+- Hạ tầng đáng tin cậy, nhưng không hoàn hảo
+
+* Kiểm soát phương sai II
+
+- Tác động của phương sai có thể lan rộng
+- Các request có phương sai làm cho việc lập lịch khó hơn, yêu cầu nhiều phiên bản hơn (bị tính phí)
+- Chúng ta muốn kiểm soát phương sai
+
+[[http://cacm.acm.org/magazines/2013/2/160173-the-tail-at-scale/fulltext]["The Tail at Scale", Dean, Barroso; Commun. ACM 56, 2]]
+
+* Kiểm soát phương sai III
+
+- Ví dụ, lưu vào memcache thường là một tối ưu hóa, và do đó là tùy chọn
+- Giới hạn thời gian dành cho công việc tùy chọn
+
+- Cách tiếp cận đầu tiên: lưu vào memcache không đồng bộ
+
+.code highperf/longtail.go /long_tail_memcache_bad/+1,/^}/
+
+- Vấn đề: Phản hồi sẽ được trả về người dùng ngay khi handler trả về, và các lời gọi API chưa hoàn thành sẽ bị hủy
+
+* Kiểm soát phương sai IV
+
+- Giải pháp: Sử dụng các nguyên thủy đồng thời của Go để timeout chờ đợi
+
+.code highperf/longtail.go /long_tail_memcache_good/+1,/^}/
+
+* Trước và Sau
+
+Baseline:
+
+.image highperf/appstats1.png
+
+Trì hoãn công việc:
+
+.image highperf/appstats2.png
+
+Batching:
+
+.image highperf/appstats3.png
+
+* Tóm tắt
+
+- Tìm các điểm nghẽn hiệu suất
+- Trì hoãn công việc
+- Batching
+- Caching
+- Đồng thời
+- Kiểm soát phương sai
+
+* Cuối cùng...
+
+- [[/][go.dev]]
+- [[http://developers.google.com/appengine/docs/go/][developers.google.com/appengine/docs/go/]]
+- [[/s/io13-ae-talk][go.dev/s/io13-ae-talk]] (bài nói chuyện này, cùng ứng dụng gophermart)
+- `github.com/mjibson/appstats`
+
+Thêm về Go:
+
+- _Go_trong_sản_xuất_ (_office_hours_), 3:30PM-4:15PM, Cloud Sandbox
+- _Các_mẫu_đồng_thời_Go_nâng_cao_, 4:25PM, Phòng 7
+- _Fireside_Chat_với_nhóm_Go_, 5:20PM, Phòng 2
+- _Go_App_Engine_ (_office_hours_), 1:45PM-2:30PM *ngày_mai*, Cloud Sandbox
+
