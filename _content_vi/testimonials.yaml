@@ -1,0 +1,54 @@
+- name: Jaime Enrique Garcia Lopez
+  title: Quản lý Phát triển Phần mềm Cấp cao
+  company: Capital One
+  quote: |-
+    "Lúc đó, không ai trong nhóm biết Go, nhưng
+    <strong>chỉ trong vòng một tháng, mọi người đều đã viết bằng Go</strong> và chúng tôi
+    đã xây dựng xong các endpoint. Chính sự linh hoạt, tính dễ sử dụng
+    và ý tưởng thú vị đằng sau Go (cách Go xử lý concurrency gốc,
+    bộ gom rác, cùng với độ an toàn và tốc độ) đã cuốn hút chúng tôi
+    trong suốt quá trình phát triển. Và mascot dễ thương kia thì ai mà chê được!"
+- name: Clayton Coleman
+  title: Kỹ sư Trưởng, Open Shift
+  company: RedHat
+  quote: |-
+    "<strong>Một ngôn ngữ nhỏ gọn, biên dịch nhanh sẽ tạo ra những lập trình viên vui vẻ.</strong>
+    Go nhỏ gọn, biên dịch rất nhanh, nhờ đó bạn có thể tập trung vào bài toán thực sự
+    thay vì mải lo với công cụ đang dùng để giải quyết nó. Chu kỳ viết, kiểm thử, gỡ lỗi
+    nhanh đến mức bạn quên mất mình không đang dùng ngôn ngữ thông dịch.
+    Nhìn vào code của chúng tôi, bạn sẽ thấy
+    <strong>ít boilerplate hơn và nhiều logic nghiệp vụ hơn.</strong>"
+- name: Matt Boyle
+  title: Kỹ sư Phần mềm Trưởng
+  company: Curve
+  quote: |-
+    "<strong>Go có những đặc tính xuất sắc về khả năng mở rộng, và các dịch vụ
+    viết bằng Go thường có dung lượng bộ nhớ rất nhỏ.</strong>
+    Vì code được biên dịch thành một file nhị phân tĩnh duy nhất, các dịch vụ cũng có thể
+    được đóng gói container dễ dàng, giúp việc build và deploy đơn giản hơn nhiều. Những
+    đặc điểm này làm cho <strong>Go trở thành lựa chọn lý tưởng cho các công ty xây dựng
+    microservices</strong>, vì bạn có thể dễ dàng triển khai vào môi trường sẵn sàng cao
+    và có khả năng mở rộng như Kubernetes."
+- name: Bala Natarajan
+  title: Giám đốc Kỹ thuật Cấp cao, Trải nghiệm Lập trình viên
+  company: PayPal
+  quote: |-
+    "Trong các môi trường được quản lý chặt chẽ nơi chúng tôi chạy code Go,
+    <strong>chúng tôi nhận thấy mức sử dụng CPU giảm khoảng 10%</strong>
+    với code sạch hơn và dễ bảo trì hơn."
+- name: Benjamin Cane
+  title: Phó Giám đốc và Kỹ sư Chính
+  company: American Express
+  quote: |-
+    "Hệ thống công cụ luôn là vấn đề với codebase cũ của chúng tôi... nhưng chúng tôi
+     nhận thấy Go có hệ thống công cụ xuất sắc, cùng với testing, benchmarking
+     và profiling được tích hợp sẵn. Viết các ứng dụng hiệu quả và bền vững với Go rất dễ.
+     <strong>Sau khi làm việc với Go, hầu hết lập trình viên trong nhóm không muốn
+     quay lại các ngôn ngữ khác nữa.</strong>"
+- name: John Biggs và Ben Popper
+  title:
+  company: Stack Overflow
+  quote: |-
+    "...khi một ngôn ngữ lập trình được thiết kế đúng cho môi trường mà hầu hết
+     chúng ta đang dùng hiện nay, đó là các máy chủ đám mây có khả năng mở rộng
+     và được tối ưu cho hiệu năng, mọi thứ đều có thể diễn ra suôn sẻ."
