@@ -1,0 +1,279 @@
+Tình Trạng của Go
+Chúng ta đang ở đâu vào tháng 2 năm 2015
+
+Andrew Gerrand
+adg@golang.org
+
+
+* Go 1.4
+
+Được phát hành vào tháng 12 năm 2014.
+
+Một vài điều quan trọng:
+
+- Hỗ trợ Android.
+- Đường dẫn import chuẩn tắc.
+- Lệnh `go`generate`.
+
+Nhiều công việc hậu trường:
+
+- Công việc chuẩn bị cho bộ thu gom rác mới.
+- Công việc chuẩn bị chuyển đổi chuỗi công cụ từ C sang Go.
+- Tổ chức lại cây mã nguồn.
+
+.link /doc/go1.4 go.dev/doc/go1.4
+
+
+* Chuyển sang Git
+
+* Chuyển sang Git
+
+Vào tháng 12, chúng tôi đã di chuyển các kho lưu trữ Go từ Mercurial sang Git.
+
+Cũng chuyển sang cơ sở hạ tầng phát triển mới:
+
+- googlesource.com thay thế Google Code để lưu trữ kho.
+- Gerrit thay thế Rietveld cho code review.
+- GitHub thay thế Google Code cho việc theo dõi issue và wiki.
+
+Đây là một bước ngoặt lớn cho người đóng góp Go, nhưng không quan trọng với người dùng Go.
+
+.link https://go.googlesource.com
+.link https://go-review.googlesource.com
+.link https://github.com/golang/go
+
+
+* Tại sao Git?
+
+- Gerrit và GitHub sử dụng Git.
+
+Tại sao Gerrit?
+
+- Rietveld không được duy trì.
+- Gerrit được duy trì tích cực; được sử dụng bởi Android và Chrome, trong số nhiều dự án khác.
+
+Tại sao GitHub?
+
+- Đưa chúng tôi gần hơn với cộng đồng.
+- Các kho GitHub khác có thể dễ dàng liên kết đến các issue và commit của Go.
+
+
+* Ưu và nhược điểm của việc chuyển đổi
+
+Ưu điểm:
+
+- Nhiều người hiểu Git hơn Mercurial.
+- Người đóng góp có thể sử dụng quy trình làm việc Git của riêng họ.
+- Tích hợp tốt giữa Git và Gerrit. (Rietveld và Mercurial là riêng biệt.)
+- Kiểm tra CLA tự động.
+
+Nhược điểm:
+
+- Git có đường cong học tập dốc.
+- Không có cách nào để vô hiệu hóa pull request.
+- Không có cách nào để "đánh dấu sao" hoặc +1 issue.
+- Tiêu chuẩn báo cáo issue đã đi xuống. (Không có mẫu issue. Văn hóa khác nhau.)
+- Việc chuyển đổi tốn rất nhiều công sức.
+
+
+* Tại sao không chấp nhận pull request?
+
+Đến từ Gerrit, Rietveld hoặc hệ thống code review nội bộ của Google,
+hệ thống pull request của GitHub còn thiếu sót.
+
+- Chỉ có thể xem diff trên một trang duy nhất (có thể *rất* chậm).
+- Nhận xét được gửi khi viết; bạn không thể "soạn thảo" nhận xét.
+- Không thể so sánh sự khác biệt giữa các bộ patch.
+- Để tạo một patch, người dùng phải fork kho lưu trữ công khai (kỳ lạ và không cần thiết).
+- Chấp nhận một patch tạo ra "merge commit" (lịch sử kho xấu).
+- Nói chung, văn hóa pull request không phải về code review.
+
+
+* Go 1.5
+
+
+* Thay đổi chu kỳ phát hành
+
+Go 1.5 được lên kế hoạch phát hành vào tháng 8 năm 2015 (trước đây là tháng 6).
+
+(Chu kỳ trước xung đột với kỳ nghỉ lễ và các sự kiện lịch khác.)
+
+
+* Từ C sang Go
+
+Chuỗi công cụ `gc` đang được chuyển đổi từ C sang Go.
+
+Một quá trình liên tục, bắt đầu từ đầu năm 2014.
+Russ Cox nói "Nó sẽ hoàn thành vào tháng 3 [2015]."
+
+Công cụ `link` mới thay thế `6l`, `8l`, v.v.
+Công cụ `asm` mới thay thế `6a`, `8a`, v.v.
+`gc` dịch máy để thay thế `6g`, `8g`, v.v.
+
+Tài liệu thiết kế:
+
+.link /s/go13compiler go.dev/s/go13compiler
+
+Go 1.5 sẽ *không* có code C trong chuỗi công cụ hay runtime.
+
+
+* Biên dịch Go 1.5
+
+Bạn sẽ cần Go 1.4 để build Go 1.5 trở lên.
+
+(Nhưng bạn sẽ không cần trình biên dịch C!)
+
+Là người dùng, hãy đặt Go 1.4 vào `$HOME/go1.4` (hoặc đặt `$GOROOT_BOOTSTRAP`).
+
+Các cổng OS hoặc kiến trúc mới sẽ cần cross-compile.
+
+Tài liệu thiết kế:
+
+.link /s/go15bootstrap go.dev/s/go15bootstrap
+
+Nếu bạn sử dụng bản phân phối nhị phân của Go, bạn không cần làm gì.
+
+
+* Bộ Thu Gom Rác Đồng Thời
+
+Công việc bắt đầu trên GC đồng thời mới trong chu kỳ phát triển Go 1.4.
+
+Mục tiêu:
+
+- Giới hạn độ trễ GC xuống dưới 10 mili giây.
+- Chạy code ứng dụng Go ít nhất 40ms trong mỗi 50ms.
+
+Đúng tiến độ cho Go 1.5.
+
+.link /s/go14gc go.dev/s/go14gc
+
+
+* HTTP/2
+
+Brad Fitzpatrick đã triển khai máy chủ `HTTP/2` cho Go.
+
+Sẽ có trong thư viện chuẩn trước Go 1.soon.
+
+Các máy chủ Go sử dụng `net/http` sẽ nhận `HTTP/2` miễn phí.
+
+Hiện tại trong GitHub của Brad:
+
+.link https://github.com/bradfitz/http2
+
+Xem nó hoạt động:
+
+.link https://http2.golang.org
+
+
+* Di động
+
+David Crawshaw, Hana Kim, Minux và Burcu Dogan đã làm việc trên Go cho
+các thiết bị di động.
+
+Có thể build ứng dụng Android với Go 1.4
+(nếu bạn có thể tìm ra hệ thống build Android).
+
+Cho Go 1.5:
+
+- Câu chuyện build đơn giản hơn cho Android.
+- Hỗ trợ thư viện NDK nhiều hơn.
+- Binding tốt hơn để gọi Go từ Java.
+- Bắt đầu hỗ trợ iOS. (Target build `darwin/arm` mới.)
+
+
+* Kiến trúc mới
+
+Go 1.5 sẽ hỗ trợ PowerPC 64 và (có thể) ARM64.
+
+PowerPC 64 về cơ bản đã hoàn thành; builder đang chạy, vượt qua các bài kiểm thử.
+
+Phát triển ARM64 đang tiến hành.
+Hy vọng có nhánh dev.arm64 trong kho chính cho Go 1.5.
+Mục tiêu xa hơn là merge nó vào master.
+
+Xem công việc đang tiến hành cho ARM64 tại đây:
+
+.link https://github.com/4ad/go
+
+
+* Theo dõi thực thi
+
+Dmitry Vyukov đã triển khai công cụ `trace`.
+Nó thu thập dữ liệu để tạo ra sơ đồ thực thi quy trình.
+
+.image state-of-go/trace.png 350 _
+
+Giao diện người dùng là trình xem trace Android/Chrome. ([[https://github.com/google/trace-viewer][github.com/google/trace-viewer]])
+
+.link /s/go15trace go.dev/s/go15trace
+
+
+* Công cụ Phân tích và Tái cấu trúc
+
+Alan Donovan và những người khác đã làm việc trên các công cụ phân tích và
+thao tác mã nguồn Go.
+
+Có sẵn trong kho `tools`:
+
+- `callgraph`: hiển thị đồ thị lời gọi của chương trình Go.
+- `gomvpkg`: di chuyển các gói Go, cập nhật khai báo import.
+- `gorename`: đổi tên an toàn kiểu của định danh trong mã nguồn Go.
+
+Sắp ra mắt:
+
+- `sockdrawer`: công cụ tự động tách gói.
+
+
+* Cơ sở hạ tầng Builder
+
+Brad Fitzpatrick và Andrew Gerrand đã làm việc nhiều với
+cơ sở hạ tầng build liên tục của chúng tôi.
+
+Hiện đang chạy các builder Linux, FreeBSD, OpenBSD và Plan 9
+trên Google Compute Engine. (OS X, Windows sắp tới.)
+
+Khởi động các builder để làm việc, khởi động nhiều builder song song.
+Cho kết quả nhanh hơn nhiều.
+
+Tiếp theo: trybot kiểm thử các thay đổi đang chờ xử lý.
+
+Ngoài ra: gomote! (Demo)
+
+
+* Cộng đồng Go
+
+
+* Hội nghị năm 2015
+
+- FOSDEM, Brussels, ngay bây giờ!
+- GopherCon India, Bengaluru, tháng 2
+- GoCon, Tokyo, Mùa xuân và Mùa thu
+- GopherCon, Denver, tháng 7
+- dotGo, Paris, tháng 11
+
+Nhiều sự kiện khác sẽ được thông báo.
+
+
+* Gopher Gala
+
+Một hackathon Go toàn cầu, vào tháng 1 năm 2015 (tuần trước).
+
+.image state-of-go/gala.jpg 200 _
+
+Các nhóm thi đua để tạo ra ứng dụng Go, được đánh giá bởi "tính hữu ích, sáng tạo, hoàn chỉnh và thể hiện điểm mạnh của Go."
+
+Ngoài ra còn có hackathon vật lý trên khắp thế giới: từ San Francisco đến Stockholm đến Tokyo.
+
+Giải thưởng hấp dẫn, bao gồm Chromebook Pixel, Raspberry Pi và chuyến đi đến Colima, Mexico.
+
+[[http://gophergala.com/blog/gopher/gala/2015/02/03/winners/][Người chiến thắng đã được thông báo]].
+
+
+
+* Nhóm người dùng Go
+
+Nhiều buổi gặp mặt Go đang xuất hiện trên khắp thế giới.
+
+Tìm một nhóm gần bạn:
+
+.link https://go-meetups.appspot.com
