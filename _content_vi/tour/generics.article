@@ -1,0 +1,41 @@
+Generics
+Go hỗ trợ lập trình generics bằng cách dùng tham số kiểu. Bài học này cho thấy một số ví dụ về việc sử dụng generics trong mã của bạn.
+
+The Go Authors
+https://golang.org
+
+* Tham số kiểu
+
+Các hàm Go có thể được viết để hoạt động trên nhiều kiểu bằng cách dùng tham số kiểu. Các
+tham số kiểu của một hàm xuất hiện giữa dấu ngoặc vuông, trước các đối số của hàm.
+
+  func Index[T comparable](s []T, x T) int
+
+Khai báo này có nghĩa là `s` là một slice của bất kỳ kiểu `T` nào thỏa mãn
+ràng buộc built-in `comparable`. `x` cũng là một giá trị cùng kiểu.
+
+`comparable` là một ràng buộc hữu ích cho phép dùng toán tử `==` và
+`!=` trên các giá trị của kiểu. Trong ví dụ này, ta dùng nó để so sánh một
+giá trị với tất cả các phần tử của slice cho đến khi tìm thấy khớp. Hàm `Index` này hoạt động
+với bất kỳ kiểu nào hỗ trợ so sánh.
+
+.play generics/index.go
+
+* Kiểu generic
+
+Ngoài các hàm generic, Go cũng hỗ trợ kiểu generic. Một kiểu có thể
+được tham số hóa bằng tham số kiểu, điều này có thể hữu ích để cài đặt
+các cấu trúc dữ liệu generic.
+
+Ví dụ này minh họa một khai báo kiểu đơn giản cho một danh sách liên kết đơn
+chứa bất kỳ kiểu giá trị nào.
+
+Là bài tập, hãy thêm một số chức năng cho cài đặt danh sách này.
+
+.play generics/list.go
+
+* Chúc mừng!
+
+Bạn đã hoàn thành bài học này!
+
+Bạn có thể quay lại danh sách các [[/tour/list][module]] để tìm hiểu tiếp theo, hoặc tiếp tục với [[javascript:click('.next-page')][bài học tiếp theo]].

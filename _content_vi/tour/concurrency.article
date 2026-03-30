@@ -1,0 +1,206 @@
+Concurrency
+Go cung cấp các cấu trúc concurrency như một phần của ngôn ngữ lõi. Bài học này trình bày chúng và đưa ra một số ví dụ về cách sử dụng.
+
+The Go Authors
+https://golang.org
+
+* Goroutine
+
+Một _goroutine_ là một luồng nhẹ được quản lý bởi Go runtime.
+
+	go f(x, y, z)
+
+khởi động một goroutine mới chạy
+
+	f(x, y, z)
+
+Việc đánh giá `f`, `x`, `y`, và `z` diễn ra trong goroutine hiện tại và việc thực thi `f` diễn ra trong goroutine mới.
+
+Các goroutine chạy trong cùng không gian địa chỉ, vì vậy việc truy cập bộ nhớ dùng chung phải được đồng bộ hóa. Package [[/pkg/sync/][`sync`]] cung cấp các nguyên thủy hữu ích, mặc dù bạn sẽ không cần chúng nhiều trong Go vì có các nguyên thủy khác. (Xem slide tiếp theo.)
+
+.play concurrency/goroutines.go
+
+* Channel
+
+Channel là một ống dẫn có kiểu qua đó bạn có thể gửi và nhận giá trị với toán tử channel, `<-`.
+
+	ch <- v    // Send v to channel ch.
+	v := <-ch  // Receive from ch, and
+	           // assign value to v.
+
+(Dữ liệu chảy theo hướng của mũi tên.)
+
+Giống như map và slice, channel phải được tạo trước khi sử dụng:
+
+	ch := make(chan int)
+
+Theo mặc định, các lệnh gửi và nhận bị chặn cho đến khi phía kia sẵn sàng. Điều này cho phép các goroutine đồng bộ hóa mà không cần khóa tường minh hoặc biến điều kiện.
+
+Mã ví dụ tính tổng các số trong một slice, phân phối công việc giữa hai goroutine.
+Khi cả hai goroutine hoàn thành tính toán, nó tính kết quả cuối cùng.
+
+.play concurrency/channels.go
+
+* Channel có bộ đệm
+
+Channel có thể _có bộ đệm_ (buffered). Cung cấp độ dài bộ đệm làm đối số thứ hai cho `make` để khởi tạo channel có bộ đệm:
+
+	ch := make(chan int, 100)
+
+Các lệnh gửi đến channel có bộ đệm chỉ bị chặn khi bộ đệm đầy. Các lệnh nhận bị chặn khi bộ đệm trống.
+
+Hãy chỉnh sửa ví dụ để làm đầy quá bộ đệm và xem điều gì xảy ra.
+
+.play concurrency/buffered-channels.go
+
+* Range và Close
+
+Người gửi có thể `close` một channel để chỉ ra rằng không còn giá trị nào sẽ được gửi. Người nhận có thể kiểm tra xem channel đã đóng chưa bằng cách gán tham số thứ hai cho biểu thức nhận: sau
+
+	v, ok := <-ch
+
+`ok` là `false` nếu không còn giá trị nào để nhận và channel đã đóng.
+
+Vòng lặp `for`i`:=`range`c` nhận giá trị từ channel liên tục cho đến khi nó đóng.
+
+*Lưu ý:* Chỉ người gửi mới nên đóng channel, không bao giờ là người nhận. Gửi trên một channel đã đóng sẽ gây ra panic.
+
+*Lưu ý khác:* Channel không giống tệp; bạn thường không cần đóng chúng. Việc đóng chỉ cần thiết khi người nhận phải được thông báo rằng không còn giá trị nào nữa, chẳng hạn để kết thúc vòng lặp `range`.
+
+.play concurrency/range-and-close.go
+
+* Select
+
+Câu lệnh `select` cho phép một goroutine chờ trên nhiều hoạt động giao tiếp.
+
+Một `select` bị chặn cho đến khi một trong các trường hợp của nó có thể chạy, sau đó nó thực thi trường hợp đó. Nó chọn ngẫu nhiên nếu nhiều trường hợp sẵn sàng.
+
+.play concurrency/select.go
+
+* Lựa chọn mặc định
+
+Trường hợp `default` trong `select` được chạy nếu không có trường hợp nào khác sẵn sàng.
+
+Dùng trường hợp `default` để thử gửi hoặc nhận mà không bị chặn:
+
+	select {
+	case i := <-c:
+		// use i
+	default:
+		// receiving from c would block
+	}
+
+.play concurrency/default-selection.go
+
+* Bài tập: Cây nhị phân tương đương
+
+Có thể có nhiều cây nhị phân khác nhau với cùng chuỗi giá trị được lưu trữ. Ví dụ, đây là hai cây nhị phân lưu trữ chuỗi 1, 1, 2, 3, 5, 8, 13.
+
+.image /tour/static/img/tree.png
+
+Hàm kiểm tra xem hai cây nhị phân có lưu trữ cùng chuỗi hay không khá phức tạp trong hầu hết các ngôn ngữ. Chúng ta sẽ dùng tính năng concurrency và channel của Go để viết một giải pháp đơn giản.
+
+Ví dụ này sử dụng package `tree`, định nghĩa kiểu:
+
+	type Tree struct {
+		Left  *Tree
+		Value int
+		Right *Tree
+	}
+
+
+Tiếp tục mô tả ở [[javascript:click('.next-page')][trang tiếp theo]].
+
+* Bài tập: Cây nhị phân tương đương
+
+*1.* Cài đặt hàm `Walk`.
+
+*2.* Kiểm tra hàm `Walk`.
+
+Hàm `tree.New(k)` tạo một cây nhị phân được cấu trúc ngẫu nhiên (nhưng luôn được sắp xếp) chứa các giá trị `k`, `2k`, `3k`, ..., `10k`.
+
+Tạo một channel mới `ch` và khởi động walker:
+
+	go Walk(tree.New(1), ch)
+
+Sau đó đọc và in 10 giá trị từ channel. Kết quả phải là các số 1, 2, 3, ..., 10.
+
+*3.* Cài đặt hàm `Same` dùng `Walk` để xác định xem `t1` và `t2` có lưu trữ cùng giá trị không.
+
+*4.* Kiểm tra hàm `Same`.
+
+`Same(tree.New(1),`tree.New(1))` nên trả về true, và `Same(tree.New(1),`tree.New(2))` nên trả về false.
+
+Tài liệu cho `Tree` có thể tìm thấy [[https://godoc.org/golang.org/x/tour/tree#Tree][tại đây]].
+
+.play concurrency/exercise-equivalent-binary-trees.go
+
+* sync.Mutex
+
+Chúng ta đã thấy cách channel phù hợp để giao tiếp giữa các goroutine.
+
+Nhưng nếu chúng ta không cần giao tiếp thì sao? Nếu chúng ta chỉ muốn đảm bảo chỉ
+một goroutine có thể truy cập một biến tại một thời điểm để tránh xung đột?
+
+Khái niệm này được gọi là _loại_trừ_lẫn_nhau_, và tên thông thường cho cấu trúc dữ liệu cung cấp điều đó là _mutex_.
+
+Thư viện chuẩn của Go cung cấp loại trừ lẫn nhau với
+[[/pkg/sync/#Mutex][`sync.Mutex`]] và hai phương thức của nó:
+
+- `Lock`
+- `Unlock`
+
+Chúng ta có thể định nghĩa một khối mã được thực thi trong loại trừ lẫn nhau bằng cách bao quanh nó
+với lời gọi `Lock` và `Unlock` như được hiển thị trong phương thức `Inc`.
+
+Chúng ta cũng có thể dùng `defer` để đảm bảo mutex sẽ được mở khóa như trong phương thức `Value`.
+
+.play concurrency/mutex-counter.go
+
+* Bài tập: Web Crawler
+
+Trong bài tập này, bạn sẽ dùng các tính năng concurrency của Go để song song hóa một web crawler.
+
+Chỉnh sửa hàm `Crawl` để lấy các URL song song mà không lấy cùng một URL hai lần.
+
+_Gợi ý_: bạn có thể lưu cache các URL đã được lấy trong một map, nhưng map không
+an toàn để sử dụng đồng thời!
+
+.play concurrency/exercise-web-crawler.go
+
+* Tiếp theo đi đâu...
+
+#appengine: Bạn có thể bắt đầu bằng cách
+#appengine: [[/doc/install/][cài đặt Go]].
+
+#appengine: Sau khi cài đặt Go,
+Trang
+[[/doc/][Tài liệu Go]] là nơi tuyệt vời để
+#appengine: tiếp tục.
+bắt đầu.
+Nó chứa các tài liệu tham khảo, hướng dẫn, video và nhiều thứ khác.
+
+Để tìm hiểu cách tổ chức và làm việc với mã Go, hãy đọc [[/doc/code][Cách viết mã Go]].
+
+Nếu bạn cần trợ giúp với thư viện chuẩn, hãy xem [[/pkg/][tài liệu tham khảo package]]. Để được trợ giúp về bản thân ngôn ngữ, bạn có thể bất ngờ khi thấy rằng [[/ref/spec][Đặc tả ngôn ngữ]] khá dễ đọc.
+
+Để khám phá thêm mô hình concurrency của Go, hãy xem
+[[https://www.youtube.com/watch?v=f6kdp27TYZs][Go Concurrency Patterns]]
+([[/talks/2012/concurrency.slide][slides]])
+và
+[[https://www.youtube.com/watch?v=QDDwwePbDtw][Advanced Go Concurrency Patterns]]
+([[/talks/2013/advconc.slide][slides]])
+và đọc bài phân tích
+[[/doc/codewalk/sharemem/][Share Memory by Communicating]].
+
+Để bắt đầu viết ứng dụng web, hãy xem
+[[https://vimeo.com/53221558][A simple programming environment]]
+([[/talks/2012/simple.slide][slides]])
+và đọc hướng dẫn
+[[/doc/articles/wiki/][Writing Web Applications]].
+
+Bài phân tích [[/doc/codewalk/functions/][First Class Functions in Go]] cung cấp góc nhìn thú vị về các kiểu hàm trong Go.
+
+[[/blog/][Blog Go]] có một kho lưu trữ lớn các bài viết thông tin về Go.
+
+Truy cập [[/][trang chủ Go]] để biết thêm.
