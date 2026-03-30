@@ -275,7 +275,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/normalization.md`
 - [ ] `blog/normalization/table1.html`
 - [ ] `blog/normalization/table2.html`
-- [ ] `blog/open-source.md`
+- [x] `blog/open-source.md`
 - [x] `blog/organizing-go-code.md`
 - [x] `blog/oscon.md`
 - [x] `blog/osconreport.md`
@@ -283,8 +283,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/package-names.md`
 - [x] `blog/pandemic.md`
 - [x] `blog/path-security.md`
-- [ ] `blog/pgo-preview.md`
-- [ ] `blog/pgo.md`
+- [x] `blog/pgo-preview.md`
+- [x] `blog/pgo.md`
 - [ ] `blog/pipelines.md`
 - [ ] `blog/pkg.go.dev-2020.md`
 - [ ] `blog/pkgsite-redesign.md`
