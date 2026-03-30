@@ -423,15 +423,15 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/contrib.md`
 - [ ] `doc/contribute.html`
 - [ ] `doc/copyright.md`
-- [ ] `doc/database/cancel-operations.md`
-- [ ] `doc/database/change-data.md`
-- [ ] `doc/database/execute-transactions.md`
-- [ ] `doc/database/index.md`
-- [ ] `doc/database/manage-connections.md`
-- [ ] `doc/database/open-handle.md`
-- [ ] `doc/database/prepared-statements.md`
-- [ ] `doc/database/querying.md`
-- [ ] `doc/database/sql-injection.md`
+- [x] `doc/database/cancel-operations.md`
+- [x] `doc/database/change-data.md`
+- [x] `doc/database/execute-transactions.md`
+- [x] `doc/database/index.md`
+- [x] `doc/database/manage-connections.md`
+- [x] `doc/database/open-handle.md`
+- [x] `doc/database/prepared-statements.md`
+- [x] `doc/database/querying.md`
+- [x] `doc/database/sql-injection.md`
 - [ ] `doc/debugging_with_gdb.md`
 - [ ] `doc/default.tmpl`
 - [ ] `doc/devel/pre_go1.html`
