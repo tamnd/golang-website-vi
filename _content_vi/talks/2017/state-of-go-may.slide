@@ -1,0 +1,305 @@
+Tình Trạng của Go
+Chúng ta đang ở đâu vào tháng 5 năm 2017
+
+Francesc Campoy
+Google Developer Advocate
+@francesc
+campoy@golang.org
+
+* Bản ghi
+
+Bản ghi của bài nói này có [[https://www.youtube.com/watch?v=dyvpF0jF3AY&list=PLtLJO5JKE5YAeVbgwCkgUWyOBsMvZu4UB&index=1][ở đây]].
+
+.image https://img.youtube.com/vi/dyvpF0jF3AY/0.jpg
+
+* Thời gian trôi nhanh
+
+Go 1.7 đã được 9 tháng!
+
+Go 1.8 được phát hành vào ngày 16 tháng 2.
+
+Vào ngày 1 tháng 5, chúng tôi bước vào giai đoạn đóng băng phát hành cho Go 1.9
+
+Go 1.9 sẽ được phát hành vào đầu tháng 8.
+
+.image state-of-go-may/img/flying.png
+
+* Ghi chú
+
+Các slide có tại [[/talks/2017/state-of-go-may.slide]]
+
+Hầu hết các ví dụ code sẽ không chạy ngoại trừ cục bộ và sử dụng tip.
+
+Playground chạy Go 1.8.
+
+* Chương trình
+
+Các thay đổi từ Go 1.8:
+
+- Ngôn ngữ
+- Thư viện Chuẩn
+- Runtime
+- Công cụ
+- Cộng đồng
+
+* Thay đổi ngôn ngữ
+
+* Tái cấu trúc Codebase (với sự giúp đỡ của Go)
+
+Bài viết do Russ Cox viết [[/talks/2016/refactor.article][link]]
+
+.image state-of-go-may/img/atomic.svg _ 300
+
+* Sửa chữa Code Dần dần
+
+Trong thực tế, việc thay đổi tất cả các cách dùng của một API một cách nguyên tử thường không thể.
+
+.image state-of-go-may/img/gradual.svg _ 600
+
+* Một ví dụ
+
+Hãy tưởng tượng chúng ta tạo ra một gói mới `net/http/status`.
+
+Đầu tiên: tạo API mới
+
+    package status
+
+    const OK = http.StatusOK
+
+Thứ hai: thay đổi từng cách dùng `http.StatusOK` bằng `status.OK`.
+
+    if res.StatusCode != http.StatusOK {
+
+    if res.StatusCode != status.OK {
+
+Thứ ba: xóa API cũ
+
+* Một ví dụ khác
+
+Hãy đổi tên `http.Get` thành `http.DoGetPleaseAndThanks`.
+
+Đầu tiên: tạo API mới
+
+    func DoGetPleaseAndThanks(url string) (*http.Response, error) {
+        return Get(url)
+    }
+
+Thứ hai: thay đổi từng cách dùng `http.Get` thành `http.DoGetPleaseAndThanks`.
+
+    res, err := http.Get("https://golang.org")
+
+    res, err := http.DoGetPleaseAndThanks("https://golang.org")
+
+Thứ ba: xóa API cũ
+
+* Một ví dụ cuối cùng
+
+Hãy di chuyển `http.Client` thành `http.Applicant`.
+
+Đầu tiên: tạo API mới
+
+    type Applicant Client
+
+- `Applicant` không có phương thức.
+- Cả hai kiểu đều có thể chuyển đổi.
+
+    type Applicant struct { Client }
+
+- `Applicant` có tất cả các phương thức của `Client`
+- Các kiểu không thể chuyển đổi.
+
+* Khai báo alias
+
+Khai báo alias là một loại khai báo kiểu mới.
+
+    type Applicant = http.Client
+
+Cả hai kiểu đều tương đương và hoàn toàn có thể thay thế cho nhau.
+
+- không cần chuyển đổi kiểu
+- không thể khai báo phương thức trên khai báo alias
+
+.play state-of-go-may/alias/main.go /type/,
+
+
+* Quaternion
+
+.image state-of-go-may/img/quaternions.png _ 750
+.caption [[/issue/19813][issue #19813]]
+
+* Thư viện Chuẩn
+
+* Khảo sát Twitter
+
+.image state-of-go-may/img/twitter-poll.png _ 800
+.caption [[https://twitter.com/francesc/status/863514399486623744][khảo sát twitter]]
+
+* math/bits
+
+[[https://tip.golang.org/pkg/math/bits/#Len16][Package bits]] triển khai các hàm đếm bit và thao tác cho các kiểu số nguyên không dấu được khai báo sẵn.
+
+Thêm vào thư viện chuẩn với đề xuất [[/issue/18616][#18616]].
+
+- LenXX, OnesCountXX
+- ReverseXX, ReverseBytesXX
+- RotateLeftXX
+- LeadingZerosXX, TrailingZerosXX
+
+.play state-of-go-may/bits/main.go /START/,/END/
+
+* sync.Map
+
+Một kiểu mới đã được thêm vào gói `sync` với đề xuất [[/issue/18177][#18177]].
+
+[[https://tip.golang.org/pkg/sync/#Map][sync.Map]] là một map đồng thời với load, store và delete có thời gian khấu hao không đổi.
+
+- giá trị zero của map là hợp lệ
+- nó không được sao chép (sử dụng con trỏ)
+
+* Ví dụ code sync.Map
+
+.play state-of-go-may/syncmap/main.go /func main/,
+
+* html/template panic với escaper được định nghĩa trước
+
+Bạn mong đợi [[/play/p/-z5rZilH1F][code này]] in gì?
+
+.play state-of-go-may/html/main.go /Foo/,
+
+Các escaper được định nghĩa trước trong template `html` tạo ra mối lo ngại bảo mật.
+
+Kể từ 1.9 `Execute` sẽ panic.
+
+* os.Exec
+
+Hãy tưởng tượng chúng ta có một lệnh `getenv` in ra một biến môi trường
+sử dụng `os.Getenv`.
+
+.code state-of-go-may/exec/getenv/main.go /func main/,
+
+Chúng ta có thể chạy nó như sau:
+
+    $ foo=bar getenv foo
+    bar
+
+* os.Exec
+
+Bạn mong đợi code này in gì?
+
+.code state-of-go-may/exec/main.go /func main/,
+
+bar, hay newbar?
+
+* Khảo sát Twitter khác
+
+.image state-of-go-may/img/exec-poll.png _ 600
+.caption [[https://twitter.com/francesc/status/863791506934472705][Khảo sát Twitter]]
+
+* os.Exec
+
+`Cmd.Start` bây giờ loại bỏ các bản sao của biến môi trường, giữ cái cuối cùng.
+
+Code này làm điều người ta mong đợi:
+
+    cmd := exec.Command("prog")
+    cmd.Env = append(os.Environ(), "FOO=bar")
+
+* Runtime
+
+* Benchmark
+
+.image state-of-go-may/img/benchmark.png _ 800
+.caption _lưu*ý_: giá trị trên 1.0 có nghĩa là tip nhanh hơn
+.caption _lưu*ý_: benchmark không chính thức chạy trên laptop của tôi trong khi phát video YouTube
+
+* Thêm về runtime
+
+Bộ Thu Gom Rác
+
+- Thuật toán mới cho phân bổ đối tượng lớn
+- Hiệu năng tốt hơn và tính tất định tăng cao cho heap lớn (+50GB)
+
+[[https://en.wikipedia.org/wiki/DWARF][DWARF]]
+
+- Nỗ lực liên tục để cải thiện thông tin DWARF được tạo ra.
+- Điều này sẽ giúp trình gỡ lỗi, trong số các công cụ khác.
+
+* Công cụ
+
+* Trình biên dịch go: lỗi tốt hơn!
+
+Thông báo lỗi tốt hơn cho dấu ngoặc nhọn kiểu Allman.
+
+    package main
+
+    func main()
+    {
+        fmt.Println("that ain't gonna compile")
+    }
+
+Với go 1.8:
+
+    fail/main.go:4: syntax error: unexpected semicolon or newline before {
+
+Với go 1.9:
+
+    fail/main.go:3:6: missing function body for "main"
+    fail/main.go:4:1: syntax error: unexpected semicolon or newline before {
+
+* Trình biên dịch go: mô-đun hóa hơn và nhanh hơn
+
+Trình biên dịch đã được tái cấu trúc thành nhiều gói.
+
+    cmd/go/internal/...
+
+Issue [[/issue/17639][#17639]] đã làm cho việc phân tích đồng thời.
+
+Trình biên dịch nhanh hơn nhờ đó.
+
+* go test
+
+Thư mục `vendor` bị bỏ qua bởi công cụ `go` [[/issue/19090][#19090]]:
+
+    go test ./...
+
+Bây giờ bạn có thể liệt kê tất cả các bài kiểm thử sẽ được thực thi, mà không cần chạy chúng [[/issue/17209][#17209]].
+
+	$ go test -test.list .
+    TestIntegration
+    TestEmbedStreams
+    TestEmbedFiles
+
+* godoc
+
+Bây giờ bạn có thể liên kết đến các trường trong struct trong tài liệu [[/issue/16753][#16753]].
+
+.link https://tip.golang.org/pkg/net/http/#Client.Transport
+
+_Lưu*ý_: Thực ra điều này đã được giới thiệu với Go 1.8!
+
+* ... và nhiều hơn nữa!
+
+* Cộng đồng
+
+* Các buổi gặp mặt Go
+
+.image state-of-go-may/img/meetups.png _ 900
+.caption Gopher trên khắp thế giới! [[http://go-meetups.appspot.com]]
+
+* Women Who Go
+
+.image state-of-go-may/img/wwg.png _ 800
+.caption 19 chương đã có! [[http://www.womenwhogo.org]]
+
+* Học bổng Gophercon của Women Who Go
+
+WWG đang tài trợ cho các gopher thiểu số từ khắp nơi trên thế giới tham dự Gophercon
+
+.image state-of-go-may/img/wwg-logo.png _ 700
+
+* Hội nghị:
+
+- [[http://gophercon.sg][Gophercon Singapore]], 25-26 tháng 5
+- [[https://gophercon.com/][Gophercon Denver]], 12-15 tháng 7
+- [[http://golanguk.com/][Golang UK]], 16-18 tháng 8
+- [[http://2017.dotgo.eu/][dotGo]], 6 tháng 11

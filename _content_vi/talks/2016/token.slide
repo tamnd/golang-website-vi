@@ -1,0 +1,469 @@
+Ngăn Xếp của Token
+Một nghiên cứu về interface
+
+Sydney Go Meetup
+15 September 2016
+
+Rob Pike
+Google
+https://go.dev/
+
+* Bối cảnh
+
+Đã nói tại Gophercon năm nay: [[/talks/2016/asm.slide]]
+
+Bài nói đó nói về thiết kế hệ thống và tính di động.
+
+Bài nói hôm nay nói về lexer của nó.
+
+Đã nói về lexing trước đây: [[/talks/2011/lex.slide]]
+
+Bài nói đó cho thấy cách sử dụng đồng thời để xây dựng một lexer.
+
+Bài nói hôm nay nói về interface.
+
+* Lexer
+
+Một lexer, còn được gọi là scanner, chia luồng đầu vào thành các "token" riêng biệt:
+
+- định danh
+- số
+- chuỗi được trích dẫn
+- toán tử
+- các ký tự khác nhau như dấu phẩy, dấu hai chấm.
+
+Mỗi token có _kiểu_ và _giá*trị_.
+
+* Ví dụ
+
+	MOVQ    R0, 4(R1)
+
+Lexer biến điều này thành luồng
+
+- định danh `MOVQ`
+- định danh `R0`
+- ký tự `,`
+- số `4`
+- ký tự `(`
+- định danh `R1`
+- ký tự `)`
+
+Khoảng trắng bị bỏ qua.
+
+Parser sau đó đọc các token này để phân tích đầu vào thành _cây*phân*tích_.
+
+* Gói text/scanner của Go
+
+Có một gói lexer hay, hiệu quả trong thư viện chuẩn Go:
+
+- [[/pkg/text/scanner/][`text/scanner`]]
+
+Nó có thể làm công việc này tốt.
+
+Nhưng.... điều đó không đủ cho trình hợp dịch vì
+
+* Tương thích ngược
+
+Trình hợp dịch Go mới phải hoàn toàn tương thích với những cái nó thay thế, sử dụng YACC và được viết bằng C. (Xem [[/talks/2015/gogo.slide][]].)
+
+Mỗi trình hợp dịch (một cho mỗi kiến trúc) chứa các dòng này ở cuối `lex.c`:
+
+	#include "../cc/lexbody"
+	#include "../cc/macbody"
+
+Điều này cho các trình hợp dịch cùng lexer như trình biên dịch C.
+Sự khác biệt giữa token C và token Go là nhỏ và có thể được xử lý, nhưng....
+
+
+Lexer C đưa vào điều gì đó có vấn đề.
+
+* Bộ tiền xử lý C
+
+Các trình hợp dịch cũ có bộ tiền xử lý C được tích hợp sẵn!
+Một cái cũ, không có `#if` và dán token, nhưng vẫn:
+
+	#include "file"
+	#define  MAXBUF 512
+	#define  MULDIV(a, b, c)  ((a)*(b)/(c))
+	#ifdef   MAXBUF
+	#endif
+
+Gói `text/scanner` không thể xử lý điều này.
+Nhưng chúng ta cần làm điều đó để tương thích.
+
+Bài nói này nói về cách sử dụng interface của Go để làm điều đó.
+
+* Một quan sát
+
+Đầu vào chuẩn là gì? Một nguồn đầu vào.
+
+- đọc đầu vào
+
+File được include là gì? Một nguồn đầu vào.
+
+- đọc file
+
+Lời gọi macro là gì? Một nguồn đầu vào.
+
+- đọc định nghĩa macro
+
+Nghe giống `io.Reader`.
+
+* Trình đọc token
+
+Chúng ta không muốn byte, chúng ta muốn token. (Tại sao?)
+
+Thay vì
+
+	type Reader interface {
+		Read(p []byte) (n int, err error)
+	}
+
+chúng ta muốn thứ gì đó như
+
+	type TokenReader interface {
+		ReadToken() (Token, error)
+	}
+
+Trong thực tế parser cần thứ gì đó khác với `Read`, nhưng ý tưởng cơ bản hoạt động.
+
+Chúng ta xây dựng lexer xung quanh interface đọc token.
+
+* Quan sát trong thực tế
+
+Đầu vào chuẩn là gì? Một nguồn đầu vào.
+
+- lấy token từ đầu vào
+
+File được include là gì? Một nguồn đầu vào.
+
+- lấy token từ file
+
+Lời gọi macro là gì? Một nguồn đầu vào.
+
+- lấy token từ định nghĩa macro
+
+Mỗi cái triển khai interface `TokenReader`.
+
+* TokenReader
+
+	type TokenReader interface {
+		// Next returns the next token.
+		Next() ScanToken
+		// The following methods all refer to the most recent token returned by Next.
+		// Text returns the original string representation of the token.
+		Text() string
+		// File reports the source file name of the token.
+		File() string
+		// Line reports the source line number of the token.
+		Line() int
+		// Col reports the source column number of the token.
+		Col() int
+	}
+
+Parser gọi `Next`, sau đó có thể hỏi về token: nó là gì, nó ở đâu.
+`ScanToken` chỉ là `text/scanner.Token` với các chỉnh sửa.
+
+Lưu ý: Không có `Peek`. Cái này không có lookahead.
+
+* Tokenizer
+
+`Tokenizer`, `TokenReader` cơ bản, biến `text/scanner.Scanner` thành `TokenReader`.
+
+	// A Tokenizer is a simple wrapping of text/scanner.Scanner, configured
+	// for our purposes and made a TokenReader. It forms the lowest level,
+	// turning text from readers into tokens.
+	type Tokenizer struct {
+		tok      ScanToken // Most recent token.
+		s        *scanner.Scanner
+		line     int
+		fileName string
+	}
+
+	func NewTokenizer(name string, r io.Reader, file *os.File) *Tokenizer
+
+Hoặc reader hoặc file có thể là nil.
+
+`Tokenizer` triển khai `TokenReader`
+
+* Tokenizer.Next
+
+Để cho thấy hương vị:
+
+	func (t *Tokenizer) Next() ScanToken {
+		s := t.s
+		for {
+			t.tok = ScanToken(s.Scan())
+			if t.tok != scanner.Comment {
+				break
+			}
+			length := strings.Count(s.TokenText(), "\n")
+			t.line += length
+			histLine += length
+			// For now, just discard all comments.
+		}
+		// Special processing for '\n' etc. elided.
+		return t.tok
+	}
+
+* Tokenizer.Text
+
+	func (t *Tokenizer) Text() string {
+		switch t.tok {
+		case LSH:  // Special handling of odd tokens used by ARM.
+			return "<<"
+		case RSH:
+			return ">>"
+		case ARR:
+			return "->"
+		case ROT:
+			return "@>"
+		}
+		return t.s.TokenText()
+	}
+
+`LSH` v.v. là lý do cho `ScanToken`: tập hợp token là siêu tập của kiểu cơ bản `text/scanner.Token`.
+
+* Định nghĩa macro
+
+Dễ thấy cách các file hoạt động: `NewTokenizer` có thể làm điều đó.
+
+Còn định nghĩa macro thì sao?
+
+	#define A(arg) 27+(arg)
+
+Trở thành các token
+
+	27 + ( arg )
+
+Khi chúng ta gặp `A(x)`, chúng ta thay thế đối số và nhận
+
+	27 + ( x )
+
+Sử dụng slice token và lưu trữ chúng trong struct `Macro`.
+
+	type Macro struct {
+		name   string   // The #define name.
+		args   []string // Formal arguments.
+		tokens []Token  // Body of macro.
+	}
+
+* Slice
+
+	// A Slice reads from a slice of Tokens.
+	type Slice struct {
+		tokens   []Token
+		fileName string
+		line     int
+		pos      int
+	}
+
+Triển khai `TokenReader`.
+
+	func (s *Slice) Next() ScanToken {
+		s.pos++
+		if s.pos >= len(s.tokens) {
+			return scanner.EOF
+		}
+		return s.tokens[s.pos].ScanToken
+	}
+
+Để gọi macro, thay thế _actuals_ cho _formals_ và tạo `Slice`.
+
+* Cờ dòng lệnh
+
+Cờ dòng lệnh `-D` có thể định nghĩa macro trước khi thực thi:
+
+	go tool asm -D 'macro=value' file.s
+
+Điều đó dễ dàng!
+
+	var DFlag MultiFlag
+	flag.Var(&DFlag, "D", "predefined symbol D=identifier...")
+
+	type MultiFlag []string // Implements flag.Value, allows multiple settings.
+
+	predefine(DFlag)
+
+* Macro được định nghĩa trước
+
+	// predefine installs the macros set by the -D flag on the command line.
+	func predefine(defines MultiFlag) map[string]*Macro {
+		macros := make(map[string]*Macro)
+		for _, name := range defines {
+			value := "1"
+			i := strings.IndexRune(name, '=')
+			if i > 0 {
+				name, value = name[:i], name[i+1:]
+			}
+			// Various error checks elided.
+			macros[name] = &Macro{
+				name:   name,
+				args:   nil, // No arguments allowed.
+				tokens: Tokenize(value), // Turn the value into tokens.
+			}
+		}
+		return macros
+	}
+
+Giá trị trả về là bảng ký hiệu ban đầu của các macro.
+
+* Bức tranh toàn cảnh
+
+Chúng ta biết cách:
+
+- tokenize luồng đầu vào từ văn bản hoặc `io.Reader`
+- định nghĩa macro
+- gọi macro
+
+Nhưng chúng khớp với nhau như thế nào?
+`TokenReader` nào parser nhìn thấy?
+
+Xem xét
+
+- `#include` đặt tên cho file cần xử lý tiếp theo
+- lời gọi macro đặt tên cho slice token cần xử lý tiếp theo
+
+Đó là một ngăn xếp! Đẩy đầu vào mới, bật ra ở EOF.
+
+* Ngăn xếp
+
+	// A Stack is a stack of TokenReaders. As the top TokenReader hits EOF,
+	// it resumes reading the next one down.
+	type Stack struct {
+		tr []TokenReader
+	}
+
+	// Push adds tr to the top (end) of the input stack. (Popping happens automatically.)
+	func (s *Stack) Push(tr TokenReader) {
+		s.tr = append(s.tr, tr)
+	}
+
+	func (s *Stack) Next() ScanToken {
+		tos := s.tr[len(s.tr)-1]
+		tok := tos.Next()
+		for tok == scanner.EOF && len(s.tr) > 1 {
+			// Pop the topmost item from the stack and resume with the next one down.
+			s.tr = s.tr[:len(s.tr)-1]
+			tok = s.Next()
+		}
+		return tok
+	}
+
+* Kiểu Input
+
+	// Input is the main input: a stack of readers and some macro definitions.
+	// It also handles #include processing (by pushing onto the input stack)
+	// and parses and instantiates macro definitions.
+	type Input struct {
+		Stack
+		includes        []string  // Directories in which to look for #includes
+		macros          map[string]*Macro
+		text            string // Text of last token returned by Next.
+		...
+	}
+
+Lưu ý việc nhúng `Stack`: `Input` là một gói của triển khai `Stack` của `TokenReader`.
+Parser sử dụng một instance duy nhất của `Input` như `TokenReader` của nó.
+
+* Ví dụ: xử lý #include
+
+Một số xử lý lỗi được bỏ qua để ngắn gọn.
+
+	func (in *Input) include() {
+		// Find and parse file name, which is next token, a string.
+		tok := in.Stack.Next()
+		name, _ := strconv.Unquote(in.Stack.Text())
+		in.expectNewline("#include") // Checks that a newline comes now.
+		// Push tokenizer for file onto stack.
+		fd, err := os.Open(name)
+		if err != nil {
+			for _, dir := range in.includes {
+				fd, err = os.Open(filepath.Join(dir, name))
+				if err == nil {
+					break
+				}
+			}
+		}
+		in.Push(NewTokenizer(name, fd, fd))
+	}
+
+* Định nghĩa macro
+
+Định nghĩa macro tương tự nhưng phức tạp hơn vì sự đa dạng của các dạng.
+Phải xử lý hằng số, giá trị rỗng, macro với đối số, v.v.
+
+Kết quả cuối cùng là xây dựng giá trị `Macro` và cài đặt nó trong `Input.macros`.
+
+* Phần cuối cùng: Input.Next
+
+Đây là triển khai luồng đầu vào CPP sử dụng các kiểu này.
+(Xử lý lỗi hầu hết được bỏ qua để ngắn gọn.)
+
+	func (in *Input) Next() ScanToken {
+		// If we cannot generate a token after 100 macro invocations, we're in trouble.
+		for nesting := 0; nesting < 100; {
+			tok := in.Stack.Next()
+			switch tok {
+			case '#':
+				in.hash()
+			case scanner.Ident:
+				// Is it a macro name?
+				name := in.Stack.Text()
+				macro := in.macros[name]
+				if macro != nil {
+					nesting++
+					in.invokeMacro(macro)
+					continue
+				}
+				fallthrough
+			default:
+				// Continued on next slide.
+
+* Input.Next phần 2
+
+	func (in *Input) Next() ScanToken {
+				// Continued from previous slide.
+			default:
+				if tok == scanner.EOF && len(in.ifdefStack) > 0 {
+					// We're skipping text but have run out of input with no #endif.
+					in.Error("unclosed #ifdef or #ifndef")
+				}
+				if in.enabled() {
+					in.text = in.Stack.Text()
+					return tok
+				}
+			}
+		}
+		in.Error("recursive macro invocation")
+		return 0
+	}
+
+* Khởi tạo và chạy lexer
+
+	// NewInput returns an Input from the given path.
+	func NewInput(name string) *Input {
+		return &Input{
+			// include directories: look in source dir, then -I directories.
+			includes:        append([]string{filepath.Dir(name)}, IFlag...),
+			macros:          predefine(DFlag),
+		}
+	}
+
+Để chạy, gọi `in.Push` để đặt file đầu vào (hoặc `os.Stdin`) lên ngăn xếp.
+
+Sau đó lexer chạy cho đến khi `Stack` rỗng.
+
+* Tóm tắt
+
+Interface cho chương trình cấu trúc.
+
+Interface khuyến khích thiết kế theo thành phần.
+
+- Chúng ta có một interface được triển khai bởi một ngăn xếp của chính nó!
+
+Interface cho phép và thực thi sự phân chia rõ ràng giữa các thành phần.
+
+- Ý tưởng đơn giản về `TokenReader` cho phép chúng ta triển khai các file `#include`, macro `#define`, cờ dòng lệnh, `#ifdef` và nhiều hơn nữa với một interface đơn giản.
+
+Và một lời kính trọng cuối cùng đến `text/scanner` bên dưới tất cả.
