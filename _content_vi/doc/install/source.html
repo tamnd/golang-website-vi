@@ -1,0 +1,759 @@
+<!--{
+	"Title": "Cài đặt Go từ mã nguồn",
+	"Breadcrumb": true
+}-->
+
+<p>
+Trang này mô tả cách biên dịch và chạy Go từ mã nguồn.
+Để cài đặt bằng trình cài đặt, xem <a href="/doc/install">Tải xuống và cài đặt</a>.
+</p>
+
+<h2 id="introduction">Giới thiệu</h2>
+
+<p>
+Go là một dự án mã nguồn mở, phân phối theo
+<a href="/LICENSE">giấy phép kiểu BSD</a>.
+Tài liệu này giải thích cách lấy mã nguồn,
+biên dịch trên máy của bạn và chạy chúng.
+</p>
+
+<p>
+Hầu hết người dùng không cần thực hiện điều này mà sẽ cài đặt
+từ các gói nhị phân được biên dịch sẵn như mô tả trong
+<a href="/doc/install">Tải xuống và cài đặt</a>,
+một quy trình đơn giản hơn nhiều.
+Tuy nhiên, nếu bạn muốn tham gia phát triển những gói nhị phân đó,
+hãy tiếp tục đọc.
+</p>
+
+<div class="detail">
+
+<p>
+Có hai bộ công cụ biên dịch Go chính thức.
+Tài liệu này tập trung vào trình biên dịch và công cụ Go <code>gc</code>.
+Để biết cách làm việc với <code>gccgo</code>, một trình biên dịch truyền thống hơn
+sử dụng back end của GCC, xem
+<a href="/doc/install/gccgo">Thiết lập và sử dụng gccgo</a>.
+</p>
+
+<p>
+Các trình biên dịch Go hỗ trợ các tập lệnh sau:
+
+<dl>
+<dt>
+  <code>amd64</code>, <code>386</code>
+</dt>
+<dd>
+  Tập lệnh <code>x86</code>, 64-bit và 32-bit.
+</dd>
+<dt>
+  <code>arm64</code>, <code>arm</code>
+</dt>
+<dd>
+  Tập lệnh <code>ARM</code>, 64-bit (<code>AArch64</code>) và 32-bit.
+</dd>
+<dt>
+  <code>loong64</code>
+</dt>
+<dd>
+  Tập lệnh LoongArch 64-bit.
+</dd>
+<dt>
+  <code>mips64</code>, <code>mips64le</code>, <code>mips</code>,  <code>mipsle</code>
+</dt>
+<dd>
+  Tập lệnh <code>MIPS</code>, big-endian và little-endian, 64-bit và 32-bit.
+</dd>
+<dt>
+  <code>ppc64</code>, <code>ppc64le</code>
+</dt>
+<dd>
+  Tập lệnh PowerPC 64-bit, big-endian và little-endian.
+</dd>
+<dt>
+  <code>riscv64</code>
+</dt>
+<dd>
+  Tập lệnh RISC-V 64-bit.
+</dd>
+<dt>
+  <code>s390x</code>
+</dt>
+<dd>
+  Kiến trúc IBM z/Architecture.
+</dd>
+<dt>
+  <code>wasm</code>
+</dt>
+<dd>
+  <a href="https://webassembly.org">WebAssembly</a>.
+</dd>
+</dl>
+</p>
+
+<p>
+Các trình biên dịch có thể nhắm đến các hệ điều hành AIX, Android, DragonFly BSD, FreeBSD,
+Illumos, Linux, macOS/iOS (Darwin), NetBSD, OpenBSD, Plan 9, Solaris
+và Windows (mặc dù không phải tất cả hệ điều hành đều hỗ trợ mọi kiến trúc).
+</p>
+
+<p>
+Danh sách các cổng được coi là "hạng nhất" có tại trang wiki
+<a href="/wiki/PortingPolicy#first-class-ports">first class ports</a>.
+</p>
+
+<p>
+Tập hợp đầy đủ các tổ hợp được hỗ trợ được liệt kê trong phần thảo luận về
+<a href="#environment">biến môi trường</a> bên dưới.
+</p>
+
+<p>
+Xem trang Go Wiki MinimumRequirements để biết
+<a href="/wiki/MinimumRequirements">yêu cầu hệ thống tổng thể</a>.
+</p>
+
+</div>
+
+<h2 id="go14">Cài đặt các tệp nhị phân trình biên dịch Go để khởi động</h2>
+
+<p>
+Bộ công cụ Go được viết bằng Go. Để biên dịch nó, bạn cần có một trình biên dịch Go đã được cài đặt.
+Các script thực hiện việc biên dịch ban đầu tìm kiếm lệnh "go"
+trong <code>$PATH</code>, vì vậy miễn là bạn đã cài đặt Go trong hệ thống
+và cấu hình trong <code>$PATH</code>, bạn đã sẵn sàng để biên dịch Go từ mã nguồn.
+Hoặc nếu muốn, bạn có thể đặt <code>$GOROOT_BOOTSTRAP</code> thành
+thư mục gốc của một bản cài đặt Go để sử dụng biên dịch bộ công cụ Go mới;
+<code>$GOROOT_BOOTSTRAP/bin/go</code> là lệnh go sẽ được dùng.</p>
+
+<p>
+Phiên bản Go tối thiểu cần thiết phụ thuộc vào phiên bản Go mục tiêu:
+</p>
+
+<ul>
+<li> Go &lt;= 1.4: một bộ công cụ C.
+<li> 1.5 &lt;= Go &lt;= 1.19: trình biên dịch Go 1.4.
+<li> 1.20 &lt;= Go &lt;= 1.21: trình biên dịch Go 1.17.
+<li> 1.22 &lt;= Go &lt;= 1.23: trình biên dịch Go 1.20.
+<li> Về sau, Go phiên bản 1.N sẽ yêu cầu trình biên dịch Go 1.M,
+trong đó M là N-2 làm tròn xuống đến số chẵn. Ví dụ: Go 1.24 và 1.25 yêu cầu Go 1.22.
+</ul>
+
+<p>
+Có bốn cách để lấy bộ công cụ khởi động:
+</p>
+
+<ul>
+<li>Tải xuống một bản phát hành nhị phân gần đây của Go.
+<li>Biên dịch chéo một bộ công cụ sử dụng hệ thống đang có cài đặt Go hoạt động.
+<li>Sử dụng gccgo.
+<li>Biên dịch bộ công cụ từ Go 1.4, bản phát hành Go cuối cùng có trình biên dịch viết bằng C.
+</ul>
+
+<p>
+Các phương pháp này được mô tả chi tiết bên dưới.
+</p>
+
+<h3 id="bootstrapFromBinaryRelease">Bộ công cụ khởi động từ bản phát hành nhị phân</h3>
+
+<p>
+Để sử dụng một bản phát hành nhị phân làm bộ công cụ khởi động, xem
+<a href="/dl/">trang tải xuống</a> hoặc sử dụng bất kỳ bản phân phối Go đóng gói nào
+đáp ứng yêu cầu phiên bản tối thiểu.
+</p>
+
+<h3 id="bootstrapFromCrosscompiledSource">Bộ công cụ khởi động từ mã nguồn biên dịch chéo</h3>
+
+<p>
+Để biên dịch chéo một bộ công cụ khởi động từ mã nguồn, điều này là
+cần thiết trên các hệ thống mà Go 1.4 không nhắm đến (ví dụ
+<code>linux/ppc64le</code>), hãy cài đặt Go trên một hệ thống khác
+và chạy <a href="/src/bootstrap.bash">bootstrap.bash</a>.
+</p>
+
+<p>
+Khi chạy như (ví dụ)
+</p>
+
+<pre>
+$ GOOS=linux GOARCH=ppc64 ./bootstrap.bash
+</pre>
+
+<p>
+<code>bootstrap.bash</code> biên dịch chéo một bộ công cụ cho tổ hợp <code>GOOS/GOARCH</code> đó,
+để lại cây kết quả trong <code>../../go-${GOOS}-${GOARCH}-bootstrap</code>.
+Cây đó có thể được sao chép sang một máy có kiểu mục tiêu tương ứng
+và được dùng làm <code>GOROOT_BOOTSTRAP</code> để khởi động một bản biên dịch cục bộ.
+</p>
+
+<h3 id="bootstrapFromGccgo">Bộ công cụ khởi động sử dụng gccgo</h3>
+
+<p>
+Để sử dụng gccgo làm bộ công cụ khởi động, bạn cần sắp xếp để
+<code>$GOROOT_BOOTSTRAP/bin/go</code> là công cụ go đi kèm
+với gccgo 5. Ví dụ trên Ubuntu Vivid:
+</p>
+
+<pre>
+$ sudo apt-get install gccgo-5
+$ sudo update-alternatives --set go /usr/bin/go-5
+$ GOROOT_BOOTSTRAP=/usr ./make.bash
+</pre>
+
+<h3 id="bootstrapFromSource">Bộ công cụ khởi động từ mã nguồn C</h3>
+
+<p>
+Để biên dịch bộ công cụ khởi động từ mã nguồn C, sử dụng
+nhánh git <code>release-branch.go1.4</code> hoặc
+<a href="https://dl.google.com/go/go1.4-bootstrap-20171003.tar.gz">go1.4-bootstrap-20171003.tar.gz</a>,
+chứa mã nguồn Go 1.4 cùng các bản sửa lỗi tích lũy
+để giữ cho công cụ hoạt động trên các hệ điều hành mới hơn.
+(Go 1.4 là bản phân phối cuối cùng mà bộ công cụ được viết bằng C.)
+Sau khi giải nén mã nguồn Go 1.4, <code>cd</code> vào
+thư mục con <code>src</code>, đặt <code>CGO_ENABLED=0</code> trong
+môi trường, và chạy <code>make.bash</code> (hoặc,
+trên Windows, <code>make.bat</code>).
+</p>
+
+<p>
+Sau khi giải nén mã nguồn Go 1.4 vào thư mục GOROOT_BOOTSTRAP,
+bạn phải giữ bản clone git này ở nhánh
+<code>release-branch.go1.4</code>. Cụ thể, đừng cố tái sử dụng
+bản clone git này ở bước sau có tên "Fetch the repository." Bộ công cụ khởi động go1.4
+<b>phải có khả năng</b> duyệt đúng cây mã nguồn go1.4
+mà nó giả định là nằm trong thư mục gốc kho lưu trữ này.
+</p>
+
+<p>
+Lưu ý rằng Go 1.4 không chạy trên tất cả các hệ thống mà các phiên bản Go sau này hỗ trợ.
+Đặc biệt, Go 1.4 không hỗ trợ các phiên bản macOS hiện tại.
+Trên những hệ thống như vậy, bộ công cụ khởi động phải được lấy bằng một trong các phương pháp khác.
+</p>
+
+<h2 id="git">Cài đặt Git (nếu cần)</h2>
+
+<p>
+Để thực hiện bước tiếp theo, bạn phải có Git đã được cài đặt. (Kiểm tra rằng bạn
+có lệnh <code>git</code> trước khi tiếp tục.)
+</p>
+
+<p>
+Nếu bạn chưa có cài đặt Git hoạt động,
+hãy làm theo hướng dẫn trên trang
+<a href="https://git-scm.com/downloads">Git downloads</a>.
+</p>
+
+<h2 id="ccompiler">(Tùy chọn) Cài đặt trình biên dịch C</h2>
+
+<p>
+Để biên dịch cài đặt Go
+có hỗ trợ <code><a href="/cmd/cgo">cgo</a></code>, cho phép các chương trình Go
+import thư viện C, trước tiên phải cài đặt một trình biên dịch C như <code>gcc</code>
+hoặc <code>clang</code>. Hãy thực hiện bằng phương pháp cài đặt tiêu chuẩn của hệ thống.
+</p>
+
+<p>
+Để biên dịch mà không có <code>cgo</code>, đặt biến môi trường
+<code>CGO_ENABLED=0</code> trước khi chạy <code>all.bash</code> hoặc
+<code>make.bash</code>.
+</p>
+
+<h2 id="fetch">Tải kho lưu trữ về máy</h2>
+
+<p>Chuyển đến thư mục nơi bạn muốn cài đặt Go, và đảm bảo
+thư mục <code>goroot</code> chưa tồn tại. Sau đó clone kho lưu trữ
+và checkout tag phát hành hoặc nhánh phát hành mới nhất (<code class="versionTag">go1.22.0</code>, hoặc <code class="versionTag">release-branch.go1.22</code>,
+chẳng hạn):</p>
+
+<pre>
+$ git clone https://go.googlesource.com/go goroot
+$ cd goroot
+$ git checkout <span class="versionTag"><i>&lt;tag&gt;</i></span>
+</pre>
+
+<p class="whereTag">
+Trong đó <code>&lt;tag&gt;</code> là chuỗi phiên bản của bản phát hành.
+</p>
+
+<p>Go sẽ được cài đặt trong thư mục nơi nó được checkout. Ví dụ,
+nếu Go được checkout trong <code>$HOME/goroot</code>, các tệp thực thi sẽ được cài đặt
+trong <code>$HOME/goroot/bin</code>. Thư mục có thể có bất kỳ tên nào, nhưng lưu ý
+rằng nếu Go được checkout trong <code>$HOME/go</code>, nó sẽ xung đột với
+vị trí mặc định của <code>$GOPATH</code>.
+Xem <a href="#gopath"><code>GOPATH</code></a> bên dưới.</p>
+
+<p>
+Nhắc nhở: Nếu bạn đã chọn cũng biên dịch các tệp nhị phân khởi động từ mã nguồn (ở
+một phần trước), bạn vẫn cần <code>git clone</code> lại tại điểm này
+(để checkout <code>&lt;tag&gt;</code> mới nhất), vì bạn phải giữ
+kho lưu trữ go1.4 của mình tách biệt.
+</p>
+
+<h2 id="head">(Tùy chọn) Chuyển sang nhánh master</h2>
+
+<p>Nếu bạn dự định sửa đổi mã nguồn go và
+<a href="/doc/contribute.html">đóng góp các thay đổi</a>
+vào dự án, hãy chuyển kho lưu trữ của bạn
+khỏi tag phát hành, sang nhánh master (phát triển).
+Nếu không, bỏ qua bước này.</p>
+
+<pre>
+$ git checkout master
+</pre>
+
+<h2 id="install">Cài đặt Go</h2>
+
+<p>
+Để biên dịch bản phân phối Go, chạy
+</p>
+
+<pre>
+$ cd src
+$ ./make.bash
+</pre>
+
+<p>
+(Để biên dịch trên Windows, dùng <code>make.bat</code>.)
+</p>
+
+<p>
+Nếu mọi thứ diễn ra tốt, quá trình sẽ kết thúc bằng cách in ra:
+</p>
+
+<pre>
+---
+Installed Go for linux/amd64 in /home/you/go.
+Installed commands in /home/you/go/bin.
+*** You need to add /home/you/go/bin to your $PATH. ***
+</pre>
+
+<p>
+trong đó các chi tiết trên vài dòng cuối phản ánh hệ điều hành,
+kiến trúc và thư mục gốc được dùng trong quá trình cài đặt.
+</p>
+
+<div class="detail">
+<p>
+Để biết thêm thông tin về các cách kiểm soát quá trình biên dịch, xem phần thảo luận về
+<a href="#environment">biến môi trường</a> bên dưới.
+Bạn cũng có thể chạy <code>all.bash</code> (hoặc <code>all.bat</code>) để chạy
+các bài kiểm thử quan trọng cho Go, có thể mất nhiều thời gian hơn so với việc chỉ biên dịch Go.
+</p>
+</div>
+
+
+<h2 id="testing">Kiểm tra cài đặt</h2>
+
+<p>
+Kiểm tra rằng Go đã được cài đặt đúng bằng cách biên dịch một chương trình đơn giản.
+</p>
+
+<p>
+Tạo một tệp tên <code>hello.go</code> và đặt chương trình sau vào đó:
+</p>
+
+<pre>
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Printf("hello, world\n")
+}
+</pre>
+
+<p>
+Sau đó chạy nó bằng công cụ <code>go</code>:
+</p>
+
+<pre>
+$ go run hello.go
+hello, world
+</pre>
+
+<p>
+Nếu bạn thấy thông báo "hello, world" thì Go đã được cài đặt đúng.
+</p>
+
+<h2 id="gopath">Thiết lập môi trường làm việc</h2>
+
+<p>
+Bạn gần xong rồi.
+Chỉ cần thực hiện thêm một vài bước thiết lập.
+</p>
+
+<p>
+<a href="/doc/code.html" class="download" id="start">
+<span class="big">Cách viết mã Go</span>
+<span class="desc">Tìm hiểu cách thiết lập và sử dụng các công cụ Go</span>
+</a>
+</p>
+
+<p>
+Tài liệu <a href="/doc/code.html">Cách viết mã Go</a>
+cung cấp <b>hướng dẫn thiết lập cần thiết</b> để sử dụng các công cụ Go.
+</p>
+
+
+<h2 id="tools">Cài đặt các công cụ bổ sung</h2>
+
+<p>
+Mã nguồn của một số công cụ Go (bao gồm <a href="https://pkg.go.dev/golang.org/x/tools/gopls">gopls</a>)
+được lưu trữ trong <a href="https://golang.org/x/tools">kho lưu trữ golang.org/x/tools</a>.
+Để cài đặt một trong các công cụ (<code>gopls</code> trong trường hợp này):
+</p>
+
+<pre>
+$ go install golang.org/x/tools/gopls@latest
+</pre>
+
+<h2 id="community">Tài nguyên cộng đồng</h2>
+
+<p>
+Các tài nguyên cộng đồng thông thường được liệt kê trên <a href="/help/">trang trợ giúp</a>
+có các nhà phát triển tích cực có thể giúp bạn giải quyết vấn đề khi cài đặt hoặc phát triển.
+Đối với những ai muốn cập nhật thường xuyên,
+còn có một danh sách thư khác, <a href="https://groups.google.com/group/golang-checkins">golang-checkins</a>,
+nhận thông báo tóm tắt mỗi lần có commit vào kho lưu trữ Go.
+</p>
+
+<p>
+Có thể báo cáo lỗi bằng <a href="/issue/new">trình theo dõi vấn đề Go</a>.
+</p>
+
+
+<h2 id="releases">Cập nhật theo các bản phát hành</h2>
+
+<p>
+Các bản phát hành mới được thông báo trên danh sách thư
+<a href="https://groups.google.com/group/golang-announce">golang-announce</a>.
+Mỗi thông báo đề cập đến tag phát hành mới nhất, ví dụ
+<code class="versionTag">go1.9</code>.
+</p>
+
+<p>
+Để cập nhật một cây nguồn đã có lên bản phát hành mới nhất, bạn có thể chạy:
+</p>
+
+<pre>
+$ cd go/src
+$ git fetch
+$ git checkout <span class="versionTag"><i>&lt;tag&gt;</i></span>
+$ ./all.bash
+</pre>
+
+<p class="whereTag">
+Trong đó <code>&lt;tag&gt;</code> là chuỗi phiên bản của bản phát hành.
+</p>
+
+
+<h2 id="environment">Các biến môi trường tùy chọn</h2>
+
+<p>
+Các công cụ Go có thể được tùy chỉnh thông qua biến môi trường.
+<i>Không có biến nào là bắt buộc khi biên dịch</i>, nhưng bạn có thể muốn đặt một số
+để ghi đè các giá trị mặc định.
+Đặt các biến môi trường này trong khi chạy make.bash sẽ thiết lập
+giá trị mặc định cho bộ công cụ mới biên dịch.
+Khi sử dụng công cụ, bạn có thể ghi đè các giá trị mặc định này cho một
+bản biên dịch cụ thể, như được mô tả
+trong <a href="https://pkg.go.dev/cmd/go#hdr-Environment_variables">tài liệu lệnh go</a>.
+</p>
+
+<ul>
+<li><code>$GOROOT</code>
+<p>
+Thư mục gốc của cây Go, thường là <code>$HOME/go1.X</code>.
+Giá trị của nó được tích hợp vào cây khi biên dịch, và
+mặc định là thư mục cha của thư mục nơi <code>all.bash</code> được chạy.
+Không cần đặt biến này trừ khi bạn muốn chuyển đổi giữa nhiều
+bản sao cục bộ của kho lưu trữ.
+</p>
+</li>
+
+<li><code>$GOOS</code> và <code>$GOARCH</code>
+<p>
+Tên của hệ điều hành mục tiêu và kiến trúc biên dịch.
+<code>$GOOS</code> mặc định theo giá trị của <code>runtime.GOOS</code>
+trong bộ công cụ khởi động.
+<code>$GOARCH</code> mặc định theo giá trị
+của <code>$GOHOSTARCH</code>, được mô tả bên dưới.
+</p>
+
+<p>
+Các giá trị cho <code>$GOOS</code> là
+<code>android</code>, <code>darwin</code>, <code>dragonfly</code>,
+<code>freebsd</code>, <code>illumos</code>, <code>ios</code>, <code>js</code>,
+<code>linux</code>, <code>netbsd</code>, <code>openbsd</code>,
+<code>plan9</code>, <code>solaris</code>, <code>wasip1</code>,
+và <code>windows</code>.
+</p>
+
+<p>
+Các giá trị cho <code>$GOARCH</code> là
+<code>amd64</code> (x86 64-bit, cổng trưởng thành nhất),
+<code>386</code> (x86 32-bit), <code>arm</code> (ARM 32-bit), <code>arm64</code> (ARM 64-bit),
+<code>ppc64le</code> (PowerPC 64-bit, little-endian), <code>ppc64</code> (PowerPC 64-bit, big-endian),
+<code>mips64le</code> (MIPS 64-bit, little-endian), <code>mips64</code> (MIPS 64-bit, big-endian),
+<code>mipsle</code> (MIPS 32-bit, little-endian), <code>mips</code> (MIPS 32-bit, big-endian),
+<code>s390x</code> (IBM System z 64-bit, big-endian), và
+<code>wasm</code> (WebAssembly 32-bit).
+</p>
+
+<p>
+Các tổ hợp hợp lệ của <code>$GOOS</code> và <code>$GOARCH</code> là:
+</p>
+
+<table cellpadding="0">
+<tr>
+<th width="50"></th><th align="left" width="100"><code>$GOOS</code></th> <th align="left" width="100"><code>$GOARCH</code></th>
+</tr>
+<tr>
+<td></td><td><code>aix</code></td> <td><code>ppc64</code></td>
+</tr>
+<tr>
+<td></td><td><code>android</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>android</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>android</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>android</code></td> <td><code>arm64</code></td>
+</tr>
+<tr>
+<td></td><td><code>darwin</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>darwin</code></td> <td><code>arm64</code></td>
+</tr>
+<tr>
+<td></td><td><code>dragonfly</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>freebsd</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>freebsd</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>freebsd</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>illumos</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>ios</code></td> <td><code>arm64</code></td>
+</tr>
+<tr>
+<td></td><td><code>js</code></td> <td><code>wasm</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>arm64</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>loong64</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>mips</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>mipsle</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>mips64</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>mips64le</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>ppc64</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>ppc64le</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>riscv64</code></td>
+</tr>
+<tr>
+<td></td><td><code>linux</code></td> <td><code>s390x</code></td>
+</tr>
+<tr>
+<td></td><td><code>netbsd</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>netbsd</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>netbsd</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>openbsd</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>openbsd</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>openbsd</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>openbsd</code></td> <td><code>arm64</code></td>
+</tr>
+<tr>
+<td></td><td><code>plan9</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>plan9</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>plan9</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>solaris</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>wasip1</code></td> <td><code>wasm</code></td>
+</tr>
+<tr>
+<td></td><td><code>windows</code></td> <td><code>386</code></td>
+</tr>
+<tr>
+<td></td><td><code>windows</code></td> <td><code>amd64</code></td>
+</tr>
+<tr>
+<td></td><td><code>windows</code></td> <td><code>arm</code></td>
+</tr>
+<tr>
+<td></td><td><code>windows</code></td> <td><code>arm64</code></td>
+</tr>
+</table>
+
+<li><code>$GOHOSTARCH</code>
+<p>
+Tên của kiến trúc biên dịch trên máy chủ.
+Mặc định theo kiến trúc của hệ thống cục bộ.
+</p>
+
+<p>
+Các giá trị hợp lệ giống như cho <code>$GOARCH</code>, được liệt kê ở trên.
+Các giá trị được chỉ định phải tương thích với hệ thống cục bộ.
+Ví dụ, bạn không nên đặt <code>$GOHOSTARCH</code> thành
+<code>arm</code> trên hệ thống x86.
+</p>
+
+<li><code>$GO386</code> (chỉ cho <code>386</code>, mặc định là <code>sse2</code>)
+<p>
+Biến này kiểm soát cách gc thực hiện các phép tính dấu phẩy động.
+</p>
+<ul>
+	<li><code>GO386=softfloat</code>: sử dụng phép tính dấu phẩy động bằng phần mềm; hỗ trợ tất cả chip x86 (Pentium MMX trở lên).</li>
+	<li><code>GO386=sse2</code>: sử dụng SSE2 cho phép tính dấu phẩy động; hiệu năng tốt hơn nhưng chỉ có trên Pentium 4/Opteron/Athlon 64 trở lên.</li>
+</ul>
+</li>
+
+<li><code>$GOARM</code> (chỉ cho <code>arm</code>; mặc định được phát hiện tự động nếu biên dịch
+trên bộ xử lý mục tiêu, nếu không thì là 7)
+<p>
+Biến này đặt phiên bản kiến trúc bộ đồng xử lý dấu phẩy động ARM mà thời gian chạy
+nên nhắm đến. Nếu bạn đang biên dịch trên hệ thống mục tiêu, giá trị sẽ được phát hiện tự động.
+</p>
+<ul>
+	<li><code>GOARM=5</code>: sử dụng dấu phẩy động bằng phần mềm; khi CPU không có bộ đồng xử lý VFP</li>
+	<li><code>GOARM=6</code>: chỉ sử dụng VFPv1; mặc định khi biên dịch chéo; thường là nhân ARM11 trở lên (VFPv2 trở lên cũng được hỗ trợ)</li>
+	<li><code>GOARM=7</code>: sử dụng VFPv3; thường là nhân Cortex-A</li>
+</ul>
+<p>
+Nếu chưa chắc, hãy để biến này không đặt và điều chỉnh nếu cần
+khi bạn chạy tệp thực thi Go lần đầu tiên.
+Trang <a href="/wiki/GoArm">GoARM</a>
+trên <a href="/wiki">wiki cộng đồng Go</a>
+chứa thêm chi tiết về hỗ trợ ARM của Go.
+</p>
+</li>
+
+<li><code>$GOARM64</code> (chỉ cho <code>arm64</code>;
+mặc định là <code>v8.0</code>)
+<p>
+Biến này đặt phiên bản kiến trúc ARM64 để biên dịch.
+Xem <a href="/wiki/MinimumRequirements#arm64">trang Go wiki
+MinimumRequirements</a> để biết các tùy chọn được phép.
+</p>
+</li>
+
+<li><code>$GOAMD64</code> (chỉ cho <code>amd64</code>;
+mặc định là <code>v1</code>)
+<p>
+Biến này đặt mức vi kiến trúc để biên dịch.
+Các giá trị hợp lệ là <code>v1</code> (mặc định), <code>v2</code>, <code>v3</code>,
+<code>v4</code>.
+Xem <a href="/wiki/MinimumRequirements#amd64">trang Go wiki
+MinimumRequirements</a> để biết thêm thông tin.
+</p>
+</li>
+
+<li><code>$GOMIPS</code> (chỉ cho <code>mips</code> và <code>mipsle</code>) <br> <code>$GOMIPS64</code> (chỉ cho <code>mips64</code> và <code>mips64le</code>)
+<p>
+	Các biến này đặt xem có sử dụng lệnh dấu phẩy động hay không. Đặt thành "<code>hardfloat</code>" để sử dụng lệnh dấu phẩy động; đây là giá trị mặc định. Đặt thành "<code>softfloat</code>" để sử dụng dấu phẩy động bằng phần mềm.
+</p>
+</li>
+
+<li><code>$GOPPC64</code> (chỉ cho <code>ppc64</code> và <code>ppc64le</code>)
+<p>
+Biến này đặt mức bộ xử lý (tức là phiên bản Tập lệnh kiến trúc)
+mà trình biên dịch sẽ nhắm đến. Mặc định là <code>power8</code>.
+</p>
+<ul>
+	<li><code>GOPPC64=power8</code>: tạo lệnh ISA v2.07</li>
+	<li><code>GOPPC64=power9</code>: tạo lệnh ISA v3.00</li>
+</ul>
+</li>
+
+<li><code>$GORISCV64</code> (chỉ cho <code>riscv64</code>)
+<p>
+Biến này đặt hồ sơ ứng dụng chế độ người dùng RISC-V để biên dịch. Mặc định là <code>rva20u64</code>.
+</p>
+<ul>
+	<li><code>GORISCV64=rva20u64</code>: chỉ sử dụng các phần mở rộng RISC-V bắt buộc trong hồ sơ <a href="https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc#51-rva20u64-profile">RVA20U64</a></li>
+	<li><code>GORISCV64=rva22u64</code>: chỉ sử dụng các phần mở rộng RISC-V bắt buộc trong hồ sơ <a href="https://github.com/riscv/riscv-profiles/blob/main/src/profiles.adoc#rva22u64-profile">RVA22U64</a></li>
+	<li><code>GORISCV64=rva23u64</code>: chỉ sử dụng các phần mở rộng RISC-V bắt buộc trong hồ sơ <a href="https://github.com/riscv/riscv-profiles/blob/main/src/rva23-profile.adoc#rva23u64-profile">RVA23U64</a></li>
+</ul>
+</li>
+
+<li><code>$GOWASM</code> (chỉ cho <code>wasm</code>)
+	<p>
+	Biến này là danh sách các <a href="https://github.com/WebAssembly/proposals">tính năng WebAssembly thử nghiệm</a> phân cách bởi dấu phẩy mà tệp nhị phân WebAssembly được biên dịch được phép sử dụng.
+	Mặc định là không sử dụng tính năng thử nghiệm nào.
+	</p>
+	<ul>
+		<li><code>GOWASM=satconv</code>: tạo <a href="https://github.com/WebAssembly/nontrapping-float-to-int-conversions/blob/master/proposals/nontrapping-float-to-int-conversion/Overview.md">các phép chuyển đổi float-to-int bão hòa (không bẫy)</a></li>
+		<li><code>GOWASM=signext</code>: tạo <a href="https://github.com/WebAssembly/sign-extension-ops/blob/master/proposals/sign-extension-ops/Overview.md">các toán tử mở rộng dấu</a></li>
+	</ul>
+</li>
+
+</ul>
+
+<p>
+Lưu ý rằng <code>$GOARCH</code> và <code>$GOOS</code> xác định
+môi trường <em>mục tiêu</em>, không phải môi trường bạn đang chạy.
+Thực chất, bạn luôn biên dịch chéo.
+Theo kiến trúc, chúng tôi muốn nói đến loại tệp nhị phân
+mà môi trường mục tiêu có thể chạy:
+một hệ thống x86-64 đang chạy hệ điều hành chỉ 32-bit
+phải đặt <code>GOARCH</code> thành <code>386</code>,
+không phải <code>amd64</code>.
+</p>
+
+<p>
+Nhắc lại, không cần đặt bất kỳ biến nào trong số này để biên dịch,
+cài đặt và phát triển cây Go.
+</p>
