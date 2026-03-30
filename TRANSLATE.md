@@ -568,9 +568,9 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `menus.yaml`
 - [ ] `pkg.tmpl`
 - [ ] `pkgroot.tmpl`
-- [ ] `play.tmpl`
+- [x] `play.tmpl`
 - [x] `project.html`
-- [ ] `rebuild.html`
+- [x] `rebuild.html`
 
 ### ref
 
