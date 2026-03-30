@@ -217,12 +217,12 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/godoc.org-redirect.md`
 - [x] `blog/gofix.md`
 - [x] `blog/gofmt.md`
-- [ ] `blog/gonew.md`
-- [ ] `blog/gopher.md`
-- [ ] `blog/gopherchina.md`
-- [ ] `blog/gophercon.md`
-- [ ] `blog/gophercon2015.md`
-- [ ] `blog/gophergala.md`
+- [x] `blog/gonew.md`
+- [x] `blog/gopher.md`
+- [x] `blog/gopherchina.md`
+- [x] `blog/gophercon.md`
+- [x] `blog/gophercon2015.md`
+- [x] `blog/gophergala.md`
 - [ ] `blog/gopls-scalability.md`
 - [ ] `blog/gopls-vscode-go.md`
 - [ ] `blog/gos-declaration-syntax.md`
