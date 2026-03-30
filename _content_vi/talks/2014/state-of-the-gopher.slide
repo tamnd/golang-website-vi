@@ -1,0 +1,369 @@
+Trạng thái của Gopher (Tháng 10)
+10 Oct 2014
+Tags: dotgo, gopher
+
+Brad Fitzpatrick
+Gopher, Google
+@bradfitz
+bradfitz@golang.org
+
+* Trạng thái của Gopher
+
+- chúng ta đã ở đâu
+- chúng ta đang đi đâu
+
+.image state-of-the-gopher/gopher.jpg
+
+* bradfitz
+
+- Làm việc trên thư viện chuẩn, các builder của Go, v.v.
+- Bắt đầu đóng góp cho Go vào tháng 5 năm 2010
+- [[http://camlistore.org]], dự án Go lớn, cũ của tôi: lưu trữ và lập chỉ mục dữ liệu cá nhân suốt đời
+
+* Quá khứ
+
+* Cơ sở người dùng trước tháng 11 năm 2009
+
+- 3-10 người bên trong Google?
+
+* Tháng 11 năm 2009
+
+- Go được [[http://google-opensource.blogspot.com/2009/11/hey-ho-lets-go.html][mã nguồn mở]]:
+
+.image state-of-the-gopher/opensource.png
+
+* Website năm 2009
+
+.image state-of-the-gopher/website1.png
+
+* Website năm 2009
+
+.image state-of-the-gopher/website2.png
+
+* Trình biên dịch năm 2009
+
+- đã có hai: `gc` và `gccgo`
+
+* Phụ chú: GC so với gc
+
+- `gc`: "trình biên dịch Go", ban đầu dựa trên trình biên dịch C của Plan 9. Trình biên dịch Go chính.
+- `GC`: "Garbage Collector" - bộ thu gom rác
+
+* Cổng năm 2009
+
+- linux-386
+- linux-amd64
+- linux-arm, vừa bắt đầu hoạt động
+- darwin-386
+- darwin-amd64
+- nacl-386 (lần thử đầu tiên)
+Với gccgo, nhiều hơn.
+
+* Công cụ năm 2009
+
+- gofmt
+- gofix
+- godoc
+
+* Điểm nổi bật phát hành
+
+* Phát hành hàng tuần
+
+- "weekly.2009-12-09"
+- làm hỏng người dùng hàng tuần, không phải hàng ngày
+- gofix xuất hiện
+
+* Phát hành hàng tháng
+
+- "r56" ... "r60"
+- làm hỏng người dùng hàng tháng, không phải hàng tuần
+- vẫn khó viết và sử dụng package (Makefile)
+
+* Go 1.0 (2012-03-28)
+
+- kiểu "error"
+- delete(m, k)
+
+  // trước Go 1:
+  latLong[storeID] = LatLong{}, false
+  name[userID] = "", false
+
+  // mới:
+  delete(name, userID)
+
+- [[/doc/go1compat][cam kết ổn định]] + công cụ kiểm tra API:
+
+  pkg net/http, const StatusOK = 200
+  pkg net/http, const StatusOK ideal-int
+  pkg net/http, type RoundTripper interface { RoundTrip }
+  pkg net/http, type Server struct, TLSConfig *tls.Config
+  pkg net/http, var DefaultServeMux *ServeMux
+  pkg time, method (*Timer) Reset(Duration) bool
+  pkg unicode/utf8, func ValidRune(int32) bool
+
+- công cụ `go` (get, build, test, ...)
+
+* Go 1.1 (2013-05-03)
+
+- giá trị phương thức
+
+  type S struct { once sync.Once; ... }
+  func (s *S) init() { ... }
+  func (s *S) Foo() {
+      s.once.Do(s.init)
+
+- "câu lệnh kết thúc" func
+
+  func abs(n int) int {
+      switch {
+      case n < 0: return -n
+      default:    return n
+      }
+  }
+
+- 64-bit "int", heap lớn
+- cải thiện tốc độ 30-40%, stdlib++
+- GC heap chính xác hơn, thường là vậy
+
+* Phụ chú: GC chính xác so với bảo thủ
+
+GC bảo thủ: nếu nó "trông giống" con trỏ, hãy đối xử như một.
+
+  [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ]
+  [ ptr? ] [ byte slice (bỏ qua trong Go 1.0)                           ]
+  [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ] [ ptr? ]
+
+Rất tệ cho máy tính 32-bit (ví dụ ARM): nhiều số nguyên trông giống con trỏ.
+
+GC chính xác:
+
+  [ int ] [ ptr     ] [ string      ] [ byte slice          ]
+  [ int ] [ t f t f ] [ ptr ] [ int ] [ float64     ] [ ptr ]
+
+Đòi hỏi biết mọi vị trí trong bộ nhớ _thực_sự_ là gì.
+
+- không giữ lại sai, chỉ nhìn vào một phần bộ nhớ trong GC
+
+* Go 1.2 (2013-12-01)
+
+- chu kỳ phát hành 6 tháng bắt đầu
+- thiết lập dung lượng slice với s[i:j:k]
+
+  s := make([]byte, 10, 20)
+  foo(s[10:12:15])
+
+  func foo(s []byte) { fmt.Println(len(s), cap(s)) }
+
+- preemption trong scheduler
+- go test -cover
+
+* Go 1.3 (2014-06-18)
+
+- không thay đổi ngôn ngữ
+- GOOS=solaris,dragonfly,plan9,nacl
+- GC chính xác của stack (hầu hết)
+- stack liền mạch (hầu hết)
+
+* Phụ chú: Stack phân đoạn so với liền mạch
+
+- C++/Java: một stack lớn cho mỗi luồng
+- Go <= 1.2: nhiều stack 4K không liền mạch, nhảy qua lại giữa chúng
+- Go 1.3: một stack nhỏ, phát triển và thu nhỏ khi cần
+.image state-of-the-gopher/contig-stack.png _ 550
+
+* Hiện tại (so với tháng 11 năm 2009)
+
+* Nhiều cổng hơn
+
+- Windows
+- FreeBSD, OpenBSD, NetBSD
+- Solaris, Plan 9, DragonFly BSD
+- NaCl (lại)
+
+* Tài liệu tốt hơn
+
+- Các bài viết [[/blog][Blog]],
+- [[/wiki][Wiki]] cộng đồng,
+- [[/wiki/Books][Sách]]
+
+* Người dùng: tăng trưởng liên tục
+
+- [[https://code.google.com/p/go-wiki/wiki/GoUserGroups][nhóm người dùng Go]], [[http://go-meetups.appspot.com/][meetup]]
+- GitHub commits, stars, forks
+- Từ 2009: `golang-nuts@` (1450 → 14134), `-dev` (37 → 2152)
+.link http://redmonk.com/dberkholz/2014/03/18/go-the-emerging-language-of-cloud-infrastructure/ Go: ngôn ngữ mới nổi của cơ sở hạ tầng đám mây
+
+.image state-of-the-gopher/oloh.png
+
+* Đám mây
+
+- Docker
+- CoreOS, etcd, fleet
+- Juju
+- NATS, gnatsd, Packer, Heka
+- dl.google.com, Vitess, Kubernetes
+- App Engine
+
+* Hội nghị
+
+[[http://connpass.com/series/312/][GoCon Tokyo]]
+
+* Hội nghị
+
+.image state-of-the-gopher/gophercon.png
+
+* Hội nghị
+
+.image state-of-the-gopher/dotgo.png
+
+* Hội nghị
+
+.image state-of-the-gopher/india.png
+
+* CoreOS
+
+.image state-of-the-gopher/bus.jpg
+
+- ngày càng chạy [[http://build.golang.org]], mỗi cái trong một Docker container
+- Go đang cung cấp sức mạnh cho việc phát triển Go!
+
+* build.golang.org
+
+.image state-of-the-gopher/build.png 400 _
+
+* Công cụ tốt hơn
+
+- go/parser: godoc, [[https://pkg.go.dev]], gofmt, gofix →
+- [[https://pkg.go.dev/code.google.com/p/go.tools/cmd/goimports][goimports]]: tự động thêm dòng import
+- go/types, gofix+types,
+- go/ast, go/ssa, [[https://pkg.go.dev/code.google.com/p/go.tools/cmd/oracle][oracle]],
+- [[https://pkg.go.dev/code.google.com/p/go.tools/cmd/eg][eg]], tái cấu trúc dựa trên ví dụ
+- [[https://pkg.go.dev/code.google.com/p/go.tools/cmd/gorename][gorename]], công cụ đổi tên toàn cục an toàn
+
+Công cụ tốt tạo ra công cụ tốt hơn!
+
+- goimports + go/types + go/parser == [[https://twitter.com/sqs/status/520203018957250560][goreturns]] (return err lười biếng)
+
+* Tương lai
+
+* Go 1.4
+
+* Go 1.4 (2014-12-01?)
+
+- GC chính xác hoàn toàn của stack + heap
+- stack phân đoạn và GC bảo thủ bị xóa
+- trình sao chép stack và bộ thu nhỏ cũng đòi hỏi kiểu stack chính xác
+
+- Chuyển đổi `runtime` từ C sang Go: map, channel, interface, kiểm tra kiểu, println, defer, panic, v.v.
+
+- Garbage collector và scheduler vẫn còn ở C
+
+* Go 1.4
+
+- [[/s/go14android][GOOS=android]] (Elias Naur, David Crawshaw)
+- GOOS=nacl GOARCH=arm
+- [[/s/go14internal][package "internal"]]
+- [[/s/go1.4-generate]["go generate"]]
+- [[https://docs.google.com/a/golang.org/document/d/1QXzI9I1pOfZPujQzxhyRy6EeHYTQitKKjHfpq0zpxZs][package syscall bị đóng băng, go.sys]]
+- "go tool pprof" được chuyển từ Perl (!) sang Go
+- bổ sung nhỏ vào stdlib, cải tiến
+
+* Go 1.5
+
+* Go 1.5 (2014-06-01?)
+
+- GC đồng thời là chủ đề chính
+- Lộ trình: [[/s/go14gc]] (GC trong 1.4, 1.5, 1.6+)
+
+* Go 1.5: cổng
+
+- GOOS=ios phục hồi? (Minux, David Crawshaw)
+- GOARCH=ppc64 (minux)
+- GOARCH=arm64 (aram, dfc)
+
+* Go 1.5: loại bỏ thêm C
+
+Chưa có trong Go 1.4:
+
+- `cmd/link`: viết lại linker bằng Go
+- `cmd/asm`: viết lại assembler bằng Go
+- trình biên dịch "gc" bằng Go
+
+* Trình biên dịch "gc" bằng Go
+
+- nhiều C
+- trình dịch C → Go == Go hơi xấu
+- tái cấu trúc Go đó bằng công cụ: `eg`, `gorename`, v.v.
+- thêm package, test
+- hợp nhất tất cả `8g`, `5g`, `6g`, `9g`
+- dạng SSA, tối ưu hóa mới
+
+Xem slide GopherCon của rsc [[/talks/2014/c2go.slide#1][slides]], [[http://gophercon.sourcegraph.com/post/83820197495/russ-cox-porting-the-go-compiler-from-c-to-go][notes]], [[https://www.youtube.com/watch?v=QIE5nV5fDwA][video]].
+
+* Tracing Go 1.5
+
+- GOTRACE của Dmitry + trình xem trace Chrome
+
+.image state-of-the-gopher/trace.png
+
+* Go 1.6
+
+- Thêm công việc GC
+- Dọn dẹp và tối ưu hóa trình biên dịch trong Go liên tục
+- PNaCl?
+- [[https://docs.google.com/a/google.com/document/d/1d3iI2QWURgDIsSR6G2275vMeQ_X7w-qxM2Vp7iGwwuM/pub][Scheduler nhận biết NUMA]]?
+- những bất ngờ chưa biết
+Ai mà biết.
+Hãy tìm hiểu năm tới tại dotGo Paris 2015!
+
+* Go 2.0
+
+- có thể một ngày nào đó
+
+* Ngoài phần cốt lõi
+
+* thư viện & công cụ
+
+- HTTP/2, sẽ được hợp nhất vào `net/http`
+- go.tools: `goimports`, `eg`, `gorename`, `oracle`, ...
+- go.text: Unicode collation, normalization, ...
+- go.mobile: Android, iOS, gaming, đồ họa 3D, xử lý sự kiện
+- go.crypto
+- go.net
+- go.tools
+- go.syscall
+
+* gccgo
+
+- theo kịp đặc tả
+- tốt hơn ở một số mặt (codegen, OS, arch)
+- tệ hơn ở những mặt khác (GC chính xác, phân tích thoát)
+- công việc đang tiến hành để cải thiện
+
+Tất cả đang kiểm tra và cải thiện lẫn nhau:
+
+- gc, gccgo, go/types, đặc tả ngôn ngữ, unit test
+
+* Các trình biên dịch đáng chú ý khác
+
+- [[https://github.com/go-llvm/llgo][llgo]], Go → LLVM → PNaCL, v.v.
+- [[https://github.com/tardisgo/tardisgo][TARDIS Go]], Go → Haxe → JS, bất cứ thứ gì
+- [[https://github.com/gopherjs/gopherjs][GopherJS]], Go → JS
+
+Và cả ba đều được viết bằng Go, sử dụng `go/parser`, `go/types`, v.v.
+Chúng tôi không thể chờ để gia nhập họ.
+
+* Tóm lại
+
+* Sự tăng trưởng thật thú vị
+
+- mọi thứ đang trở nên gọn gàng hơn,
+- mọi thứ đang trở nên nhanh hơn,
+- mọi thứ đang trở nên ấn tượng hơn,
+- mọi thứ đang phát triển trên nền tảng của nhau,
+- khó theo kịp golang-dev@, golang-nuts@, lỗi, wiki, các dự án github mới, review mã,
+
+* Tất cả các bạn thật tuyệt vời
+
+- hãy tiếp tục tuyệt vời
+- hãy tiếp tục tạo ra những điều tuyệt vời

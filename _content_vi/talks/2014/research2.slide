@@ -1,0 +1,437 @@
+Thêm các vấn đề nghiên cứu khi triển khai Go
+
+Dmitry Vyukov
+Google
+
+https://go.dev/
+
+* Về Go
+
+Go là ngôn ngữ lập trình mã nguồn mở giúp dễ dàng xây dựng phần mềm đơn giản, đáng tin cậy và hiệu quả.
+
+Thiết kế bắt đầu vào cuối năm 2007.
+
+- Robert Griesemer, Rob Pike, Ken Thompson
+- Russ Cox, Ian Lance Taylor
+
+Trở thành mã nguồn mở vào tháng 11 năm 2009.
+
+Được phát triển hoàn toàn công khai; cộng đồng rất tích cực.
+Ngôn ngữ ổn định kể từ Go 1, đầu năm 2012.
+Công việc vẫn tiếp tục.
+
+* Động lực cho Go
+
+.image research2/datacenter.jpg
+
+* Động lực cho Go
+
+Bắt đầu như một câu trả lời cho các vấn đề phần mềm tại Google:
+
+- bộ vi xử lý đa nhân
+- các hệ thống mạng
+- cụm tính toán khổng lồ
+- quy mô: hơn 10⁷ dòng mã
+- quy mô: hơn 10³ lập trình viên
+- quy mô: hơn 10⁶ máy (điểm thiết kế)
+
+Đã triển khai: các phần của YouTube, dl.google.com, Blogger, Google Code, Google Fiber, ...
+
+* Go
+
+Một ngôn ngữ đơn giản nhưng mạnh mẽ và thú vị.
+
+- bắt đầu với C, loại bỏ các phần phức tạp
+- thêm interface, đồng thời
+- cũng có: thu gom rác, closure, reflection, chuỗi, ...
+
+Để biết thêm bối cảnh về thiết kế:
+
+- [[http://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html][Ít là nhiều hơn theo cấp số nhân]]
+- [[/talks/2012/splash.article][Go tại Google: Thiết kế ngôn ngữ phục vụ kỹ thuật phần mềm]]
+
+* Nghiên cứu và Go
+
+Go được thiết kế để xây dựng các hệ thống production tại Google.
+
+- Mục tiêu: làm cho công việc đó dễ dàng hơn, nhanh hơn, tốt hơn.
+- Không phải mục tiêu: mở ra vùng đất mới trong nghiên cứu ngôn ngữ lập trình
+
+Có rất nhiều câu hỏi nghiên cứu về cách triển khai Go tốt.
+
+- Đồng thời
+- Lập lịch
+- Thu gom rác
+- Phát hiện race và deadlock
+- Kiểm thử cài đặt
+
+
+
+
+* Đồng thời
+
+.image research2/busy.jpg
+
+* Đồng thời
+
+Go cung cấp hai khái niệm quan trọng:
+
+Goroutine là một luồng điều khiển trong chương trình, với các biến cục bộ và stack riêng. Rẻ, dễ tạo.
+
+Một channel mang các thông điệp có kiểu giữa các goroutine.
+
+* Đồng thời
+
+.play research2/hello.go
+
+* Đồng thời: CSP
+
+Channel được áp dụng từ Communicating Sequential Processes của Hoare.
+
+- Trực giao với phần còn lại của ngôn ngữ
+- Có thể giữ mô hình quen thuộc để tính toán
+- Tập trung vào _thành_phần_ của mã thông thường
+
+Go _cho_phép_ lập trình đồng thời đơn giản, an toàn.
+Nó không _cấm_ lập trình xấu.
+
+Lưu ý: không hoàn toàn an toàn bộ nhớ; việc chia sẻ là hợp pháp.
+Truyền con trỏ qua channel là thành ngữ.
+
+Kinh nghiệm cho thấy điều này là thực tế.
+
+* Đồng thời
+
+Phân giải địa chỉ mạng tuần tự, với một danh sách công việc:
+
+.play research2/addr1.go /lookup/+1,/^}/-1
+
+* Đồng thời
+
+Phân giải địa chỉ mạng đồng thời, với một danh sách công việc:
+
+.play research2/addr2.go /lookup/+1,/^}/-1
+
+* Đồng thời
+
+Câu lệnh select: switch cho giao tiếp.
+
+.play research2/select.go /select/,/^}/-1
+
+Đó chính là select làm cho việc triển khai hiệu quả trở nên khó khăn.
+
+* Triển khai đồng thời
+
+Thách thức: Làm cho giao tiếp channel có khả năng mở rộng
+
+- bắt đầu với một khóa channel toàn cục
+- khóa theo channel, khóa theo thứ tự địa chỉ cho các thao tác đa channel
+
+Câu hỏi nghiên cứu: channel không khóa?
+
+
+
+
+* Lập lịch
+
+.image research2/gophercomplex6.jpg
+
+* Lập lịch
+
+Một mặt chúng ta có các chương trình người dùng tùy ý:
+
+- goroutine hạt nhỏ, goroutine hạt thô hoặc hỗn hợp cả hai
+- goroutine tính toán, goroutine ràng buộc I/O hoặc hỗn hợp cả hai
+- mẫu giao tiếp động tùy ý
+- chương trình bận rộn, nhàn rỗi, bursty
+
+Không có gợi ý người dùng!
+
+* Lập lịch
+
+Mặt khác chúng ta có kiến trúc phần cứng phức tạp:
+
+- bộ nhớ đệm mỗi nhân
+- bộ nhớ đệm dùng chung giữa các nhân
+- nhân dùng chung giữa các hyper thread (HT)
+- nhiều bộ vi xử lý với truy cập bộ nhớ không đồng đều (NUMA)
+
+* Lập lịch
+
+Thách thức: làm cho tất cả hoạt động hiệu quả một cách kỳ diệu
+
+- bắt đầu với một khóa toàn cục cho tất cả trạng thái scheduler
+- scheduler work-stealing phân tán với trạng thái theo "processor"
+- tích hợp network poller vào scheduler
+- hàng đợi công việc không khóa
+
+* Lập lịch
+
+Scheduler hiện tại:
+
+ ┌─┐         ┌─┐         ┌─┐         ┌─┐                  ┌─┐
+ │ │         │ │         │ │         │ │                  │ │
+ ├─┤         ├─┤         ├─┤         ├─┤                  ├─┤ Global
+ │ │         │G│         │ │         │ │                  │ │ state
+ ├─┤         ├─┤         ├─┤         ├─┤                  ├─┤
+ │G│         │G│         │G│         │ │                  │G│
+ ├─┤         ├─┤         ├─┤         ├─┤                  ├─┤
+ │G│         │G│         │G│         │G│                  │G│
+ └┬┘         └┬┘         └┬┘         └┬┘                  └─┘
+  │           │           │           │
+  ↓           ↓           ↓           ↓
+ ┌─┬──────┐  ┌─┬──────┐  ┌─┬──────┐  ┌─┬──────┐     ┌────┐┌──────┐┌───────┐
+ │P│mcache│  │P│mcache│  │P│mcache│  │P│mcache│     │heap││timers││netpoll│
+ └┬┴──────┘  └┬┴──────┘  └┬┴──────┘  └┬┴──────┘     └────┘└──────┘└───────┘
+  │           │           │           │
+  ↓           ↓           ↓           ↓
+ ┌─┐         ┌─┐         ┌─┐         ┌─┐               ┌─┐ ┌─┐ ┌─┐
+ │M│         │M│         │M│         │M│               │M│ │M│ │M│
+ └─┘         └─┘         └─┘         └─┘               └─┘ └─┘ └─┘
+
+G - goroutine; P - processor logic; M - luồng hệ điều hành (machine)
+
+* Lập lịch
+
+Mong muốn:
+
+- cục bộ thời gian để khai thác bộ nhớ đệm
+- cục bộ không gian để khai thác NUMA
+- lập lịch chủ yếu LIFO nhưng đảm bảo công bằng yếu
+- cấp phát bộ nhớ cục bộ và stack
+- quét bộ nhớ cục bộ trong GC
+- đặt cùng chỗ các goroutine đang giao tiếp
+- phân tán các goroutine không giao tiếp
+- phân tán timer và network poller
+- poll mạng trên cùng nhân nơi lần đọc cuối cùng được phát hành
+
+
+
+
+* Thu gom rác
+
+* Thu gom rác
+
+Thu gom rác đơn giản hóa các API.
+
+- Trong C và C++, quá nhiều thiết kế API (và quá nhiều nỗ lực lập trình!) là về quản lý bộ nhớ.
+
+Cơ bản cho đồng thời: quá khó để theo dõi quyền sở hữu.
+
+Cơ bản cho interface: chi tiết quản lý bộ nhớ không phân chia các API tương tự nhau.
+
+Tất nhiên, thêm chi phí, độ trễ, độ phức tạp trong hệ thống runtime.
+
+* Thu gom rác
+
+Có nhiều nghiên cứu về thu gom rác, chủ yếu trong ngữ cảnh Java.
+
+- Song song stop-the-world
+- CMS: mark-and-sweep đồng thời, compaction stop-the-world
+- G1: bộ thu gom copying gia tăng dựa trên vùng
+
+Các bộ thu gom Java thường:
+
+- là generational/incremental vì tốc độ phân bổ cao
+- compact bộ nhớ để hỗ trợ thế hệ
+- có các lần dừng vì compaction đồng thời phức tạp và chậm
+
+* Thu gom rác
+
+Nhưng Go rất khác!
+
+- Người dùng có thể tránh nhiều phân bổ bằng cách nhúng đối tượng:
+
+	type Point struct {
+		X, Y int
+	}
+	type Rectangle struct {
+		Min, Max Point
+	}
+
+- Ít con trỏ hơn.
+- Nhiều phân bổ stack.
+- Con trỏ nội tại được phép:
+
+	p := &rect.Max
+
+- Hàng trăm nghìn stack (goroutine)
+- Không có header đối tượng cho đến nay
+
+* Triển khai thu gom rác
+
+GC hiện tại: dừng thế giới, đánh dấu song song, bắt đầu thế giới, quét đồng thời.
+Đánh dấu đồng thời gần như sẵn sàng.
+
+Không thể tái sử dụng trực tiếp các thuật toán GC của Java.
+
+Câu hỏi nghiên cứu: thuật toán GC nào phù hợp nhất với Go?
+Chúng ta có cần thế hệ không? Chúng ta có cần compaction không? Cấu trúc dữ liệu hiệu quả nào hỗ trợ con trỏ nội tại?
+
+
+
+
+* Phát hiện race và deadlock
+
+.image research2/race.png 160 600
+
+* Phát hiện race
+
+Dựa trên runtime ThreadSanitizer, ban đầu chủ yếu nhắm vào C/C++.
+Bộ phát hiện race dựa trên happens-before truyền thống dựa trên vector clock (có nhiều chi tiết phức tạp!).
+Hoạt động tốt cho Go, ngoại trừ:
+
+ $ go run -race lots_of_goroutines.go
+ race: limit on 8192 simultaneously alive goroutines is exceeded, dying
+
+Câu hỏi nghiên cứu: bộ phát hiện race hỗ trợ hiệu quả hàng trăm nghìn goroutine?
+
+* Phát hiện deadlock
+
+Deadlock trên mutex do đảo ngược thứ tự khóa:
+
+ // thread 1                       // thread 2
+ pthread_mutex_lock(&m1);          pthread_mutex_lock(&m2);
+ pthread_mutex_lock(&m2);          pthread_mutex_lock(&m1);
+ ...                               ...
+ pthread_mutex_unlock(&m2);        pthread_mutex_unlock(&m1);
+ pthread_mutex_unlock(&m1);        pthread_mutex_unlock(&m2);
+
+Đảo ngược thứ tự khóa dễ phát hiện:
+
+- xây dựng quan hệ "M1 bị khóa dưới M2".
+- nếu nó trở nên vòng tròn, có một deadlock tiềm năng.
+- mỗi khi một cạnh mới được thêm vào đồ thị, thực hiện DFS để tìm chu trình.
+
+* Phát hiện deadlock
+
+Go có channel và mutex. Channel là semaphore. Mutex có thể được mở khóa trong
+một goroutine khác, vì vậy về cơ bản nó cũng là một semaphore nhị phân.
+
+Ví dụ deadlock:
+
+	// Duyệt cây file song song.
+	func worker(pendingItems chan os.FileInfo)
+		for f := range pendingItems {
+			if f.IsDir() {
+				filepath.Walk(f.Name(), func(path string, info os.FileInfo, err error) error {
+					pendingItems <- info
+				})
+			} else {
+				visit(f)
+			}
+		}
+	}
+
+Channel pendingItems có dung lượng giới hạn. Tất cả worker có thể bị chặn khi gửi đến pendingItems.
+
+* Phát hiện deadlock
+
+Ví dụ deadlock khác:
+
+ var (
+ 	c = make(chan T, 100)
+ 	mtx sync.RWMutex
+  )
+
+ // goroutine 1      // goroutine 2         // goroutine 3
+ // does send        // does receive        // "resizes" the channel
+ mtx.RLock()         mtx.RLock()            mtx.Lock()
+ c <- v              v := <-c               tmp := make(chan T, 200)
+ mtx.RUnlock()       mtx.RUnlock()          copyAll(c, tmp)
+                                            c = tmp
+                                            mtx.Unlock()
+
+RWMutex công bằng cho cả reader và writer: khi một writer đến, các reader mới không được phép vào phần critical.
+Goroutine 1 bị chặn khi gửi chan; sau đó goroutine 3 bị chặn trên mtx.Lock; sau đó goroutine 2 bị chặn trên mtx.RLock.
+
+* Phát hiện deadlock
+
+Câu hỏi nghiên cứu: cách phát hiện deadlock trên semaphore?
+
+Chưa có lý thuyết nào được biết đến cho đến nay.
+
+
+
+
+* Kiểm thử cài đặt
+
+.image research2/gopherswrench.jpg 240 405
+
+* Kiểm thử cài đặt
+
+Vậy bây giờ chúng ta có một ngôn ngữ mới với một số cài đặt phức tạp:
+
+- lexer
+- parser
+- các bước biến đổi và tối ưu hóa
+- tạo mã
+- linker
+- thao tác channel và map
+- bộ thu gom rác
+- ...
+
+*Làm*thế*nào*để*kiểm*thử*nó?*
+
+* Kiểm thử cài đặt
+
+Csmith là công cụ tạo ra các chương trình C ngẫu nhiên tuân thủ tĩnh và động theo tiêu chuẩn C99.
+
+.image research2/csmith.png
+
+* Kiểm thử cài đặt
+
+Gosmith là công cụ tạo ra các chương trình Go ngẫu nhiên tuân thủ tĩnh và động theo tiêu chuẩn Go.
+
+Hóa ra đơn giản hơn nhiều so với C: không có hành vi không xác định xung quanh!
+
+- không có biến chưa khởi tạo
+- không có đột biến đồng thời giữa các điểm trình tự (x[i++] = --i)
+- không có UB trong quá trình tràn số nguyên có dấu
+- tổng cộng 191 loại hành vi không xác định và 52 loại hành vi không xác định trong C
+
+* Kiểm thử cài đặt
+
+Nhưng tạo ra các chương trình không thú vị từ góc độ thực thi: hầu hết chúng deadlock hoặc crash trên nil deref.
+
+Thành tựu:
+
+- 31 lỗi trong trình biên dịch gc
+- 18 lỗi trong trình biên dịch gccgo
+- 5 lỗi trong trình biên dịch llgo
+- 1 lỗi trong gofmt
+- 3 lỗi trong đặc tả
+
+.image research2/emoji.png
+
+* Kiểm thử cài đặt
+
+Câu hỏi nghiên cứu: cách tạo ra các chương trình Go *đồng_thời* *thú_vị* ngẫu nhiên?
+
+Phải:
+
+- tạo và chờ goroutine
+- giao tiếp qua channel
+- bảo vệ dữ liệu bằng mutex (reader-writer)
+- truyền quyền sở hữu dữ liệu giữa các goroutine (tường minh và ngầm định)
+
+Không được:
+
+- deadlock
+- gây ra data race
+- có kết quả không xác định
+
+
+
+
+* Nghiên cứu và Go
+
+Có rất nhiều câu hỏi nghiên cứu về cách triển khai Go tốt.
+
+- Đồng thời
+- Lập lịch
+- Thu gom rác
+- Phát hiện race và deadlock
+- Kiểm thử cài đặt
+- [Đa hình]
+- [Dịch chương trình]

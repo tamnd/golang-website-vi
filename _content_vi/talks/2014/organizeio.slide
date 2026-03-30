@@ -1,0 +1,333 @@
+Tổ chức mã Go
+
+David Crawshaw
+crawshaw@golang.org
+
+
+* Package
+
+* Chương trình Go được tạo thành từ các package
+
+Tất cả mã nguồn Go đều là một phần của một package.
+Mỗi file bắt đầu bằng một câu lệnh package.
+Chương trình bắt đầu trong package main.
+
+.play organizeio/hello.go
+
+Đối với các chương trình rất nhỏ, `main` là package duy nhất bạn cần viết.
+
+Chương trình hello world _import_ package `fmt`.
+
+Hàm `Println` được định nghĩa trong package fmt.
+
+* Một package ví dụ: fmt
+
+	// Package fmt implements formatted I/O.
+	package fmt
+
+	// Println formats using the default formats for its
+	// operands and writes to standard output.
+	func Println(a ...interface{}) (n int, err error) {
+		...
+	}
+
+	func newPrinter() *pp {
+		...
+	}
+
+Hàm `Println` đã được _xuất_. Nó bắt đầu bằng chữ hoa,
+nghĩa là các package khác được phép gọi nó.
+
+Hàm `newPrinter` _chưa_được_xuất_. Nó bắt đầu bằng chữ thường,
+vì vậy nó chỉ có thể được sử dụng bên trong package fmt.
+
+* Hình dạng của một package
+
+Package tập hợp các mã liên quan.
+
+Chúng có thể lớn hoặc nhỏ,
+và có thể trải dài trên nhiều file.
+
+Tất cả các file trong một package đều nằm trong một thư mục duy nhất.
+
+Package `net/http` xuất hơn 100 tên. (18 file)
+Package `errors` chỉ xuất một tên. (1 file)
+
+* Tên của một package
+
+Giữ tên package ngắn và có ý nghĩa.
+Đừng dùng dấu gạch dưới, chúng làm tên package dài hơn.
+
+- `io/ioutil` không phải `io/util`
+- `suffixarray` không phải `suffix_array`
+
+Đừng tổng quát hóa quá mức. Package `util` có thể là bất cứ thứ gì.
+
+Tên của một package là một phần của tên kiểu và hàm của nó.
+Một mình, kiểu `Buffer` là mơ hồ. Nhưng người dùng thấy:
+
+	buf := new(bytes.Buffer)
+
+Chọn tên package cẩn thận.
+
+Chọn tên tốt cho người dùng.
+
+* Kiểm thử một package
+
+Các file kiểm thử được phân biệt bởi tên file. Các file kiểm thử kết thúc bằng `_test.go`.
+
+	package fmt
+
+	import "testing"
+
+	var fmtTests = []fmtTest{
+		{"%d", 12345, "12345"},
+		{"%v", 12345, "12345"},
+		{"%t", true, "true"},
+	}
+
+	func TestSprintf(t *testing.T) {
+		for _, tt := range fmtTests {
+			if s := Sprintf(tt.fmt, tt.val); s != tt.out {
+				t.Errorf("...")
+			}
+		}
+	}
+
+Kiểm thử kỹ càng.
+
+* Tổ chức mã
+
+* Giới thiệu workspace
+
+Mã Go của bạn được lưu trong một _workspace_.
+
+Một workspace chứa _nhiều_ kho mã nguồn (git, hg).
+
+Công cụ Go hiểu bố cục của một workspace.
+Bạn không cần `Makefile`. Bố cục file là tất cả.
+
+Thay đổi bố cục file, thay đổi quá trình build.
+
+	$GOPATH/
+		src/
+			github.com/user/repo/
+				mypkg/
+					mysrc1.go
+					mysrc2.go
+				cmd/mycmd/
+					main.go
+		bin/
+			mycmd
+
+
+* Hãy tạo một workspace
+
+	mkdir /tmp/gows
+	GOPATH=/tmp/gows
+
+Biến môi trường `GOPATH` cho công cụ Go biết workspace của bạn ở đâu.
+
+	go get github.com/dsymonds/fixhub/cmd/fixhub
+
+Lệnh `go` `get` tải về các kho mã nguồn từ internet và đặt chúng vào workspace của bạn.
+
+Đường dẫn package quan trọng với công cụ Go. Sử dụng "github.com/..."
+có nghĩa là công cụ biết cách tải về kho lưu trữ của bạn.
+
+	go install github.com/dsymonds/fixhub/cmd/fixhub
+
+Lệnh go install build một binary và đặt nó trong `$GOPATH/bin/fixhub`.
+
+* Workspace của chúng ta
+
+	$GOPATH/
+		bin/fixhub                              # binary đã cài đặt
+		pkg/darwin_amd64/                       # archive đã biên dịch
+			code.google.com/p/goauth2/oauth.a
+			github.com/...
+		src/                                    # kho mã nguồn
+			code.google.com/p/goauth2/
+				.hg
+				oauth                           # được dùng bởi package go-github
+				...
+			github.com/
+				golang/lint/...                 # được dùng bởi package fixhub
+					.git
+				google/go-github/...            # được dùng bởi package fixhub
+					.git
+				dsymonds/fixhub/
+					.git
+					client.go
+					cmd/fixhub/fixhub.go        # package main
+
+`go` `get` đã tải về nhiều kho lưu trữ.
+`go` `install` đã build một binary từ chúng.
+
+
+* Tại sao quy định bố cục file?
+
+Sử dụng bố cục file để build có nghĩa là ít cấu hình hơn.
+Thực ra, nó có nghĩa là không cần cấu hình.
+Không có `Makefile`, không có `build.xml`.
+
+Ít thời gian cấu hình có nghĩa là nhiều thời gian lập trình hơn.
+
+Mọi người trong cộng đồng sử dụng cùng một bố cục.
+Điều này giúp việc chia sẻ mã dễ dàng hơn.
+
+Công cụ Go giúp xây dựng cộng đồng Go.
+
+* Workspace của bạn ở đâu?
+
+Có thể có nhiều workspace, nhưng hầu hết mọi người chỉ sử dụng một.
+
+Vậy bạn trỏ `GOPATH` của mình vào đâu? Một sở thích phổ biến:
+
+.image organizeio/home.png
+
+Điều này đặt các thư mục `src`, `bin` và `pkg` trong thư mục home của bạn.
+
+(Tiện lợi vì `$HOME/bin` có thể đã nằm trong `PATH` của bạn.)
+
+
+* Làm việc với workspace
+
+Unix tránh gõ nhiều:
+
+	CDPATH=$GOPATH/src/github.com:$GOPATH/src/code.google.com/p
+
+	$ cd dsymonds/fixhub
+	/tmp/gows/src/github.com/dsymonds/fixhub
+	$ cd goauth2
+	/tmp/gows/src/code.google.com/p/goauth2
+	$
+
+Một hàm shell cho `~/.profile` của bạn:
+
+	gocd () { cd `go list -f '{{.Dir}}' $1` }
+
+Điều này cho phép bạn di chuyển bằng tên đường dẫn của công cụ Go:
+
+	$ gocd .../lint
+	/tmp/gows/src/github.com/golang/lint
+	$
+
+
+* Nhiều tài năng của công cụ Go
+
+	$ go help
+	Go is a tool for managing Go source code.
+
+	Usage:
+
+		go command [arguments]
+
+	The commands are:
+
+Đáng khám phá! Một số điểm nổi bật:
+
+	    build       compile packages and dependencies
+	    get         download and install packages and dependencies
+	    install     compile and install packages and dependencies
+	    test        test packages
+
+Có nhiều lệnh con hữu ích hơn. Hãy xem `vet` và `fmt`.
+
+* Quản lý phụ thuộc
+
+* Trong môi trường production, phiên bản quan trọng.
+
+`go` `get` luôn tải về mã mới nhất, ngay cả khi build của bạn bị hỏng.
+
+.image organizeio/gogetversion.png
+
+Điều đó ổn khi phát triển. Không ổn khi phát hành.
+Chúng ta cần các công cụ khác.
+
+* Versioning
+
+Kỹ thuật yêu thích của tôi: vendoring.
+
+Để build binary, import các package bạn quan tâm
+vào workspace `_vendor`.
+
+	GOPATH=/tmp/gows/_vendor:/tmp/gows
+
+Để build thư viện, import các package bạn quan tâm
+vào kho lưu trữ của bạn. Đổi tên các import thành:
+
+	import "github.com/you/proj/vendor/github.com/them/lib"
+
+Đường dẫn dài, nhưng dễ tự động hóa. Viết một chương trình Go!
+
+Một kỹ thuật khác: [[http://gopkg.in][gopkg.in]], cung cấp đường dẫn package có phiên bản:
+
+	gopkg.in/user/pkg.v3 -> github.com/user/pkg (branch/tag v3, v3.N, or v.3.N.M)
+
+* Đặt tên
+
+* Tên gọi quan trọng
+
+Chương trình đầy các tên. Tên có chi phí và lợi ích.
+
+*Chi_phí*: *không_gian* *và* *thời_gian*
+Tên cần được lưu trong bộ nhớ ngắn hạn khi đọc mã.
+Bạn chỉ có thể chứa được nhiều đến mức đó. Tên dài chiếm nhiều không gian hơn.
+
+*Lợi_ích:* *thông_tin*
+Một tên tốt không chỉ là một tham chiếu, nó truyền đạt thông tin.
+
+Sử dụng tên ngắn nhất mang đúng lượng thông tin trong ngữ cảnh của nó.
+
+Dành thời gian cho việc đặt tên.
+
+* Phong cách đặt tên
+
+Sử dụng `camelCase`, `not_underscores`.
+Tên biến cục bộ nên ngắn, thường là một hoặc hai ký tự.
+
+Tên package thường là một từ viết thường.
+
+Các biến toàn cục nên có tên dài hơn.
+
+Đừng lặp lại.
+
+- `bytes.Buffer` không phải `bytes.ByteBuffer`
+- `zip.Reader` không phải `zip.ZipReader`
+- `errors.New` không phải `errors.NewError`
+- `r` không phải `bytesReader`
+- `i` không phải `loopIterator`
+
+* Comment tài liệu
+
+Comment tài liệu đứng trước khai báo của một định danh đã xuất:
+
+        // Join concatenates the elements of elem to create a single string.
+        // The separator string sep is placed between elements in the resulting string.
+        func Join(elem []string, sep string) string {
+
+Công cụ godoc trích xuất các comment như vậy và trình bày chúng trên web:
+
+.image organizeio/godoc.png
+
+* Viết comment tài liệu
+
+Comment tài liệu nên là các câu và đoạn văn tiếng Anh.
+Chúng không sử dụng định dạng đặc biệt nào ngoài thụt lề cho văn bản đã định dạng sẵn.
+
+Comment tài liệu nên bắt đầu bằng danh từ mà chúng mô tả.
+
+	// Join concatenates… 		tốt
+	// This function… 			xấu
+
+Tài liệu package đặt ở trên khai báo package:
+
+	// Package fmt…
+	package fmt
+
+Đọc tài liệu Go của thế giới tại [[https://pkg.go.dev]]. Ví dụ:
+
+[[https://pkg.go.dev/golang.org/x/tools/txtar]]
+
+* Câu hỏi?
