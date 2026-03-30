@@ -752,24 +752,24 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### tour
 
-- [ ] `tour/basics.article`
-- [ ] `tour/concurrency.article`
-- [ ] `tour/flowcontrol.article`
-- [ ] `tour/generics.article`
-- [ ] `tour/methods.article`
-- [ ] `tour/moretypes.article`
-- [ ] `tour/static/partials/editor.html`
-- [ ] `tour/static/partials/feedback-button.html`
-- [ ] `tour/static/partials/lesson.html`
-- [ ] `tour/static/partials/list.html`
-- [ ] `tour/static/partials/toc-button.html`
-- [ ] `tour/static/partials/toc.html`
-- [ ] `tour/template/action.tmpl`
-- [ ] `tour/template/index.tmpl`
-- [ ] `tour/welcome.article`
+- [x] `tour/basics.article`
+- [x] `tour/concurrency.article`
+- [x] `tour/flowcontrol.article`
+- [x] `tour/generics.article`
+- [x] `tour/methods.article`
+- [x] `tour/moretypes.article`
+- [x] `tour/static/partials/editor.html`
+- [x] `tour/static/partials/feedback-button.html`
+- [x] `tour/static/partials/lesson.html`
+- [x] `tour/static/partials/list.html`
+- [x] `tour/static/partials/toc-button.html`
+- [x] `tour/static/partials/toc.html`
+- [x] `tour/template/action.tmpl`
+- [x] `tour/template/index.tmpl`
+- [x] `tour/welcome.article`
 
 ### wiki
 
-- [ ] `wiki/Comments.md`
+- [x] `wiki/Comments.md`
 - [ ] `wiki/default.tmpl`
-- [ ] `wiki/index.md`
+- [x] `wiki/index.md`
