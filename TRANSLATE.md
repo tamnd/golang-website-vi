@@ -592,7 +592,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `solutions/bitly.md`
 - [x] `solutions/bytedance.md`
 - [x] `solutions/capital-one.md`
-- [ ] `solutions/case-studies.md`
+- [x] `solutions/case-studies.md`
 - [x] `solutions/chrome.md`
 - [x] `solutions/clis.md`
 - [x] `solutions/cloud.md`
@@ -608,7 +608,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `solutions/google/chrome.md`
 - [ ] `solutions/google/coredata.md`
 - [ ] `solutions/google/firebase.md`
-- [ ] `solutions/google/index.md`
+- [x] `solutions/google/index.md`
 - [ ] `solutions/google/sitereliability.md`
 - [x] `solutions/grail.md`
 - [x] `solutions/index.md`
@@ -619,13 +619,13 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `solutions/paypal.md`
 - [x] `solutions/riotgames.md`
 - [x] `solutions/salesforce.md`
-- [ ] `solutions/sitereliability.md`
+- [x] `solutions/sitereliability.md`
 - [x] `solutions/sixt.md`
 - [x] `solutions/stream.md`
 - [x] `solutions/trivago.md`
 - [x] `solutions/twitch.md`
 - [x] `solutions/uber.md`
-- [ ] `solutions/use-cases.md`
+- [x] `solutions/use-cases.md`
 - [x] `solutions/webdev.md`
 - [x] `solutions/wildlifestudios.md`
 - [x] `solutions/x.md`
