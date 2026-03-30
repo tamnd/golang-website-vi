@@ -1,0 +1,471 @@
+<!--{
+	"Title": "Chẩn đoán",
+  	"Breadcrumb": true
+}-->
+
+<!--
+NOTE: In this document and others in this directory, the convention is to
+set fixed-width phrases with non-fixed-width spaces, as in
+<code>hello</code> <code>world</code>.
+Do not send CLs removing the interior tags from such phrases.
+-->
+
+<h2 id="introduction">Giới thiệu</h2>
+
+<p>
+Hệ sinh thái Go cung cấp một bộ API và công cụ phong phú để
+chẩn đoán các vấn đề về logic và hiệu suất trong các chương trình Go. Trang này
+tóm tắt các công cụ hiện có và giúp người dùng Go chọn đúng công cụ
+cho vấn đề cụ thể của họ.
+</p>
+
+<p>
+Các giải pháp chẩn đoán có thể được phân loại thành các nhóm sau:
+</p>
+
+<ul>
+<li><strong>Profiling</strong>: Các công cụ profiling phân tích độ phức tạp và chi phí của một
+chương trình Go chẳng hạn như mức sử dụng bộ nhớ và các hàm được gọi thường xuyên
+để xác định các phần tốn kém của chương trình Go.</li>
+<li><strong>Tracing</strong>: Tracing là cách đo lường mã để phân tích độ trễ
+trong suốt vòng đời của một lời gọi hoặc yêu cầu từ người dùng. Trace cung cấp
+tổng quan về mức độ trễ mà mỗi thành phần đóng góp vào tổng độ trễ của hệ thống. Trace có thể kéo dài trên nhiều tiến trình Go.</li>
+<li><strong>Debugging</strong>: Debugging cho phép chúng ta tạm dừng một chương trình Go và kiểm tra
+quá trình thực thi của nó. Trạng thái và luồng của chương trình có thể được xác minh bằng debugging.</li>
+<li><strong>Thống kê và sự kiện runtime</strong>: Thu thập và phân tích thống kê và sự kiện runtime
+cung cấp cái nhìn tổng quan về tình trạng sức khỏe của chương trình Go. Sự tăng/giảm đột biến của các chỉ số
+giúp chúng ta xác định các thay đổi về thông lượng, mức sử dụng và hiệu suất.</li>
+</ul>
+
+<p>
+Lưu ý: Một số công cụ chẩn đoán có thể can thiệp lẫn nhau. Ví dụ, memory profiling chính xác
+làm lệch CPU profile và goroutine blocking profiling ảnh hưởng đến scheduler trace.
+Hãy dùng từng công cụ riêng lẻ để có thông tin chính xác hơn.
+</p>
+
+<h2 id="profiling">Profiling</h2>
+
+<p>
+Profiling hữu ích để xác định các phần mã tốn kém hoặc được gọi thường xuyên.
+Go runtime cung cấp <a href="/pkg/runtime/pprof/">
+dữ liệu profiling</a> ở định dạng mà
+<a href="https://github.com/google/pprof/blob/master/doc/README.md">công cụ trực quan hóa pprof</a>
+mong đợi.
+Dữ liệu profiling có thể được thu thập trong quá trình kiểm thử
+qua <code>go</code> <code>test</code> hoặc các endpoint được cung cấp từ gói <a href="/pkg/net/http/pprof/">
+net/http/pprof</a>. Người dùng cần thu thập dữ liệu profiling và sử dụng công cụ pprof để lọc
+và trực quan hóa các đường dẫn mã hàng đầu.
+</p>
+
+<p>Các profile được định nghĩa sẵn bởi gói <a href="/pkg/runtime/pprof">runtime/pprof</a>:</p>
+
+<ul>
+<li>
+<strong>cpu</strong>: CPU profile xác định nơi chương trình dành
+thời gian trong khi tiêu thụ CPU tích cực (trái với khi ngủ hoặc chờ I/O).
+</li>
+<li>
+<strong>heap</strong>: Heap profile báo cáo các mẫu phân bổ bộ nhớ;
+dùng để theo dõi mức sử dụng bộ nhớ hiện tại và lịch sử, và để kiểm tra rò rỉ bộ nhớ.
+</li>
+<li>
+<strong>threadcreate</strong>: Thread creation profile báo cáo các phần
+của chương trình dẫn đến việc tạo các OS thread mới.
+</li>
+<li>
+<strong>goroutine</strong>: Goroutine profile báo cáo stack trace của tất cả goroutine hiện tại.
+</li>
+<li>
+<strong>block</strong>: Block profile cho thấy goroutine bị block chờ trên các synchronization
+primitive (bao gồm timer channel). Block profile không được bật mặc định;
+dùng <code>runtime.SetBlockProfileRate</code> để bật.
+</li>
+<li>
+<strong>mutex</strong>: Mutex profile báo cáo sự tranh chấp lock. Khi bạn cho rằng
+CPU không được sử dụng hết do tranh chấp mutex, hãy dùng profile này. Mutex profile
+không được bật mặc định, xem <code>runtime.SetMutexProfileFraction</code> để bật.
+</li>
+</ul>
+
+
+<p><strong>Tôi có thể dùng profiler nào khác để profile chương trình Go?</strong></p>
+
+<p>
+Trên Linux, <a href="https://perf.wiki.kernel.org/index.php/Tutorial">công cụ perf</a>
+có thể được dùng để profile chương trình Go. Perf có thể profile
+và unwind mã cgo/SWIG và kernel, nên nó hữu ích để có được thông tin chi tiết về
+các điểm nghẽn hiệu suất ở native/kernel. Trên macOS,
+<a href="https://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/InstrumentsUserGuide/">bộ Instruments</a>
+có thể được dùng để profile chương trình Go.
+</p>
+
+<p><strong>Tôi có thể profile các dịch vụ production của mình không?</strong></p>
+
+<p>Có. Việc profile các chương trình trong môi trường production là an toàn, nhưng bật
+một số profile (ví dụ: CPU profile) sẽ tăng chi phí. Bạn nên kỳ vọng
+thấy hiệu suất giảm. Có thể ước tính mức phạt hiệu suất
+bằng cách đo overhead của profiler trước khi bật nó trong
+môi trường production.
+</p>
+
+<p>
+Bạn có thể muốn định kỳ profile các dịch vụ production của mình.
+Đặc biệt trong một hệ thống có nhiều bản sao của một tiến trình, việc chọn
+một bản sao ngẫu nhiên định kỳ là lựa chọn an toàn.
+Chọn một tiến trình production, profile nó trong
+X giây mỗi Y giây và lưu kết quả để trực quan hóa và
+phân tích; sau đó lặp lại định kỳ. Kết quả có thể được
+xem xét thủ công và/hoặc tự động để tìm vấn đề.
+Việc thu thập profile có thể can thiệp lẫn nhau,
+vì vậy nên thu thập chỉ một profile tại một thời điểm.
+</p>
+
+<p>
+<strong>Những cách tốt nhất để trực quan hóa dữ liệu profiling là gì?</strong>
+</p>
+
+<p>
+Các công cụ Go cung cấp trực quan hóa văn bản, đồ thị và <a href="http://valgrind.org/docs/manual/cl-manual.html">callgrind</a>
+của dữ liệu profile bằng
+<code><a href="https://github.com/google/pprof/blob/master/doc/README.md">go tool pprof</a></code>.
+Đọc <a href="/blog/profiling-go-programs">Profiling Go programs</a>
+để xem chúng hoạt động.
+</p>
+
+<p>
+<img width="800" src="../images/diagnostics/pprof-text.png">
+<br>
+<small>Liệt kê các lời gọi tốn kém nhất dưới dạng văn bản.</small>
+</p>
+
+<p>
+<img width="800" src="../images/diagnostics/pprof-dot.png">
+<br>
+<small>Trực quan hóa các lời gọi tốn kém nhất dưới dạng đồ thị.</small>
+</p>
+
+<p>Chế độ xem Weblist hiển thị các phần tốn kém của mã nguồn theo từng dòng trong
+một trang HTML. Trong ví dụ sau, 530ms được dành cho
+<code>runtime.concatstrings</code> và chi phí của mỗi dòng được trình bày
+trong danh sách.</p>
+
+<p>
+<img width="800" src="../images/diagnostics/pprof-weblist.png">
+<br>
+<small>Trực quan hóa các lời gọi tốn kém nhất dưới dạng weblist.</small>
+</p>
+
+<p>
+Một cách khác để trực quan hóa dữ liệu profile là <a href="http://www.brendangregg.com/flamegraphs.html">flame graph</a>.
+Flame graph cho phép bạn di chuyển theo một đường ancestry cụ thể, để bạn có thể zoom
+vào/ra các phần mã cụ thể.
+<a href="https://github.com/google/pprof">pprof upstream</a>
+có hỗ trợ flame graph.
+</p>
+
+<p>
+<img width="800" src="../images/diagnostics/flame.png">
+<br>
+<small>Flame graph cung cấp trực quan hóa để phát hiện các đường dẫn mã tốn kém nhất.</small>
+</p>
+
+<p><strong>Tôi có bị giới hạn với các profile tích hợp sẵn không?</strong></p>
+
+<p>
+Ngoài những gì runtime cung cấp, người dùng Go có thể tạo
+các profile tùy chỉnh qua <a href="/pkg/runtime/pprof/#Profile">pprof.Profile</a>
+và sử dụng các công cụ hiện có để kiểm tra chúng.
+</p>
+
+<p><strong>Tôi có thể phục vụ các handler profiler (/debug/pprof/...) trên đường dẫn và cổng khác không?</strong></p>
+
+<p>
+Có. Gói <code>net/http/pprof</code> đăng ký các handler của mình vào
+default mux theo mặc định, nhưng bạn cũng có thể tự đăng ký bằng cách sử dụng các handler
+được xuất ra từ gói.
+</p>
+
+<p>
+Ví dụ, đoạn code sau sẽ phục vụ pprof.Profile handler
+trên :7777 tại /custom_debug_path/profile:
+</p>
+
+<p>
+<pre>
+package main
+
+import (
+	"log"
+	"net/http"
+	"net/http/pprof"
+)
+
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/custom_debug_path/profile", pprof.Profile)
+	log.Fatal(http.ListenAndServe(":7777", mux))
+}
+</pre>
+</p>
+
+<h2 id="tracing">Tracing</h2>
+
+<p>
+Tracing là cách đo lường mã để phân tích độ trễ trong suốt
+vòng đời của một chuỗi lời gọi. Go cung cấp gói
+<a href="https://godoc.org/golang.org/x/net/trace">golang.org/x/net/trace</a>
+như một tracing backend tối giản cho mỗi Go node và cung cấp một
+thư viện đo lường tối giản với dashboard đơn giản. Go cũng cung cấp
+một execution tracer để trace các sự kiện runtime trong một khoảng thời gian.
+</p>
+
+<p>Tracing giúp chúng ta:</p>
+
+<ul>
+<li>Đo lường và phân tích độ trễ ứng dụng trong một tiến trình Go.</li>
+<li>Đo chi phí của các lời gọi cụ thể trong một chuỗi lời gọi dài.</li>
+<li>Tìm ra các cải tiến về mức sử dụng và hiệu suất.
+Các điểm nghẽn không phải lúc nào cũng rõ ràng mà không có dữ liệu tracing.</li>
+</ul>
+
+<p>
+Trong các hệ thống nguyên khối, tương đối dễ dàng thu thập dữ liệu chẩn đoán
+từ các khối xây dựng của chương trình. Tất cả các module tồn tại trong một
+tiến trình và chia sẻ các tài nguyên chung để báo cáo log, lỗi và các
+thông tin chẩn đoán khác. Khi hệ thống của bạn phát triển vượt qua một tiến trình duy nhất và
+bắt đầu trở thành phân tán, việc theo dõi một lời gọi bắt đầu
+từ web server front-end đến tất cả các back-end của nó cho đến khi phản hồi được
+trả về người dùng trở nên khó hơn. Đây là nơi distributed tracing đóng vai trò
+lớn trong việc đo lường và phân tích các hệ thống production của bạn.
+</p>
+
+<p>
+Distributed tracing là cách đo lường mã để phân tích độ trễ trong suốt
+vòng đời của một yêu cầu người dùng. Khi một hệ thống phân tán và khi
+các công cụ profiling và debugging thông thường không mở rộng được, bạn có thể muốn
+sử dụng các công cụ distributed tracing để phân tích hiệu suất của các yêu cầu người dùng
+và RPC của bạn.
+</p>
+
+<p>Distributed tracing giúp chúng ta:</p>
+
+<ul>
+<li>Đo lường và profile độ trễ ứng dụng trong một hệ thống lớn.</li>
+<li>Theo dõi tất cả RPC trong vòng đời của một yêu cầu người dùng và xem các vấn đề tích hợp
+chỉ hiển thị trong môi trường production.</li>
+<li>Tìm ra các cải tiến hiệu suất có thể áp dụng cho hệ thống của chúng ta.
+Nhiều điểm nghẽn không rõ ràng trước khi thu thập dữ liệu tracing.</li>
+</ul>
+
+<p>Hệ sinh thái Go cung cấp nhiều thư viện distributed tracing khác nhau cho từng hệ thống tracing
+và các thư viện không phụ thuộc backend.</p>
+
+
+<p><strong>Có cách nào để tự động chặn từng lời gọi hàm và tạo trace không?</strong></p>
+
+<p>
+Go không cung cấp cách để tự động chặn mọi lời gọi hàm và tạo
+các trace span. Bạn cần đo lường mã thủ công để tạo, kết thúc và ghi chú các span.
+</p>
+
+<p><strong>Tôi nên truyền trace header trong các thư viện Go như thế nào?</strong></p>
+
+<p>
+Bạn có thể truyền các trace identifier và tag trong
+<a href="/pkg/context#Context"><code>context.Context</code></a>.
+Hiện chưa có trace key chính tắc hoặc biểu diễn chung của trace header
+trong ngành. Mỗi nhà cung cấp tracing chịu trách nhiệm cung cấp các tiện ích
+truyền trong các thư viện Go của họ.
+</p>
+
+<p>
+<strong>Các sự kiện cấp thấp nào khác từ thư viện chuẩn hoặc
+runtime có thể được bao gồm trong trace?</strong>
+</p>
+
+<p>
+Thư viện chuẩn và runtime đang cố gắng hiển thị một số API bổ sung
+để thông báo về các sự kiện nội bộ cấp thấp. Ví dụ,
+<a href="/pkg/net/http/httptrace#ClientTrace"><code>httptrace.ClientTrace</code></a>
+cung cấp API để theo dõi các sự kiện cấp thấp trong vòng đời của một yêu cầu gửi đi.
+Đang có nỗ lực liên tục để lấy các sự kiện runtime cấp thấp từ
+execution tracer của runtime và cho phép người dùng định nghĩa và ghi lại các sự kiện người dùng của họ.
+</p>
+
+<h2 id="debugging">Debugging</h2>
+
+<p>
+Debugging là quá trình xác định tại sao một chương trình hoạt động sai.
+Debugger cho phép chúng ta hiểu luồng thực thi và trạng thái hiện tại của chương trình.
+Có một số phong cách debugging; phần này sẽ chỉ tập trung vào việc gắn
+một debugger vào chương trình và debugging core dump.
+</p>
+
+<p>Người dùng Go chủ yếu sử dụng các debugger sau:</p>
+
+<ul>
+<li>
+<a href="https://github.com/derekparker/delve">Delve</a>:
+Delve là một debugger cho ngôn ngữ lập trình Go. Nó có
+hỗ trợ cho các khái niệm runtime và kiểu tích hợp sẵn của Go. Delve
+cố gắng trở thành một debugger đầy đủ tính năng và đáng tin cậy cho các chương trình Go.
+</li>
+<li>
+<a href="/doc/gdb">GDB</a>:
+Go cung cấp hỗ trợ GDB thông qua trình biên dịch Go chuẩn và Gccgo.
+Việc quản lý stack, phân luồng và runtime có những điểm khác biệt đáng kể
+so với mô hình thực thi mà GDB kỳ vọng, có thể gây nhầm lẫn cho
+debugger, ngay cả khi chương trình được biên dịch bằng gccgo. Mặc dù
+GDB có thể được dùng để gỡ lỗi chương trình Go, nhưng nó không lý tưởng và có thể
+gây nhầm lẫn.
+</li>
+</ul>
+
+<p><strong>Debugger hoạt động tốt với chương trình Go như thế nào?</strong></p>
+
+<p>
+Trình biên dịch <code>gc</code> thực hiện các tối ưu hóa như
+function inlining và variable registerization. Những tối ưu hóa này
+đôi khi làm cho việc gỡ lỗi với debugger khó hơn. Đang có nỗ lực
+liên tục để cải thiện chất lượng thông tin DWARF được tạo ra cho
+các tệp nhị phân đã được tối ưu hóa. Cho đến khi các cải tiến đó có sẵn, chúng tôi khuyến nghị
+tắt tối ưu hóa khi xây dựng mã đang được gỡ lỗi. Lệnh sau
+xây dựng một gói không có tối ưu hóa trình biên dịch:
+
+<p>
+<pre>
+$ go build -gcflags=all="-N -l"
+</pre>
+</p>
+
+Trong khuôn khổ nỗ lực cải tiến, Go 1.10 đã giới thiệu cờ trình biên dịch mới
+<code>-dwarflocationlists</code>. Cờ này khiến trình biên dịch
+thêm danh sách vị trí giúp debugger hoạt động với các tệp nhị phân đã tối ưu hóa.
+Lệnh sau xây dựng một gói với tối ưu hóa nhưng có
+các DWARF location list:
+
+<p>
+<pre>
+$ go build -gcflags="-dwarflocationlists=true"
+</pre>
+</p>
+
+<p><strong>Giao diện người dùng debugger nào được khuyến nghị?</strong></p>
+
+<p>
+Mặc dù cả delve và gdb đều cung cấp CLI, nhưng hầu hết các tích hợp trình soạn thảo
+và IDE đều cung cấp giao diện người dùng dành riêng cho debugging.
+</p>
+
+<p><strong>Có thể thực hiện postmortem debugging với chương trình Go không?</strong></p>
+
+<p>
+Tệp core dump là một tệp chứa memory dump của một tiến trình đang chạy
+và trạng thái tiến trình của nó. Nó chủ yếu được dùng để
+gỡ lỗi post-mortem của một chương trình và để hiểu trạng thái của nó
+trong khi nó vẫn đang chạy. Hai trường hợp này làm cho việc gỡ lỗi core
+dump trở thành công cụ chẩn đoán tốt để phân tích postmortem và
+phân tích các dịch vụ production. Có thể lấy core file từ chương trình Go và
+dùng delve hoặc gdb để gỡ lỗi, xem trang
+<a href="/wiki/CoreDumpDebugging">core dump debugging</a>
+để có hướng dẫn từng bước.
+</p>
+
+<h2 id="runtime">Thống kê và sự kiện runtime</h2>
+
+<p>
+Runtime cung cấp thống kê và báo cáo về các sự kiện nội bộ cho
+người dùng để chẩn đoán các vấn đề về hiệu suất và mức sử dụng ở
+cấp độ runtime.
+</p>
+
+<p>
+Người dùng có thể theo dõi các thống kê này để hiểu rõ hơn về tình trạng sức khỏe
+tổng thể và hiệu suất của các chương trình Go.
+Một số thống kê và trạng thái được theo dõi thường xuyên:
+</p>
+
+<ul>
+<li><code><a href="/pkg/runtime/#ReadMemStats">runtime.ReadMemStats</a></code>
+báo cáo các chỉ số liên quan đến phân bổ heap
+và bộ gom rác. Thống kê bộ nhớ hữu ích để
+theo dõi một tiến trình đang tiêu thụ bao nhiêu tài nguyên bộ nhớ,
+liệu tiến trình có sử dụng bộ nhớ tốt không, và để phát hiện
+rò rỉ bộ nhớ.</li>
+<li><code><a href="/pkg/runtime/debug/#ReadGCStats">debug.ReadGCStats</a></code>
+đọc thống kê về bộ gom rác.
+Hữu ích để xem bao nhiêu tài nguyên được dành cho GC pause.
+Nó cũng báo cáo timeline của các GC pause và phân vị thời gian pause.</li>
+<li><code><a href="/pkg/runtime/debug/#Stack">debug.Stack</a></code>
+trả về stack trace hiện tại. Stack trace
+hữu ích để xem có bao nhiêu goroutine đang chạy,
+chúng đang làm gì và liệu chúng có bị block hay không.</li>
+<li><code><a href="/pkg/runtime/debug/#WriteHeapDump">debug.WriteHeapDump</a></code>
+tạm dừng thực thi của tất cả goroutine
+và cho phép bạn dump heap vào một tệp. Một heap dump là
+snapshot bộ nhớ của tiến trình Go tại một thời điểm nhất định. Nó chứa tất cả
+các đối tượng được phân bổ cũng như goroutine, finalizer và nhiều hơn nữa.</li>
+<li><code><a href="/pkg/runtime#NumGoroutine">runtime.NumGoroutine</a></code>
+trả về số lượng goroutine hiện tại.
+Giá trị có thể được theo dõi để xem liệu đủ goroutine có được
+sử dụng hay không, hoặc để phát hiện rò rỉ goroutine.</li>
+</ul>
+
+<h3 id="execution-tracer">Execution tracer</h3>
+
+<p>Go đi kèm với một execution tracer runtime để nắm bắt một loạt rộng
+các sự kiện runtime. Lập lịch, syscall, garbage collection,
+kích thước heap và các sự kiện khác được thu thập bởi runtime và có sẵn
+để trực quan hóa bởi go tool trace. Execution tracer là công cụ
+để phát hiện các vấn đề về độ trễ và mức sử dụng. Bạn có thể kiểm tra mức sử dụng CPU,
+và khi nào networking hoặc syscall là nguyên nhân gây preemption cho các goroutine.</p>
+
+<p>Tracer hữu ích để:</p>
+<ul>
+<li>Hiểu cách các goroutine của bạn thực thi.</li>
+<li>Hiểu một số sự kiện runtime cốt lõi như GC run.</li>
+<li>Xác định thực thi song song kém.</li>
+</ul>
+
+<p>Tuy nhiên, nó không tốt để xác định các điểm nóng như
+phân tích nguyên nhân sử dụng bộ nhớ hoặc CPU quá mức.
+Hãy dùng công cụ profiling trước để giải quyết chúng.</p>
+
+<p>
+<img width="800" src="../images/diagnostics/tracer-lock.png">
+</p>
+
+<p>Ở trên, trực quan hóa go tool trace cho thấy thực thi bắt đầu
+tốt, sau đó trở thành tuần tự. Điều này gợi ý có thể
+có tranh chấp lock cho một tài nguyên chia sẻ tạo ra điểm nghẽn.</p>
+
+<p>Xem <a href="/cmd/trace/"><code>go</code> <code>tool</code> <code>trace</code></a>
+để thu thập và phân tích trace runtime.
+</p>
+
+<h3 id="godebug">GODEBUG</h3>
+
+<p>Runtime cũng phát ra sự kiện và thông tin nếu
+biến môi trường <a href="/pkg/runtime/#hdr-Environment_Variables">GODEBUG</a>
+được đặt phù hợp.</p>
+
+<ul>
+<li>GODEBUG=gctrace=1 in các sự kiện bộ gom rác tại
+mỗi lần thu gom, tóm tắt lượng bộ nhớ được thu gom
+và độ dài của pause.</li>
+<li>GODEBUG=inittrace=1 in tóm tắt thời gian thực thi và thông tin phân bổ bộ nhớ
+cho công việc khởi tạo gói đã hoàn thành.</li>
+<li>GODEBUG=schedtrace=X in các sự kiện lập lịch mỗi X millisecond.</li>
+</ul>
+
+<p>Biến môi trường GODEBUG có thể được dùng để tắt việc sử dụng
+các phần mở rộng tập lệnh trong thư viện chuẩn và runtime.</p>
+
+<ul>
+<li>GODEBUG=cpu.all=off tắt việc sử dụng tất cả
+phần mở rộng tập lệnh tùy chọn.</li>
+<li>GODEBUG=cpu.<em>extension</em>=off tắt việc sử dụng các lệnh từ
+phần mở rộng tập lệnh được chỉ định.<br>
+<em>extension</em> là tên chữ thường của phần mở rộng tập lệnh
+chẳng hạn như <em>sse41</em> hoặc <em>avx</em>.</li>
+</ul>
