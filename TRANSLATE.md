@@ -518,7 +518,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/security/vulndb/policy.md`
 - [ ] `doc/telemetry.md`
 - [ ] `doc/toolchain.md`
-- [ ] `doc/tos.html`
+- [x] `doc/tos.html`
 - [x] `doc/tutorial/add-a-test.html`
 - [x] `doc/tutorial/call-module-code.html`
 - [x] `doc/tutorial/compile-install.html`
@@ -566,8 +566,8 @@ This checklist tracks files that likely require localization work. It excludes s
 ### (root)
 
 - [x] `menus.yaml`
-- [ ] `pkg.tmpl`
-- [ ] `pkgroot.tmpl`
+- [x] `pkg.tmpl`
+- [x] `pkgroot.tmpl`
 - [x] `play.tmpl`
 - [x] `project.html`
 - [x] `rebuild.html`
@@ -582,7 +582,7 @@ This checklist tracks files that likely require localization work. It excludes s
 
 - [x] `resources.yaml`
 - [x] `robots.txt`
-- [ ] `site.tmpl`
+- [x] `site.tmpl`
 
 ### solutions
 
@@ -600,7 +600,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `solutions/cockroachlabs.md`
 - [x] `solutions/coredata.md`
 - [x] `solutions/curve.md`
-- [ ] `solutions/default.tmpl`
+- [x] `solutions/default.tmpl`
 - [x] `solutions/devops.md`
 - [x] `solutions/dropbox.md`
 - [x] `solutions/facebook.md`
