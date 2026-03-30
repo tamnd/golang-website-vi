@@ -235,15 +235,15 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/hello-china.md`
 - [x] `blog/hello-world.md`
 - [x] `blog/heroku.md`
-- [ ] `blog/http-tracing.md`
-- [ ] `blog/image-draw.md`
-- [ ] `blog/image.md`
-- [ ] `blog/index.md`
-- [ ] `blog/inliner.md`
-- [ ] `blog/integration-test-coverage.md`
-- [ ] `blog/intro-generics.md`
-- [ ] `blog/introducing-go-playground.md`
-- [ ] `blog/introducing-gofix.md`
+- [x] `blog/http-tracing.md`
+- [x] `blog/image-draw.md`
+- [x] `blog/image.md`
+- [x] `blog/index.md`
+- [x] `blog/inliner.md`
+- [x] `blog/integration-test-coverage.md`
+- [x] `blog/intro-generics.md`
+- [x] `blog/introducing-go-playground.md`
+- [x] `blog/introducing-gofix.md`
 - [x] `blog/io2010-faq.md`
 - [x] `blog/io2010-preview.md`
 - [x] `blog/io2010.md`
