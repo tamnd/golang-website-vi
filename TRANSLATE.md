@@ -402,8 +402,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `brand.md`
 - [ ] `codewalk.tmpl`
 - [ ] `codewalkdir.tmpl`
-- [ ] `conduct.html`
-- [ ] `copyright.md`
+- [x] `conduct.html`
+- [x] `copyright.md`
 - [ ] `dir.tmpl`
 - [ ] `dl.tmpl`
 
