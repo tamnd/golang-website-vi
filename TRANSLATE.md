@@ -422,7 +422,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/conduct.md`
 - [ ] `doc/contrib.md`
 - [ ] `doc/contribute.html`
-- [ ] `doc/copyright.md`
+- [x] `doc/copyright.md`
 - [x] `doc/database/cancel-operations.md`
 - [x] `doc/database/change-data.md`
 - [x] `doc/database/execute-transactions.md`
@@ -433,7 +433,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/database/querying.md`
 - [x] `doc/database/sql-injection.md`
 - [ ] `doc/debugging_with_gdb.md`
-- [ ] `doc/default.tmpl`
+- [x] `doc/default.tmpl`
 - [ ] `doc/devel/pre_go1.html`
 - [ ] `doc/devel/release.html`
 - [ ] `doc/devel/weekly.html`
