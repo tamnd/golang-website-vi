@@ -286,14 +286,14 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/pgo-preview.md`
 - [x] `blog/pgo.md`
 - [x] `blog/pipelines.md`
-- [ ] `blog/pkg.go.dev-2020.md`
-- [ ] `blog/pkgsite-redesign.md`
-- [ ] `blog/pkgsite-search-redesign.md`
-- [ ] `blog/pkgsite.md`
-- [ ] `blog/playground-intro.md`
-- [ ] `blog/playground.md`
-- [ ] `blog/ports.md`
-- [ ] `blog/pprof.md`
+- [x] `blog/pkg.go.dev-2020.md`
+- [x] `blog/pkgsite-redesign.md`
+- [x] `blog/pkgsite-search-redesign.md`
+- [x] `blog/pkgsite.md`
+- [x] `blog/playground-intro.md`
+- [x] `blog/playground.md`
+- [x] `blog/ports.md`
+- [x] `blog/pprof.md`
 - [x] `blog/preview-of-go-version-1.md`
 - [x] `blog/profiling-go-programs.md`
 - [x] `blog/protobuf-apiv2.md`
