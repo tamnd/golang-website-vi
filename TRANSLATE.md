@@ -576,7 +576,7 @@ This checklist tracks files that likely require localization work. It excludes s
 
 - [x] `ref/default.tmpl`
 - [x] `ref/index.md`
-- [ ] `ref/mod.md`
+- [x] `ref/mod.md`
 
 ### (root)
 
