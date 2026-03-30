@@ -594,8 +594,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `solutions/capital-one.md`
 - [ ] `solutions/case-studies.md`
 - [ ] `solutions/chrome.md`
-- [ ] `solutions/clis.md`
-- [ ] `solutions/cloud.md`
+- [x] `solutions/clis.md`
+- [x] `solutions/cloud.md`
 - [ ] `solutions/cloudflare.md`
 - [ ] `solutions/cockroachlabs.md`
 - [ ] `solutions/coredata.md`
@@ -611,7 +611,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `solutions/google/index.md`
 - [ ] `solutions/google/sitereliability.md`
 - [ ] `solutions/grail.md`
-- [ ] `solutions/index.md`
+- [x] `solutions/index.md`
 - [ ] `solutions/mercadolibre.md`
 - [ ] `solutions/microsoft.md`
 - [ ] `solutions/monzo.md`
