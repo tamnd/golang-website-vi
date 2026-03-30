@@ -1,0 +1,145 @@
+Go: Dễ đọc, khó biên dịch
+Các trường hợp đặc biệt khi biên dịch Go
+
+Ian Lance Taylor
+Google
+iant@golang.org
+
+* Giới thiệu
+
+- Để thực sự học một ngôn ngữ, hãy viết một trình biên dịch cho nó
+- Lỗi trình biên dịch phản ánh độ phức tạp của ngôn ngữ
+- Hoặc, lỗi trình biên dịch phản ánh sự khác biệt so với C/C++
+- Đôi khi đơn giản hơn với người dùng lại phức tạp hơn với trình biên dịch
+- May mắn là Go đơn giản để biên dịch hơn nhiều so với C++ hoặc thậm chí C
+
+Bài nói chuyện này dựa trên các lỗi trình biên dịch Go gặp phải qua nhiều năm.
+
+* Kiểu đệ quy
+
+Các tên trong gói Go được định nghĩa trong toàn bộ gói, vì vậy kiểu Go
+có thể tham chiếu đến chính nó theo cách đệ quy.
+
+.code compiling/rtype1.go /1 START OMIT/,/1 END OMIT/
+
+Điều này không được phép trong C/C++, ngoại trừ trường hợp đặc biệt của
+một trường struct/union/class là con trỏ hoặc tham chiếu.
+
+Tất cả mã trình biên dịch Go duyệt qua các kiểu phải cẩn thận để tránh
+vòng lặp vô tận.
+
+* Kiểu đệ quy
+
+Kiểu con trỏ đệ quy có tác dụng gì? Nó chỉ có thể là nil hoặc là
+con trỏ đến chính nó. Thế là đủ cho phép tính Peano.
+
+.code compiling/rtype1.go /2 START OMIT/,/2 END OMIT/
+
+* Kiểu đệ quy
+
+Thực ra, một con trỏ đệ quy có thể chứa thêm thông tin: nó có thể
+có một finalizer.
+
+.play compiling/rtype1.go /3 START OMIT/,/3 END OMIT/
+
+* Kiểu đệ quy
+
+Kiểu hàm đệ quy thực sự hữu ích: chúng có thể cài đặt một
+máy trạng thái.
+
+.code compiling/rtype2.go /1 START OMIT/,/1 END OMIT/
+
+* Kiểu đệ quy
+
+.play compiling/rtype2.go /2 START OMIT/,/2 END OMIT/
+
+* Kiểu đệ quy
+
+Quy tắc đơn giản: tất cả các tên ở phạm vi gói đều hiển thị trong toàn bộ
+gói.
+
+Hệ quả phức tạp: trình biên dịch phải xử lý kiểu đệ quy (cũng như
+các khởi tạo đệ quy).
+
+* Hằng số
+
+Go có cả hằng số có kiểu và hằng số không có kiểu. Chúng tuân theo cùng quy tắc,
+ngoại trừ hằng số có kiểu phải có thể biểu diễn được trong kiểu đó.
+
+Điều này khá rõ ràng với số nguyên, ít rõ ràng hơn với số thực.
+
+.play compiling/const1.go /1 START OMIT/,/1 END OMIT/
+
+* Hằng số
+
+Biến số thực của Go tuân theo quy tắc IEEE-754.
+
+Hằng số thì không.
+
+.play compiling/const2.go /1 START OMIT/,/1 END OMIT/
+
+* Hằng số
+
+Hàm đặc biệt unsafe.Sizeof trả về một hằng số.
+
+.play compiling/const3.go /1 START OMIT/,/1 END OMIT/
+
+* Hằng số
+
+Quy tắc đơn giản: hằng số không có kiểu; chúng chính xác về mặt toán học và
+không yêu cầu chuyển đổi kiểu.
+
+Hệ quả phức tạp: hành vi số thực chính xác phụ thuộc vào
+kiểu dữ liệu.
+
+* Tra cứu tên
+
+Tra cứu tên trong trình biên dịch Go đơn giản hơn nhiều ngôn ngữ khác.
+Với mỗi tên, phạm vi để tra cứu nó rõ ràng. Điều này
+giúp việc phân tích cú pháp Go khá đơn giản.
+
+Có một ngoại lệ. Phạm vi của i là gì?
+
+.code compiling/name1.go /1 START OMIT/,/1 END OMIT/
+
+* Tra cứu tên
+
+Một khả năng.
+
+.play compiling/name1.go /2 START OMIT/,/2 END OMIT/
+
+* Tra cứu tên
+
+Khả năng khác.
+
+.play compiling/name2.go /2 START OMIT/,/2 END OMIT/
+
+* Tra cứu tên
+
+Quy tắc đơn giản: trong một composite literal của struct, bạn có thể dùng tên trường như
+các khóa.
+
+Hệ quả phức tạp: nếu bạn không biết kiểu của composite
+literal, phạm vi tra cứu của các tên dùng làm khóa không rõ ràng khi
+phân tích cú pháp.
+
+* Phương thức
+
+Bất kỳ kiểu được đặt tên nào cũng có thể có phương thức. Bất kỳ kiểu struct nào cũng có thể kế thừa phương thức
+từ trường được nhúng. Do đó, đôi khi bạn có thể gọi
+phương thức trên một biến dù nó có kiểu không được đặt tên.
+
+.play compiling/var1.go /1 START OMIT/,/1 END OMIT/
+
+* Phương thức
+
+Quy tắc đơn giản: kiểu được đặt tên có thể có phương thức; struct có thể có
+trường nhúng.
+
+Hệ quả phức tạp: kiểu không được đặt tên có thể có phương thức.
+
+* Kết luận
+
+- Go đơn giản để biên dịch hơn hầu hết các ngôn ngữ
+- Vẫn còn những phức tạp đối với trình biên dịch
+- Hầu hết những phức tạp xuất phát từ việc làm Go dễ viết hơn

@@ -1,0 +1,541 @@
+Go, từ C sang Go
+
+GopherCon
+25 Apr 2014
+
+Russ Cox
+Google
+
+https://go.dev/
+
+
+* Video
+
+Bài nói chuyện này đã được ghi hình tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=QIE5nV5fDwA Xem bài nói chuyện trên YouTube
+
+
+* Trình biên dịch Go
+
+* Trình biên dịch Go
+
+Hơn 80.000 dòng C.
+
+* Vấn đề
+
+Lập trình bằng Go thú vị.
+
+Lập trình bằng C thì không.
+
+* Vấn đề
+
+Viết một trình biên dịch Go đòi hỏi am hiểu sâu về Go.
+
+Viết bất kỳ chương trình nào bằng C đòi hỏi am hiểu sâu về C.
+
+Viết một trình biên dịch Go bằng C đòi hỏi am hiểu sâu về cả Go lẫn C.
+
+* Giải pháp
+
+Viết trình biên dịch Go bằng Go.
+
+* Quá khứ
+
+Tại sao không viết trình biên dịch Go bằng Go ngay từ đầu?
+
+- Go chưa tồn tại.
+
+- Go chưa ổn định.
+
+- Go không nhắm đến đối tượng là những người viết trình biên dịch.
+
+* Hiện tại
+
+Tại sao làm điều đó ngay bây giờ?
+
+- Go đã tồn tại.
+
+- Go đã ổn định.
+
+- Go là một ngôn ngữ lập trình đa năng tuyệt vời.
+
+* Như thế nào?
+
+Ý tưởng táo bạo: chuyển đổi tự động.
+
+"Một gofix lớn."
+
+* C
+
+* C
+
+- Đợt sáng tạo đầu tiên vào năm 1972 tại Bell Labs
+
+- Ritchie, [[http://cm.bell-labs.com/who/dmr/chist.html][Sự phát triển của ngôn ngữ C]], HOPL 1993
+
+- "C khó tính, có nhiều khiếm khuyết, nhưng lại là một thành công vang dội..."
+
+* Mô hình dữ liệu của C
+
+- Mục tiêu ban đầu: PDP-11 với 24 kB bộ nhớ.
+
+- Lập trình viên chịu trách nhiệm quản lý bộ nhớ.
+
+- "Bộ nhớ cấp phát động ngoài stack chỉ được cung cấp qua một hàm thư viện và gánh nặng quản lý nó đặt lên vai lập trình viên: C không thân thiện với bộ gom rác tự động."
+
+- Kiểu dữ liệu để giúp đỡ nhưng không được thực thi nghiêm ngặt.
+
+* Luồng điều khiển của C
+
+- `do...while`, `for`, `switch`, `while`
+
+- `goto` bị chỉ trích nhiều
+
+* Mô hình chương trình của C
+
+- Biên dịch theo từng tệp.
+
+- Tệp tiêu đề so với tệp mã nguồn.
+
+- `#define`, `#include`
+
+* Chuyển đổi
+
+* Những thách thức khi chuyển C sang Go
+
+- nhỏ: union, #define, chú thích
+
+- goto
+
+- ánh xạ kiểu dữ liệu
+
+* Mục tiêu
+
+Chuyển đổi tự động mã C của chúng ta sang Go.
+
+Mục tiêu: mã C _của chúng ta_, không phải _toàn bộ_ mã C.
+
+- Muốn mã được tạo ra có thể bảo trì được.
+- Muốn dịch tự động cho hơn 99% mã nguồn.
+- Không cần giải quyết vấn đề tổng quát cho số ít trường hợp.
+- Cho phép xử lý đặc biệt trong bộ chuyển đổi.
+- Cho phép chú thích trong mã nguồn.
+
+* Khởi động
+
+* Union
+
+go/src/cmd/gc/go.h
+
+	struct  Val
+	{
+	    short   ctype;
+	    union
+	    {
+	        short   reg;        // OREGISTER
+	        short   bval;       // bool value CTBOOL
+	        Mpint*  xval;       // int CTINT, rune CTRUNE
+	        Mpflt*  fval;       // float CTFLT
+	        Mpcplx* cval;       // float CTCPLX
+	        Strlit* sval;       // string CTSTR
+	    } u;
+	};
+
+* Union
+
+go/include/link.h
+
+	struct  Addr
+	{
+	    short type;
+	    union
+	    {
+	        char    sval[8];
+	        float64 dval;
+	        Prog*   branch; // for 5g, 6g, 8g
+	    } u;
+
+	    ...
+	};
+
+* Union
+
+`#define` `struct` `union` `/*` `Great` `space` `saver` `*/`
+
+* Union
+
+`#define` `union` `struct` `/*` `legal` `in` `C!` `*/`
+
+Dù sao, chỉ có hai trường hợp.
+
+* #define
+
+Không thể chỉ mở rộng trong khi phân tích cú pháp.
+
+* #define
+
+Không nhiều.
+
+	/*
+	 * defined macros
+	 *    you need super-gopher-guru privilege
+	 *    to add this list.
+	 */
+	#define nelem(x)    (sizeof(x)/sizeof((x)[0]))
+	#define nil         ((void*)0)
+	...
+
+Mở rộng trình phân tích cú pháp để nhận biết các trường hợp đặc biệt.
+
+* #define
+
+Chú thích một số.
+
+	#define	BOM	0xFEFF
+	/*c2go enum { BOM = 0xFEFF }; */
+
+Viết lại các trường hợp khác.
+
+	enum {
+	    BOM = 0xFEFF,
+	};
+
+* Chú thích
+
+Không thể bỏ qua trong khi phân tích cú pháp.
+
+	/*
+	 * If the new process paused because it was
+	 * swapped out, set the stack level to the last call
+	 * to savu(u_ssav).  This means that the return
+	 * which is executed immediately after the call to aretu
+	 * actually returns from the last routine which did
+	 * the savu.
+	 *
+	 * You are not expected to understand this.
+	 */
+	if(rp->p_flag&SSWAP) {
+	    rp->p_flag =& ~SSWAP;
+	    aretu(u.u_ssav);
+	}
+
+* Chú thích
+
+Ghi lại vị trí nguồn chính xác.
+
+	case OMAPLIT:
+	    n->esc = EscNone;  // until proven otherwise
+	    e->noesc = list(e->noesc, n);
+	    n->escloopdepth = e->loopdepth;
+
+	    // Keys and values make it to memory, lose track.
+	    for(ll=n->list; ll; ll=ll->next) {
+	        escassign(e, &e->theSink, ll->n->left);
+	        escassign(e, &e->theSink, ll->n->right);
+	    }
+	    break;
+
+Chú thích trên toàn dòng gắn với cú pháp ngay sau đó (hoặc EOF).
+
+Chú thích hậu tố gắn với cú pháp ngay trước đó.
+
+Cú pháp mang theo chú thích khi di chuyển.
+
+* Goto
+
+* C Goto
+
+"27. Kinh dị! goto và nhãn
+
+C có lệnh goto và nhãn, nên bạn có thể phân nhánh tùy ý. Nhưng hầu hết thời gian goto không cần thiết... Mã nguồn hầu như luôn có thể diễn đạt rõ ràng hơn bằng for/while, if/else, và các câu lệnh ghép.
+
+* C Goto
+
+Một cách dùng goto có phần hợp lệ là trong một chương trình chứa vòng lặp dài, nơi while(1) sẽ quá mở rộng. Khi đó bạn có thể viết:
+
+	mainloop:
+		...
+		goto mainloop;
+
+Cách dùng khác là thoát ra khỏi nhiều cấp độ for hoặc while. goto chỉ có thể nhảy đến nhãn trong cùng một hàm."
+
+- Kernighan, [[http://cm.bell-labs.com/who/dmr/ctut.pdf][Programming in C - A Tutorial]]
+
+* Hạn chế Goto trong Go
+
+- Không thể nhảy qua khai báo biến trong phạm vi đích.
+
+	.   if x {
+	        goto Done
+	    }
+
+	    y := f()
+	    print(y)
+
+	Done:
+	    close(c)
+	    return
+
+* Hạn chế Goto trong Go
+
+- Không thể nhảy qua khai báo biến trong phạm vi đích.
+
+	.   var y int
+
+	    if x {
+	        goto Done
+	    }
+
+	    y = f()
+	    print(y)
+
+	Done:
+	    close(c)
+	    return
+
+* Hạn chế Goto trong Go
+
+- Không thể nhảy vào một phạm vi mới (vào một khối { }).
+
+	if bad {
+	Bad:
+	    printError()
+	    return err
+	}
+
+	...
+
+	if other bad thing {
+	    goto Bad
+	}
+
+* Hạn chế Goto trong Go
+
+- Không thể nhảy vào một phạm vi mới (vào một khối { } hoặc case của switch).
+
+	switch x {
+	case 1:
+	    F()
+	    goto Common;
+	case 2:
+	    G()
+	    goto Common
+	case 3:
+	Common:
+	    H()
+	}
+
+* Goto trong trình biên dịch Go
+
+1032 câu lệnh goto
+241 nhãn
+
+* Goto trong trình biên dịch Go
+
+35 nhãn thụt vào
+
+18 case trong switch
+6 break/continue nhiều cấp
+5 câu lệnh 'else'
+4 nhãn dọn dẹp/xử lý lỗi
+1 vòng lặp
+1 khó giải thích
+
+* Tái cấu trúc goto trong switch case
+
+	switch(r->op) {
+	case OINDEXMAP:
+	    n->op = OAS2MAPR;
+	    goto common;
+	case ORECV:
+	    n->op = OAS2RECV;
+	    goto common;
+	case ODOTTYPE:
+	    n->op = OAS2DOTTYPE;
+	    r->op = ODOTTYPE2;
+	common:
+	    ...
+	}
+
+* Tái cấu trúc goto trong switch case
+
+	switch r.op {
+	case OINDEXMAP, ORECV, ODOTTYPE:
+	    switch r.op {
+	    case OINDEXMAP:
+	        n.op = OAS2MAPR
+	    case ORECV:
+	    	n.op = OAS2RECV
+	    case ODOTTYPE:
+	    	n.op = OAS2DOTTYPE
+	    	r.op = ODOTTYPE2
+	    }
+	    ...
+	}
+
+* Giải pháp tổng quát
+
+Baker, [[http://dl.acm.org/citation.cfm?id=321999][An Algorithm for Structuring Flowgraphs]], JACM 1977
+
+Nhưng chúng ta không cần đến nó.
+
+Xử lý các thay đổi đơn giản trong bộ chuyển đổi.
+Viết lại các goto phức tạp bằng tay.
+
+* Ánh xạ kiểu dữ liệu
+
+* Ánh xạ kiểu dữ liệu
+
+Câu hỏi tổng quát: nên dùng kiểu nào trong bản dịch Go?
+
+- C cho phép chuyển đổi ngầm định giữa int, long, char, v.v. Go phải dùng một kiểu nhất quán.
+
+- C dùng con trỏ cho những gì Go gọi là con trỏ _và_ slice.
+
+* Ánh xạ kiểu dữ liệu
+
+Xây dựng đồ thị luồng giá trị được "gán" và trích xuất các cụm.
+
+	x = y;
+
+	int f(void) {
+	    return x;
+	}
+	w = f();
+
+	void g(int z);
+	g(x);
+	g(y);
+
+Áp dụng cho toàn bộ trình biên dịch (tất cả các tệp). Loại trừ một số hàm.
+
+* Ánh xạ kiểu dữ liệu
+
+	int
+	islvalue(Node *n)
+	{
+	    switch(n->op) {
+	    case OINDEX:
+	        if(isfixedarray(n->left->type))
+	            return islvalue(n->left);
+	        if(n->left->type != T && n->left->type->etype == TSTRING)
+	            return 0;
+	        // fall through
+	    case OIND:
+	    case ODOTPTR:
+	    case OCLOSUREVAR:
+	        return 1;
+	    case ODOT:
+	        return islvalue(n->left);
+	    case ONAME:
+	        if(n->class == PFUNC)
+	            return 0;
+	        return 1;
+	    }
+	    return 0;
+	}
+
+* Ánh xạ kiểu dữ liệu
+
+	int
+	islvalue(Node *n)
+	{
+	    ...
+	    return islvalue(n->left);
+	    ...
+	    return 0;
+	    ...
+	    return 1;
+	    ...
+	    return islvalue(n->left);
+	    ...
+	    return 0;
+	    ...
+	    return 1;
+	    ...
+	    return 0;
+	}
+
+* Ánh xạ kiểu dữ liệu
+
+	cụm
+	    kiểu: int
+	    giá trị:
+	        giá trị trả về từ islvalue
+	        0
+	        1
+	        islvalue(n)
+	        islvalue(n->left)
+	        islvalue(n->right)
+	    ngữ cảnh:
+	        điều kiện bool
+	        /* if(islvalue(n)), if(!islvalue(n)), ... */
+
+Bản dịch: bool.
+
+* Ánh xạ kiểu dữ liệu
+
+	cụm
+	    kiểu: int
+	    giá trị:
+	        giá trị trả về từ checksliceconst
+	        0
+	        -1
+	    ngữ cảnh:
+	        checksliceconst(lo, hi) < 0
+	        checksliceconst(lo, mid) < 0
+	        checksliceconst(mid, hi) < 0
+
+Bản dịch: bool hoặc error.
+
+* Ánh xạ kiểu dữ liệu
+
+	cụm
+	    kiểu: Val*
+	    giá trị:
+	        var Val *v
+	        va_arg(fp->args, Val*)
+	    ngữ cảnh:
+	        v->ctype
+	        v->u
+
+Bản dịch: con trỏ.
+
+* Ánh xạ kiểu dữ liệu
+
+	cụm
+	    kiểu: long*
+	    giá trị:
+	        var long* a1
+	        &a->a[0]
+	    ngữ cảnh:
+	        *a1
+	        a1++
+
+Bản dịch: slice.
+
+* Ánh xạ kiểu dữ liệu
+
+Thống kê cụm
+
+- 1.703 cụm trong trình biên dịch Go
+- kích thước cụm trung vị là 4 giá trị
+- kích thước cụm tối đa là 16.592 giá trị
+
+Phân cụm hoàn toàn không dựa vào thông tin kiểu C.
+
+* Trạng thái chuyển đổi
+
+- Vẫn đang trong giai đoạn thử nghiệm, nhưng kết quả khả quan.
+- Nhắm đến Go 1.4, nhưng không đảm bảo.
+
+Nhân tiện, hãy thử bản beta Go 1.3 nhé!
+
+* Go từ C sang Go!
+
+- Thực tiễn
+- Áp dụng được cho các mã nguồn khác?
+- Áp dụng được cho các ngôn ngữ khác?
+- Áp dụng được cho các công cụ hiểu chương trình?
+

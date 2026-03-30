@@ -1,0 +1,207 @@
+Camlistore: Android, ARM, App Engine, mọi nơi.
+
+25 June 2014
+Tags: camlistore
+
+Brad Fitzpatrick
+Gopher, Google
+@bradfitz
+bradfitz@golang.org
+http://bradfitz.com/
+http://camlistore.org/
+
+* Về tôi
+
+- bradfitz
+- LiveJournal, memcached, OpenID, ...
+- Google
+- Thư viện chuẩn Go, v.v.
+- Camlistore
+
+* Camlistore
+
+* Camlistore
+
+- "Hệ thống lưu trữ cá nhân cho cả cuộc đời"
+- Dự án mã nguồn mở hơn 4 năm:
+.link http://camlistore.org
+- Toàn bộ viết bằng Go.
+- Người dùng sớm của thư viện chuẩn Go. Đã góp phần định hình nó.
+
+* Camlistore
+
+- lưu trữ, lập chỉ mục, tìm kiếm, đồng bộ, chia sẻ nội dung
+- có thể mô hình hóa hệ thống tệp POSIX
+- mô hình lưu trữ đối tượng nhẹ, lưu tất cả các thay đổi
+
+Lưu trữ trên:
+
+- đĩa cục bộ, S3, Google Cloud Storage
+- MySQL, Postgres, SQLite, LevelDB,
+- MongoDB, App Engine,
+- chính nó,
+- được mã hóa, chia mảnh, nhân bản, cân bằng tải,
+- ...
+
+* Ảnh chụp màn hình Camlistore
+
+* Giao diện Web
+
+.image camlistore/cam-mix-types.png _ 1000
+
+* Tìm kiếm theo vị trí
+
+.image camlistore/cam-moscow.png 580 _
+
+* Ảnh toàn cảnh
+
+.image camlistore/cam-pano.png _ 1000
+
+* Paris và ảnh chân dung
+
+.image camlistore/cam-paris-portrait.png _ 1000
+
+* Nội dung không phải ảnh
+
+.image camlistore/cam-other.png _ 1000
+
+* FUSE
+
+.image camlistore/cam-fuse.png _ 1000
+
+* Android
+
+.image camlistore/cam-android.png 600 _
+
+* Demo Camlistore
+
+* Camlistore làm nhiều việc, ở nhiều nơi
+
+* Camlistore
+
+thực hiện:
+
+- máy chủ web & API
+- hệ thống tệp FUSE (OS X, Linux)
+- công cụ dòng lệnh
+
+trên:
+
+- máy tính để bàn, máy chủ cá nhân
+- Raspberry Pi, v.v. (ARM)
+- Android
+- App Engine
+- Đám mây (EC2, GCE)
+
+* Máy tính để bàn, máy chủ cá nhân
+
+- Linux, FreeBSD, Mac, Windows, ...
+
+  $ go {get,build,install,test} camlistore.org/{cmd,pkg,server}/...
+
+- Đôi khi dùng +build windows, v.v.
+- Không có gì cầu kỳ.
+
+* Raspberry Pi
+
+- Hầu hết các thiết bị ARM rất chậm
+- Biên dịch chéo từ bất kỳ hệ điều hành, kiến trúc nào trên máy nhanh:
+
+  $ GOARCH=arm GOOS=linux go build camlistore.org/server/camlistored
+
+- ... rồi sao chép binary sang thiết bị ARM chậm.
+- Công cụ hỗ trợ phổ biến:
+
+.link https://github.com/davecheney/golang-crosscompile
+
+- Để gỡ lỗi: ChromeOS + crouton rất tiện, khá nhanh
+
+* App Engine
+
+- Chỉ cần tải mã lên.
+- API App Engine yêu cầu truyền context.
+- Có thể tránh truyền context bằng cách hack xấu xí, nhưng đừng làm vậy.
+.link https://developers.google.com/appengine/docs/go/reference#Context
+.link https://pkg.go.dev/camlistore.org/pkg/context
+.link https://pkg.go.dev/code.google.com/p/go.net/context
+- Tái cấu trúc mã để không giả định có goroutine chạy lâu dài; chỉ dùng handler
+- Không có unsafe, syscall, v.v.: dùng build tag cho các tệp:
+
+  // +build !appengine
+
+* Đám mây
+
+- Giống như máy tính để bàn.
+- Binary tĩnh giúp triển khai dễ dàng
+- Còn dễ hơn:
+- Nhúng tài nguyên (CSS, JS, HTML, hình ảnh) với fileembed
+- Camlistore có: camlistore.org/pkg/fileembed + genfileembed
+
+* fileembed
+
+Định nghĩa:
+
+  package fileembed
+  func (f *Files) Open(filename string) (http.File, error)
+
+Dùng trong Camlistore:
+
+  package server
+  uistatic.Files = &fileembed.Files{
+      DirFallback: ui.uiDir,
+      Listable:    true,
+      // In dev_appserver, allow edit-and-reload without
+      // restarting. In production, though, it's faster to just
+      // slurp it in.
+      SlurpToMemory: uistatic.IsProdAppEngine,
+  }
+
+- Chỉ tải lại khi phát triển; nhúng vào binary khi triển khai thực tế.
+
+* genfileembed của Camlistore
+
+  $ genfileembed ./path/to/dir
+
+- tạo ra zindex.html.go
+
+* Nhúng tài nguyên
+
+- Nhiều tùy chọn trong cộng đồng Go
+- Sắp được tích hợp sẵn trong Go 1.4
+
+* Máy chủ web
+
+- Hiển nhiên
+- net/http rất tốt: không cần Apache, nginx, v.v.
+- Hỗ trợ WebSockets tuyệt vời và dễ dùng
+
+* FUSE
+
+- Hệ thống tệp gốc trên OS X & Linux
+- hanwen/gofuse (chỉ Linux lúc đầu) -> rsc/fuse (chỉ Mac lúc đó) -> Camlistore fork (cả hai) -> bazil.org (cộng đồng duy trì)
+- Dễ viết hệ thống tệp nhanh bằng Go
+
+* Android
+
+- tiến trình con
+- khi khởi động ứng dụng, giải nén binary arm vào hệ thống tệp Unix (không phải media)
+.link https://camlistore.googlesource.com/camlistore/+/master/clients/android/src/org/camlistore/UploadApplication.java UploadApplication.java
+.link https://camlistore.googlesource.com/camlistore/+/master/clients/android/src/org/camlistore/UploadThread.java UploadThread.java
+- build bằng Docker (demo)
+.link https://camlistore.googlesource.com/camlistore/+/master/clients/android/devenv/Dockerfile Dockerfile
+.link https://camlistore.googlesource.com/camlistore/+/master/clients/android/Makefile Makefile
+.link https://camlistore.googlesource.com/camlistore/+/master/clients/android/build-in-docker.pl build-in-docker.pl
+
+* Công cụ dòng lệnh
+
+  $ cmdtool [--global=foo] subcmd [--subcommand opts]
+
+.link http://camlistore.org/pkg/cmdmain/
+.link https://camlistore.googlesource.com/camlistore/+/master/cmd/camtool/describe.go camtool's describe.go
+.link https://github.com/codegangsta/cli Phổ biến: codegangsta/cli
+
+* Tóm lại
+
+Go tuyệt vời và chạy được ở nhiều nơi, dễ dàng.
+
+- Web, CLI, FUSE, x86, ARM, Android, App Engine

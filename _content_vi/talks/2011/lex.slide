@@ -1,0 +1,351 @@
+Phân tích từ vựng trong Go
+GTUG Sydney
+30 Aug 2011
+
+Rob Pike
+r@golang.org
+
+
+* Video
+
+Buổi nói chuyện này đã được ghi lại tại Go Sydney Meetup.
+
+.link https://www.youtube.com/watch?v=HxaD_trXwRE Xem buổi nói chuyện trên YouTube
+
+
+* Sự không khớp cấu trúc
+
+Nhiều bài toán lập trình đòi hỏi chuyển đổi một cấu trúc dữ liệu sang cấu trúc khác.
+
+- tách văn bản thành các dòng
+- "đóng khối" và "mở khối"
+- lắp ráp và tháo rời gói tin
+- phân tích cú pháp
+- phân tích từ vựng
+
+* Đôi khi khó
+
+Các phần ở hai phía có trạng thái độc lập, lookahead, bộ đệm, ...
+Có thể rất lộn xộn nếu làm tốt.
+
+Coroutine được phát minh để giải quyết vấn đề này!
+Chúng cho phép chúng ta viết hai phần một cách độc lập.
+
+Hãy xem xét chủ đề này trong ngữ cảnh của một bộ phân tích từ vựng.
+
+
+* Một hệ thống template mới
+
+Muốn thay thế package template Go cũ.
+Nó có nhiều vấn đề:
+
+- không linh hoạt
+- không diễn đạt được
+- mã quá dễ vỡ
+
+* Một hệ thống template mới
+
+Thay đổi quan trọng là tái thiết kế với bộ phân tích từ vựng, bộ phân tích cú pháp và bộ đánh giá thực sự.
+Có văn bản tùy ý cộng với các hành động trong `{{` `}}`.
+
+.code lex/snippets /Evaluation/,/Control.structures/
+
+* Hôm nay chúng ta tập trung vào bộ phân tích từ vựng
+
+Phải mã hóa token:
+
+- phần nằm ngoài các hành động
+- dấu phân cách hành động
+- định danh
+- hằng số số
+- hằng số chuỗi
+- và những thứ khác
+
+* Các mục từ vựng
+
+Hai thứ xác định mỗi mục được phân tích từ vựng:
+
+- kiểu của nó
+- giá trị của nó; một chuỗi là đủ
+
+.code lex/lex1.oldgo /item.represents/,/^}/
+
+* Kiểu từ vựng
+
+Kiểu chỉ là một hằng số nguyên.
+Chúng ta dùng `iota` để định nghĩa các giá trị.
+
+.code lex/lex1.oldgo /itemType.identifies/,/type/
+.code lex/lex1.oldgo /const/,/itemEOF/
+
+* Giá trị kiểu từ vựng (tiếp theo)
+
+.code lex/lex1.oldgo /itemElse/,/^\)/
+
+* In một mục từ vựng
+
+`Printf` có quy ước giúp dễ dàng in bất kỳ kiểu nào: chỉ cần định nghĩa phương thức `String()`:
+
+.code lex/lex1.oldgo /func.*item.*String/,/^}/
+
+* Cách mã hóa token?
+
+Có nhiều cách tiếp cận:
+
+- dùng công cụ như lex hoặc ragel
+- dùng biểu thức chính quy
+- dùng trạng thái, hành động và câu lệnh switch
+
+* Các công cụ
+
+Không có gì sai khi dùng công cụ nhưng:
+
+- khó xử lý lỗi tốt (có thể rất quan trọng)
+- thường phải học thêm ngôn ngữ khác
+- kết quả có thể cồng kềnh, thậm chí chậm
+- thường không phù hợp
+- nhưng phân tích từ vựng dễ tự làm!
+
+* Biểu thức chính quy
+
+Đã viết blog về điều này tuần trước.
+
+- quá mức cần thiết
+- chậm
+- có thể khám phá không gian trạng thái quá nhiều
+- lạm dụng một engine động để đặt câu hỏi tĩnh
+
+* Hãy tự viết
+
+Thật dễ dàng!
+
+Hơn nữa, hầu hết các ngôn ngữ lập trình phân tích từ vựng gần như cùng các token, vì vậy khi đã học thì việc điều chỉnh bộ phân tích cho mục đích tiếp theo rất đơn giản.
+
+- một lập luận vừa ủng hộ vừa phản đối việc dùng công cụ
+
+* Máy trạng thái
+
+Nhiều người sẽ bảo bạn viết một câu lệnh switch,
+đại loại như thế này:
+
+.code lex/snippets /One/,/^}/
+
+* Máy trạng thái hay quên
+
+Nhàm chán và lặp lại và dễ mắc lỗi, nhưng dù sao:
+
+Tại sao lại switch?
+
+Sau mỗi hành động, bạn biết mình muốn ở đâu;
+trạng thái mới là kết quả của hành động.
+
+Nhưng chúng ta bỏ thông tin đó đi và tính lại từ trạng thái.
+
+(Hậu quả của việc trả về cho người gọi.)
+
+Một công cụ có thể biên dịch điều đó ra, nhưng chúng ta cũng có thể.
+
+* Trạng thái là gì? Hành động là gì?
+
+Trạng thái biểu thị nơi chúng ta đang ở và những gì chúng ta mong đợi.
+
+Hành động biểu thị những gì chúng ta làm.
+
+Hành động dẫn đến trạng thái mới.
+
+* Hàm trạng thái
+
+Hãy kết hợp chúng: một hàm trạng thái.
+
+Thực thi một hành động, trả về trạng thái tiếp theo dưới dạng hàm trạng thái.
+
+Định nghĩa đệ quy nhưng đơn giản và rõ ràng.
+
+.code lex/lex1.oldgo /stateFn/,/type/
+
+* Vòng lặp chạy
+
+Máy trạng thái của chúng ta rất đơn giản:
+chỉ chạy cho đến khi trạng thái về `nil`, nghĩa là "xong".
+
+.code lex/snippets /run.lexes/,/^}/
+
+* Bước đồng thời
+
+Làm sao chúng ta cung cấp token cho client?
+Token có thể xuất hiện vào những thời điểm không thuận tiện để dừng lại trả về cho người gọi.
+
+Dùng lập trình đồng thời:
+Chạy máy trạng thái dưới dạng goroutine,
+phát giá trị trên một channel.
+
+* Kiểu lexer
+
+Đây là kiểu `lexer`. Lưu ý channel của các mục; bỏ qua phần còn lại trước mắt.
+
+.code lex/lex1.oldgo /lexer.holds/,/^}/
+
+* Khởi động lexer
+
+Một `lexer` khởi tạo bản thân để phân tích một chuỗi và khởi chạy máy trạng thái dưới dạng goroutine, trả về chính lexer và một channel của các mục.
+
+API sẽ thay đổi, đừng lo về điều đó bây giờ.
+
+.code lex/lex1.oldgo /func.lex/,/^}/
+
+* Hàm chạy thực sự
+
+Đây là hàm chạy máy trạng thái thực sự, chạy dưới dạng goroutine.
+
+.code lex/lex1.oldgo /run.lexes/,/^}/
+
+* Bộ phát token
+
+Một token là kiểu và giá trị, nhưng (tuyệt vời với Go) giá trị chỉ cần được cắt từ chuỗi đầu vào.
+`lexer` nhớ vị trí hiện tại trong đầu vào và hàm emit chỉ đơn giản ném chuỗi con đó cho người gọi làm giá trị của token.
+
+.code lex/lex1.oldgo /input.*scanned/,/pos.*position/
+.code lex/lex1.oldgo /emit.passes/,/^}/
+
+* Khởi động máy
+
+Khi `lexer` bắt đầu, nó đang tìm kiếm văn bản thuần túy, vì vậy trạng thái ban đầu là hàm `lexText`.
+Nó hấp thụ văn bản thuần túy cho đến khi gặp "left meta".
+
+.code lex/lex1.oldgo /run.lexes/,/^}/
+.code lex/lex1.oldgo /leftMeta/
+
+* lexText
+
+.code lex/lex1.oldgo /^func.lexText/,/^}/
+
+* lexLeftMeta
+
+Một hàm trạng thái tầm thường.
+Khi đến đây, chúng ta biết có `leftMeta` trong đầu vào.
+
+.code lex/lex1.oldgo /^func.lexLeftMeta/,/^}/
+
+* lexInsideAction
+
+.code lex/lex1.oldgo /^func.lexInsideAction/,/itemPipe/
+
+* Thêm về lexInsideAction
+
+Điều này sẽ cho bạn biết hương vị.
+
+.code lex/lex1.oldgo /case.*"/,/lexRawQuote/
+.code lex/lex1.oldgo /case.*9/,/lexIdentifier/
+
+* Hàm next
+
+.code lex/lex1.oldgo /next.returns.the/,/^}/
+
+* Một số hàm trợ giúp cho lexing
+
+.code lex/lex1.oldgo /ignore.skips/,/^}/
+.code lex/lex1.oldgo /backup.steps/,/^}/
+
+* Hàm peek
+
+.code lex/lex1.oldgo /peek.returns.but/,/^}/
+
+* Các hàm accept
+
+.code lex/lex1.oldgo /accept.consumes/,/^}/
+.code lex/lex1.oldgo /acceptRun.consumes/,/^}/
+
+* Phân tích số, bao gồm dấu phẩy động
+
+.code lex/lex1.oldgo /^func.lexNumber/,/imaginary/
+
+* Phân tích số, tiếp theo
+
+Cách này chấp nhận nhiều hơn cần thiết, nhưng không nhiều lắm. Người gọi phải gọi `Atof` để xác thực.
+
+.code lex/lex1.oldgo /Is.it.imaginary/,/^}/
+
+* Lỗi
+
+Dễ xử lý: phát token lỗi và dừng máy.
+
+.code lex/lex1.oldgo /error.returns/,/^}/
+
+* Tóm tắt
+
+Lập trình đồng thời giúp thiết kế bộ phân tích từ vựng trở nên dễ dàng.
+
+Goroutine cho phép bộ phân tích từ vựng và người gọi (bộ phân tích cú pháp) mỗi bên chạy theo tốc độ riêng, như mã tuần tự rõ ràng.
+
+Channel cung cấp cho chúng ta cách sạch sẽ để phát token.
+
+* Một vấn đề
+
+Không thể chạy goroutine đến hoàn thành trong quá trình khởi tạo.
+Bị cấm bởi đặc tả ngôn ngữ.
+(Gây ra các vấn đề khủng khiếp về thứ tự init, tốt nhất nên tránh.)
+
+Điều đó có nghĩa là chúng ta không thể phân tích từ vựng và phân tích cú pháp template trong init.
+
+Goroutine là vấn đề....
+
+_(Lưu ý:_Hạn chế_này_đã_được_bãi_bỏ_trong_Go_phiên_bản_1_nhưng_thảo_luận_vẫn_còn_thú_vị.)_
+
+* Thiết kế so với triển khai
+
+...nhưng dù sao cũng không cần thiết.
+
+Công việc được hoàn thành bởi thiết kế; bây giờ chúng ta chỉ điều chỉnh API.
+
+Chúng ta có thể thay đổi API để ẩn channel, cung cấp hàm để lấy token tiếp theo, và viết lại hàm chạy.
+
+Thật dễ dàng.
+
+* Một API mới
+
+Ẩn channel và đệm nó nhẹ, biến nó thành bộ đệm vòng.
+
+.code lex/r59-lex.go /lex.creates.a.new/,/^}/
+
+* Một hàm cho mục tiếp theo
+
+API lexer truyền thống: trả về mục tiếp theo.
+Bao gồm máy trạng thái đã được sửa đổi.
+
+.code lex/r59-lex.go /nextItem.returns/,/^}/
+
+* Vậy là xong
+
+Bây giờ chúng ta có API truyền thống cho bộ phân tích từ vựng với triển khai đơn giản, đồng thời bên dưới.
+
+Dù triển khai không còn thực sự đồng thời, nó vẫn có tất cả ưu điểm của thiết kế đồng thời.
+
+Chúng ta sẽ không có thiết kế gọn gàng và hiệu quả như vậy nếu không suy nghĩ về bài toán theo cách đồng thời, không lo lắng về "khởi động lại".
+
+Mô hình loại bỏ hoàn toàn lo ngại về "sự không khớp cấu trúc".
+
+* Lập trình đồng thời là một cách tiếp cận thiết kế
+
+Lập trình đồng thời không phải là song song.
+
+(Dù nó có thể kích hoạt song song).
+
+Lập trình đồng thời là cách thiết kế chương trình bằng cách phân tách nó thành các phần thực thi độc lập.
+
+Kết quả có thể sạch sẽ, hiệu quả và rất dễ thích nghi.
+
+* Kết luận
+
+Bộ phân tích từ vựng thú vị.
+
+Lập trình đồng thời thú vị.
+
+Go thú vị.
+
+* Để biết thêm thông tin
+
+Go: [[/][go.dev]]
+
+Các template mới: https://golang.org/pkg/exp/template/
+
+(Bản phát hành tiếp theo sẽ đưa chúng ra khỏi experimental.)
