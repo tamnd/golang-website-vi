@@ -399,7 +399,7 @@ This checklist tracks files that likely require localization work. It excludes s
 ### (root)
 
 - [ ] `blogfeed.tmpl`
-- [ ] `brand.md`
+- [x] `brand.md`
 - [ ] `codewalk.tmpl`
 - [ ] `codewalkdir.tmpl`
 - [ ] `conduct.html`
@@ -544,24 +544,24 @@ This checklist tracks files that likely require localization work. It excludes s
 ### gopls
 
 - [ ] `gopls/doc/default.tmpl`
-- [ ] `gopls/doc/index.md`
-- [ ] `gopls/doc/settings.md`
+- [x] `gopls/doc/index.md`
+- [x] `gopls/doc/settings.md`
 
 ### (root)
 
-- [ ] `help.md`
+- [x] `help.md`
 - [x] `index.md`
 
 ### learn
 
-- [ ] `learn/books.yaml`
-- [ ] `learn/cloud.yaml`
-- [ ] `learn/courses.yaml`
-- [ ] `learn/guided.yaml`
-- [ ] `learn/index.md`
-- [ ] `learn/quickstart.yaml`
-- [ ] `learn/training.yaml`
-- [ ] `learn/tutorials.yaml`
+- [x] `learn/books.yaml`
+- [x] `learn/cloud.yaml`
+- [x] `learn/courses.yaml`
+- [x] `learn/guided.yaml`
+- [x] `learn/index.md`
+- [x] `learn/quickstart.yaml`
+- [x] `learn/training.yaml`
+- [x] `learn/tutorials.yaml`
 
 ### (root)
 
@@ -748,7 +748,7 @@ This checklist tracks files that likely require localization work. It excludes s
 
 - [ ] `testimonials.yaml`
 - [ ] `texthtml.tmpl`
-- [ ] `tos.md`
+- [x] `tos.md`
 
 ### tour
 

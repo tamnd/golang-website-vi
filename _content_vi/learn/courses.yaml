@@ -1,0 +1,28 @@
+  - title: Codecademy
+    content: Khóa học này bao gồm cách thiết lập môi trường Go, các khái niệm cơ bản
+      của Go, và sẽ hướng dẫn bạn xây dựng một số dự án mẫu.
+    url: https://www.codecademy.com/learn/learn-go?utm_source=customer_io&utm_campaign=oct_21_golaunch&utm_medium=email&utm_content=header_img
+    thumbnail: /images/learn/codecademy_light.svg
+    thumbnailDark: /images/learn/codecademy_dark.svg
+    cta: Tìm hiểu thêm
+  - title: Exercism.io
+    content: Giải các bài tập Go do cộng đồng đóng góp trong khóa học tương tác này,
+      kết hợp làm việc với các học viên khác và người hướng dẫn.
+    url: https://exercism.io/tracks/go
+    thumbnail: /images/learn/exercism_light.svg
+    thumbnailDark: /images/learn/exercism_dark.svg
+    cta: Tìm hiểu thêm
+  - title: Google Developers Codelabs
+    content: Bắt đầu với một codelab miễn phí hướng dẫn bạn dùng Go để
+      xây dựng và xuất bản một Google Cloud Function.
+    url: https://codelabs.developers.google.com/codelabs/cloud-functions-go-http/#0
+    thumbnail: /images/learn/codelabs_light.svg
+    thumbnailDark: /images/learn/codelabs_dark.svg
+    cta: Tìm hiểu thêm
+  - title: Gophercises
+    content: Củng cố kỹ năng Go của bạn qua khóa học này, nơi bạn sẽ
+      xây dựng khoảng hai mươi ứng dụng Go khác nhau.
+    url: https://gophercises.com/
+    thumbnail: /images/learn/gophercises_light.png
+    thumbnailDark: /images/learn/gophercises_dark.png
+    cta: Tìm hiểu thêm
