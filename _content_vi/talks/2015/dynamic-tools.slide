@@ -1,0 +1,355 @@
+Công cụ kiểm thử động trong Go
+Gophercon 2015, 9 tháng 7 năm 2015
+
+Dmitry Vyukov
+Google
+dvyukov@
+
+
+* Video
+
+Bài nói này đã được ghi hình tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=a9xrxRsIbSU Xem bài nói trên YouTube
+
+
+* Giới thiệu về tôi
+
+Đã thực hiện nhiều công việc trên Go:
+
+- Bộ lập lịch goroutine có khả năng mở rộng
+- Bộ kết nối mạng tích hợp
+- GC song song, quét đồng thời
+- Cải tiến tốc độ/không gian của bộ cấp phát bộ nhớ
+- Các hàm đồng bộ hóa nguyên thủy
+- Bộ phát hiện data race
+- Hồ sơ chặn
+- Hơn 800 commit, báo cáo hơn 500 lỗi
+
+Nhưng thực ra thuộc nhóm công cụ kiểm thử động:
+
+- Thread/Address/MemorySanitizer
+
+* Chương trình nghị sự
+
+- Bộ phát hiện data race
+- Go-fuzz, hệ thống kiểm thử ngẫu nhiên
+- Công cụ theo dõi thực thi
+
+* Bộ phát hiện data race
+
+.image dynamic-tools/philosoraptor.png
+
+
+* Data race là gì?
+
+Data race xảy ra khi hai goroutine truy cập cùng một biến đồng thời và ít nhất một trong số đó là thao tác ghi.
+
+*Mọi* *cam* *kết* *đều* *bị* *phá* *vỡ!*
+
+Bất kỳ data race nào cũng có thể phá hủy tính an toàn về bộ nhớ/kiểu của chương trình Go.
+
+* Không có data race nào là "vô hại"
+
+	// goroutine 1       // goroutine 2
+	m[k1] = v1           m[k2] = v2
+
+Không tốt!
+
+	// goroutine 1       // goroutine 2
+	stat++               stat++
+
+Cũng không tốt!
+
+Trình biên dịch giả định các chương trình không có race và thực hiện tối ưu hóa tích cực
+dựa trên giả định đó (ví dụ: giả định "quyền sở hữu" đối với các biến được ghi).
+
+Race mang tính không xác định và khó gỡ lỗi.
+
+* Cách dùng
+
+	$ go test -race mypkg    // kiểm thử gói
+	$ go run -race mysrc.go  // chạy tệp nguồn
+	$ go build -race mycmd   // biên dịch lệnh
+	$ go install -race mypkg // cài đặt gói
+
+Chỉ vậy thôi!
+
+* Ví dụ
+
+	package main
+
+	func main() {
+		m := make(map[int]int)
+		go func() {
+			m[1] = 1
+		}()
+		m[2] = 2
+	}
+
+* Báo cáo ví dụ
+
+ WARNING: DATA RACE
+ Write by goroutine 5:
+   runtime.mapassign1()
+       runtime/hashmap.go:411 +0x0
+   main.main.func1()
+       race.go:6 +0x60
+
+ Previous write by main goroutine:
+   runtime.mapassign1()
+       runtime/hashmap.go:411 +0x0
+   main.main()
+       race.go:8 +0xb6
+
+ Goroutine 5 (running) created at:
+   main.main()
+       race.go:7 +0x76
+
+* Thành tích
+
+- Hơn 70 lỗi trong thư viện chuẩn
+- Hơn 350 lỗi trong code nội bộ của Google
+- Rất nhiều lỗi được tìm thấy trong thực tế
+
+* Công cụ đo lường
+
+Quá trình đo lường của trình biên dịch được bật bằng -race.
+
+	func foo(p *int) {
+		*p = 1
+	}
+
+Trở thành:
+
+	func foo(p *int) {
+		runtime.funcenter(caller_pc)
+		runtime.racewrite(p)
+		*p = 1
+		runtime.funcexit()
+	}
+
+* Mô-đun thời gian chạy
+
+Xử lý:
+
+- truy cập bộ nhớ (để phát hiện truy cập có race)
+- đồng bộ hóa (để không tạo ra báo cáo sai)
+- lời gọi hàm (để thu thập stack trace)
+- tạo/kết thúc goroutine (để theo dõi các goroutine đang hoạt động)
+
+Thuật toán dựa trên mô hình hóa động quan hệ happens-before:
+
+- không có dương tính giả
+- âm tính giả có thể xảy ra
+
+* Mẹo sử dụng
+
+Công cụ động chỉ hữu ích khi bộ kiểm thử của bạn tốt.
+
+- viết các bài kiểm thử *đồng thời* tốt
+- có quy trình build liên tục với bộ phát hiện race
+- chạy kiểm thử tích hợp
+- chạy canary bật phát hiện race trên môi trường production
+
+* Go-fuzz
+
+.image dynamic-tools/go-fuzz.png
+
+* Kiểm thử ngẫu nhiên
+
+Một cách tiếp cận khác để kiểm thử giúp tìm ra [nhiều] lỗi mà các cách khác không phát hiện được. Chủ yếu dành cho các chương trình phân tích đầu vào phức tạp.
+
+Tạo blob ngẫu nhiên -> đưa vào chương trình -> xem có crash không -> lợi ích!
+
+- dễ sử dụng
+- không có bất kỳ thiên kiến nào
+
+Các blob hoàn toàn ngẫu nhiên sẽ không phát hiện được nhiều lỗi.
+
+Làm thế nào để tạo ra các đầu vào đa dạng nhưng có ý nghĩa để kích hoạt
+nil deref, off-by-one, v.v.?
+
+* Fuzzing dựa trên độ bao phủ
+
+Thuật toán di truyền đến cứu giúp!
+
+	Đo lường chương trình để thu thập độ bao phủ code
+	Thu thập corpus đầu vào ban đầu
+	for {
+		Đột biến ngẫu nhiên một đầu vào từ corpus
+		Thực thi và thu thập độ bao phủ
+		Nếu đầu vào tạo ra độ bao phủ mới, thêm vào corpus
+	}
+
+* Ví dụ
+
+Code sau yêu cầu đầu vào "ABCD":
+
+	if input[0] == 'A' {
+		if input[1] == 'B' {
+			if input[2] == 'C' {
+				if input[3] == 'D' {
+					panic("input must not be ABCD")
+				}
+			}
+		}
+	}
+
+Tiến trình corpus:
+
+	""
+	"", "A"
+	"", "A", "AB"
+	"", "A", "AB", "ABC"
+	"", "A", "AB", "ABC", "ABCD"
+
+* Game over
+
+Kiểm tra checksum CRC32 trong `image/png/reader.go`
+
+	func (d *decoder) verifyChecksum() error {
+		if binary.BigEndian.Uint32(d.tmp[:4]) != d.crc.Sum32() {
+			return FormatError("invalid checksum")
+		}
+		return nil
+	}
+
+Xác suất để các đột biến ngẫu nhiên thay đổi đầu vào theo cách thú vị và
+đoán đúng CRC32 cùng lúc về cơ bản là BẰNG KHÔNG.
+
+* Sonar
+
+Không cần đoán, chương trình đã biết rồi!
+
+	+ v1 := binary.BigEndian.Uint32(d.tmp[:4])
+	+ v2 := d.crc.Sum32()
+	+ __go_fuzz.Sonar(v1, v2)
+	if v1 != v2 {
+		return FormatError("invalid checksum")
+	}
+
+Sau đó, tìm v1 trong đầu vào và thay thế bằng v2. Xong!
+
+* Game over 2
+
+Đột biến và sonar thực hiện thay đổi ở mức thấp ("lật bit"):
+
+Gốc:
+
+	`<item name="foo"><prop name="price">100</prop></item>`
+
+Sau đột biến:
+
+	`<item name="foo"><prop name="price">100</prop><<item>`
+
+Cũng muốn thay đổi ở mức cao!
+
+* Versifier
+
+Versifier dịch ngược [giao thức văn bản] và học _cấu_trúc_ của nó.
+
+	abc          -> token chữ và số
+	123, 1e-2    -> số
+	"..."        -> trong ngoặc kép
+	[...]        -> trong ngoặc
+	...,...,...  -> danh sách
+	...\n...\n   -> dòng
+
+Sau đó áp dụng các đột biến _cấu_trúc_ cho đầu vào.
+
+* Ví dụ Versifier
+
+Gốc:
+
+	`<item name="foo"><prop name="price">100</prop></item>`
+
+Versified (tất cả đều là xml hợp lệ):
+
+	<item	name="rb54ana"><item  name="foo"><prop name="price"></prop><prop/></item></item>
+	<item name=""><prop name="price">=</prop><prop/> </item>
+	<item name=""><prop F="">-026023767521520230564132665e0333302100</prop><prop/></item>
+	<item SN="foo_P"><prop name="_G_nx">510</prop><prop name="vC">-9e-07036514</prop></item>
+	<item name="foo"><prop name="c8">prop name="p"</prop>/}<prop name="price">01e-6</prop></item>
+	<item name="foo"><item name="foo"><prop JY="">100</prop></item>8<prop/></item>
+
+* Thuật toán
+
+.image dynamic-tools/algo.png
+
+* Thành tích
+
+- 115 lỗi trong thư viện chuẩn (66 đã sửa)
+- 43 lỗi trong golang.org/x/... (24 đã sửa)
+- 134 lỗi ở nơi khác
+
+* Thành tích
+
+	fmt.Sprintf("%.[]")
+	panic: runtime error: index out of range
+
+	regexp.MustCompile("((0(0){0}))").ReplaceAllString("00000", "00$00")
+	panic: runtime error: slice bounds out of range
+
+	ioutil.ReadAll(flate.NewReader(strings.NewReader("4LJNIMK\a\x00\x00\xff..\xff.....\xff")))
+	chạy mãi không dừng
+
+	var x = 1/"."[0]
+	làm crash trình biên dịch
+
+	archive/tar: hang
+	archive/zip: cap out of range
+	encoding/gob: stack overflow
+	encoding/asn1: index out of range
+	image/jpeg: Decode hangs
+	image/png: nil deref
+	math/big: chuyển đổi string->Float sai
+	crypto/x509: chia cho không
+	...
+
+* Cách dùng
+
+- go get github.com/dvyukov/go-fuzz/...
+- viết kiểm thử:
+
+	func Fuzz(data []byte) int {
+		gob.NewDecoder(bytes.NewReader(data))
+		return 0
+	}
+
+- biên dịch
+
+	$ go-fuzz-build github.com/dvyukov/go-fuzz/examples/gob
+
+- thu thập corpus
+- chạy
+
+	$ go-fuzz -bin=gob-fuzz.zip -workdir=examples/gob
+
+* Công cụ theo dõi thực thi
+
+.image dynamic-tools/tracer.png
+
+* Công cụ theo dõi thực thi
+
+Cung cấp cái nhìn sâu vào quá trình thực thi động của chương trình.
+
+Thu thập với độ chính xác nanosecond:
+
+- tạo/bắt đầu/kết thúc goroutine
+- chặn/giải chặn goroutine
+- chặn mạng
+- system call
+- sự kiện GC
+
+* Công cụ theo dõi thực thi
+
+.image dynamic-tools/trace.png 450 _
+
+* Tóm tắt
+
+- bộ phát hiện race: luôn dùng khi kiểm thử (-race)
+- go-fuzz: phân tích đầu vào phức tạp (github.com/dvyukov/go-fuzz)
+- công cụ theo dõi thực thi: phân tích sâu quá trình thực thi (-trace)
+
+

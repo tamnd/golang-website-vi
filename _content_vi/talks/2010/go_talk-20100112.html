@@ -1,0 +1,410 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="vi" lang="vi">
+<head>
+<title>Go (12 tháng 1, 2010)</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="font-size-adjustment" content="-1" />
+<link rel="stylesheet" href="support/slidy.css"
+  type="text/css" media="screen, projection, print" />
+<script src="support/slidy.js" type="text/javascript">
+</script>
+</head>
+<body>
+<!-- this defines the slide background -->
+
+<div class="background">
+
+  <div class="header">
+  <!-- sized and colored via CSS -->
+  </div>
+
+  <div class="footer"></div>
+  </div>
+
+<div class="slide titlepage">
+<div style="height: 135px; width: 480px; overflow: hidden; position: fixed; top: auto; bottom: 10px; left: auto; right: 0;  ">
+<img src="support/bumper480x270.png" style="margin: -135px 0 0 0;"/>
+</div>
+<br/>
+<img src="support/go-logo-white.png">
+<br/>
+<br/>
+<h1 style="padding-right: 0pt; margin-right: 0pt; color: #0066cc; font-size: 250%; border-bottom: 0px;">Ngôn ngữ lập trình Go</h1>
+<div style="color: #ffcc00;">
+<h2>Russ Cox</h2>
+<!-- <h3><i>rsc@google.com</i></h3> -->
+<br/>
+<h3>Đại học Stanford<br/><br/>12 tháng 1, 2010</h3>
+</div>
+</div>
+
+<div class="slide">
+	<h1>Go</h1>
+
+	<h2>Mới</h2>
+	<h2>Thực nghiệm</h2>
+	<h2>Đồng thời</h2>
+	<h2>Có bộ gom rác</h2>
+	<h2>Ngôn ngữ</h2>
+	<h2>hệ thống</h2>
+</div>
+
+<div class="slide">
+	<h1>Hello, world</h1>
+<pre>
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Printf("Hello, 世界\n")
+}
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Lịch sử</h1>
+
+	<h2>Bắt đầu thiết kế vào cuối năm 2007.</h2>
+	<h2>Triển khai bắt đầu hoạt động vào giữa năm 2008.</h2>
+	<h2>Phát hành dưới dạng dự án mã nguồn mở vào tháng 11 năm 2009.</h2>
+	<h2>Công việc vẫn tiếp tục.</h2>
+	<h2>Robert&nbsp;Griesemer, Ken&nbsp;Thompson, Rob&nbsp;Pike, Ian&nbsp;Lance&nbsp;Taylor, Russ&nbsp;Cox và nhiều người khác</h2>
+</div>
+
+<div class="slide">
+	<h1>Tại sao?</h1>
+
+	<h2>Nhanh hơn!</h2>
+	<h2>Làm cho lập trình trở nên thú vị trở lại.</h2>
+</div>
+
+<div class="slide">
+	<h1>Tại sao lập trình lại không còn thú vị?</h1>
+
+	<div class="incremental">
+	<h2>Các ngôn ngữ biên dịch kiểu tĩnh (C, C++, Java) yêu cầu quá nhiều thao tác gõ phím và quá nhiều kiểu dữ liệu:</h2>
+
+	<ul>
+		<li>dài dòng, lặp lại nhiều</li>
+		<li>quá chú trọng vào phân cấp kiểu</li>
+		<li>kiểu dữ liệu cản trở nhiều như giúp ích</li>
+		<li>biên dịch mất quá nhiều thời gian</li>
+	</ul>
+	</div>
+
+	<div class="incremental">
+	<h2>Các ngôn ngữ động (Python, JavaScript) giải quyết những vấn đề này (không cần kiểu, không cần trình biên dịch) nhưng lại đưa vào những vấn đề khác:</h2>
+
+	<ul>
+		<li>lỗi xảy ra lúc chạy thay vì bị phát hiện tĩnh</li>
+		<li>không có biên dịch nghĩa là mã chạy chậm</li>
+	</ul>
+	</div>
+
+	<h2 class="incremental">Liệu chúng ta có thể kết hợp điểm tốt nhất của cả hai không?</h2>
+</div>
+
+<div class="slide">
+	<h1>Go</h1>
+
+	<h2>Làm cho ngôn ngữ nhanh hơn.</h2>
+	<h2>Làm cho công cụ nhanh hơn.</h2>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Kiểu tĩnh</h1>
+
+	<h2>Kiểu tĩnh, nhưng khai báo có thể suy luận kiểu từ biểu thức:</h2>
+
+<pre>
+var one, hi = 1, "hello"
+
+var double = func(x int) int { return x*2 }
+</pre>
+
+	<h2>Không phải suy luận kiểu Hindley-Milner đầy đủ.</h2>
+</div>
+
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Phương thức</h1>
+
+	<h2>Phương thức có thể được định nghĩa trên bất kỳ kiểu nào.</h2>
+
+<pre>
+type Point struct {
+	X, Y float64
+}
+
+func (p Point) Abs() float64 {
+	return math.Sqrt(p.X*p.X + p.Y*p.Y)
+}
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Phương thức</h1>
+
+	<h2>Phương thức có thể được định nghĩa trên bất kỳ kiểu nào.</h2>
+
+<pre>
+type MyFloat float64
+
+func (f MyFloat) Abs() float64 {
+	v := float64(f)
+	if v &lt; 0 {
+		v = -v
+	}
+	return v
+}
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Kiểu trừu tượng</h1>
+
+	<h2>Một kiểu interface liệt kê một tập hợp các phương thức. Bất kỳ giá trị nào có các phương thức đó đều thỏa mãn interface.</h2>
+
+<pre>
+type Abser interface {
+	Abs() float64
+}
+
+func AbsPrinter(a Abser)
+</pre>
+
+	<h2>Có thể dùng Point hoặc MyFloat (hoặc ...):</h2>
+
+<pre>
+p := Point{3, 4}
+AbsPrinter(p)
+
+f := MyFloat(-10)
+AbsPrinter(f)
+</pre>
+
+	<h2>Lưu ý rằng Point chưa bao giờ khai báo rằng nó triển khai Abser. Nó chỉ đơn giản là làm vậy. Tương tự với MyFloat.</h2>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Package</h1>
+
+	<h2>Một chương trình Go gồm một hoặc nhiều package.</h2>
+	<h2>Mỗi package là một hoặc nhiều tệp nguồn được biên dịch và nhập khẩu như một đơn vị.</h2>
+<pre>
+package draw
+
+type Point struct {
+	X, Y int
+}
+</pre>
+
+<pre>
+package main
+
+import "draw"
+
+var p draw.Point
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Phạm vi hiển thị</h1>
+
+	<h2>Bên trong một package, tất cả các tên được định nghĩa cục bộ đều hiển thị trong tất cả các tệp nguồn.</h2>
+
+	<h2>Khi được nhập khẩu, chỉ các tên viết hoa mới hiển thị.</h2>
+
+<pre>
+package draw
+
+type <span style="color: black;">Point</span> struct {
+	<span style="color: black;">X</span>, <span style="color: black;">Y</span> int
+	dist float64
+}
+
+type cache map[Point] float64
+</pre>
+
+<h2>Các client <code>import "draw"</code> chỉ có thể dùng các tên viết đen (in hoa).</h2>
+
+<h2>&ldquo;Shift là <code>public</code> mới.&rdquo;</h2>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Lập trình đồng thời</h1>
+
+	<h2>Chi phí tạo luồng điều khiển mới (goroutine) thấp:</h2>
+
+<pre>
+func main() {
+	go expensiveComputation(x, y, z)
+	anotherExpensiveComputation(a, b, c)
+}
+</pre>
+
+	<h2>Hai phép tính nặng chạy song song.</h2>
+</div>
+
+<div class="slide">
+	<h1>Cách tiếp cận của Go: Đồng bộ hóa</h1>
+
+	<h2>Dùng thông điệp tường minh để giao tiếp và đồng bộ hóa.</h2>
+
+<pre>
+func computeAndSend(ch chan int, x, y, z int) {
+	ch &lt;- expensiveComputation(x, y, z)
+}
+
+func main() {
+	ch := make(chan int)
+	go computeAndSend(ch, x, y, z)
+	v2 := anotherExpensiveComputation(a, b, c)
+	v1 := &lt;-ch
+	fmt.Println(v1, v2)
+}
+</pre>
+	<h2>Lưu ý việc truyền kết quả ngoài đồng bộ hóa.</h2>
+</div>
+
+<div class="slide">
+	<h1>Go nhanh: Ngôn ngữ</h1>
+
+	<h2 class="incremental">Kiểu tĩnh: đủ để biên dịch tốt, nhưng thường được suy luận.</h2>
+
+	<h2 class="incremental">Phương thức: trên bất kỳ kiểu nào, độc lập với hệ thống kiểu.</h2>
+
+	<h2 class="incremental">Kiểu trừu tượng: giá trị interface, quan hệ được suy luận tĩnh.</h2>
+
+	<h2 class="incremental">Phạm vi hiển thị: suy luận từ chữ hoa hay chữ thường của tên.</h2>
+
+	<h2 class="incremental">Lập trình đồng thời: cách nhẹ nhàng để tạo luồng điều khiển mới.</h2>
+
+	<h2 class="incremental">Đồng bộ hóa: truyền thông điệp tường minh, dễ dùng.</h2>
+
+	<br/>
+
+	<h2 class="incremental">Cảm giác nhẹ nhàng như ngôn ngữ kịch bản nhưng được biên dịch.</h2>
+</div>
+
+<div class="slide">
+	<h1>Biên dịch nhanh</h1>
+
+	<div class="incremental">
+	<h2>Quan sát: phần lớn thời gian biên dịch của một tệp nguồn bị dùng để xử lý
+	các tệp khác, thường không liên quan.</h2>
+
+	<h2>Trong C: <code>a.c</code> include <code>b.h</code>, b.h include <code>c.h</code>, c.h include <code>d.h</code>.
+	</h2>
+
+	<h2>Thực tế thường là một cây thay vì một chuỗi.</h2>
+
+	<h2>Trên Mac của tôi (OS X 10.5.8, gcc 4.0.1):</h2>
+	<ul>
+		<li>C: <code>#include &lt;stdio.h&gt;</code> đọc 360 dòng từ 9 tệp.</li>
+		<li>C++: <code>#include &lt;iostream&gt;</code> đọc 25.326 dòng từ 131 tệp.</li>
+		<li>Objective C: <code>#include &lt;Carbon/Carbon.h&gt;</code> đọc 124.730 dòng từ 689 tệp.</li>
+	</ul>
+
+	<h2>Và chúng ta vẫn chưa làm được việc gì thực sự!</h2>
+
+	<h2>Tương tự với Java, Python, nhưng đọc file nhị phân thay vì tệp nguồn.</h2>
+	</div>
+</div>
+
+<div class="slide">
+	<h1>Triển khai: Tóm tắt dependency</h1>
+
+<pre>
+package gui
+
+import "draw"
+
+type Mouse struct {
+	Loc draw.Point
+	Buttons uint
+}
+</pre>
+	<h2>Dạng biên dịch của <code>gui</code> tóm tắt phần cần thiết của <code>draw</code> (chỉ <code>Point</code>).</h2>
+
+</div>
+
+<div class="slide">
+	<h1>Triển khai: Tóm tắt dependency</h1>
+
+	<h2>Dạng biên dịch của <code>gui</code> tóm tắt phần cần thiết của <code>draw</code> (chỉ <code>Point</code>). Pseudo-object:</h2>
+
+<pre>
+package gui
+type draw.Point struct {
+	X, Y int
+}
+type gui.Mouse struct {
+	Loc draw.Point
+	Buttons uint
+}
+</pre>
+
+	<h2>Tệp import <code>gui</code> được biên dịch mà không cần tra cứu <code>draw</code> hay dependency của nó.</h2>
+
+	<h2>Trong Go: <code>import "fmt"</code> đọc <i>một</i> tệp: 184 dòng tóm tắt kiểu từ 7 package.</h2>
+
+	<h2>Ảnh hưởng nhỏ trong chương trình này nhưng có thể tăng theo hàm mũ trong các chương trình lớn.</h2>
+</div>
+
+<div class="slide">
+	<h1>Demo biên dịch</h1>
+
+	<h2>Build tất cả các package Go chuẩn: ~120.000 dòng mã.</h2>
+</div>
+
+<div class="slide">
+	<h1>Trạng thái Go</h1>
+
+	<div class="incremental">
+	<div>
+	<h2>Mã nguồn mở:</h2>
+	<ul>
+		<li>phát hành ngày 10 tháng 11 năm 2009</li>
+		<li>các bản phát hành đều đặn (~ hàng tuần)</li>
+		<li>toàn bộ quá trình phát triển trong kho lưu trữ Mercurial công khai</li>
+		<li>chào đón đóng góp từ bên ngoài</li>
+	</ul>
+	</div>
+
+	<div>
+	<h2>Đa nền tảng:</h2>
+	<ul>
+		<li>FreeBSD, Linux, OS X (x86, x86-64)</li>
+		<li>(đang xử lý) Linux arm, Native Client x86, Windows x86.</li>
+	</ul>
+	</div>
+
+	<div>
+	<h2>Vẫn đang tiến triển, thực nghiệm. Những điều sắp tới:</h2>
+	<ul>
+		<li>bộ gom rác hoàn thiện</li>
+		<li>generics?</li>
+		<li>exception?</li>
+		<li>union hay kiểu tổng?</li>
+	</ul>
+	</div>
+	</div>
+
+</div>
+
+<div class="slide titlepage">
+	<h1>Câu hỏi?</h1>
+	<br><br>
+	<center>
+	<img src="support/bumper640x360.png">
+	</center>
+	<br><br>
+	<div style="color: #ffcc00;">
+	<!-- <h3><i>rsc@google.com</i></h3> -->
+	</div>
+</div>
+
+</body></html>

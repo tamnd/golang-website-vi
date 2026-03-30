@@ -1,0 +1,300 @@
+Go: mã phát triển uyển chuyển
+
+Andrew Gerrand
+Google Sydney
+http://andrewgerrand.com
+@enneff
+https://go.dev
+
+* Video
+
+Buổi nói chuyện này đã được ghi lại tại Øredev ở Malmö, Thụy Điển vào tháng 11 năm 2012.
+
+.link http://vimeo.com/53221560 Xem buổi nói chuyện trên Vimeo
+
+* Go
+
+Bạn có thể đã nghe nói về Go.
+
+Đây là ngôn ngữ yêu thích của tôi. Tôi nghĩ bạn cũng sẽ thích nó.
+
+* Go là gì?
+
+Một dự án mã nguồn mở (được cấp phép BSD):
+
+- Đặc tả ngôn ngữ,
+- Runtime nhỏ (bộ gom rác, bộ lập lịch, v.v.),
+- Hai trình biên dịch (`gc` và `gccgo`),
+- Thư viện chuẩn "pin kèm theo",
+- Các công cụ (build, tải về, kiểm thử, tài liệu, profile, định dạng),
+- Tài liệu.
+
+Tính đến tháng 9 năm 2012 chúng tôi có hơn 300 người đóng góp.
+
+* Go là về thành phần
+
+Go hướng đối tượng, nhưng không theo cách thông thường.
+
+- không có lớp (phương thức có thể khai báo trên bất kỳ kiểu nào)
+- không có kế thừa kiểu con
+- interface được thỏa mãn ngầm định (kiểu cấu trúc)
+
+Kết quả: các phần đơn giản được kết nối bằng các interface nhỏ.
+
+* Go là về lập trình đồng thời
+
+Go cung cấp các nguyên thủy đồng thời giống CSP.
+
+- thread nhẹ (goroutine)
+- giao tiếp và đồng bộ hóa an toàn theo kiểu dữ liệu (channel)
+
+Kết quả: mã đồng thời dễ hiểu.
+
+* Go là về gopher
+
+.image chat/gophers.jpg
+
+* Các giá trị cốt lõi
+
+Go là về thành phần, lập trình đồng thời và gopher.
+
+Hãy nhớ điều đó.
+
+* Hello, go
+
+.play chat/support/hello.go
+
+* Hello, net
+
+.play chat/support/hello-net.go
+
+* Interface
+
+Tuyệt thật! Chúng ta vừa dùng `Fprintln` để ghi vào kết nối mạng.
+
+Đó là vì `Fprintln` ghi vào `io.Writer`, và `net.Conn` là một `io.Writer`.
+
+.code chat/support/hello-net.go /Fprintln/
+.code chat/support/defs.go /Fprintln/
+.code chat/support/defs.go /type.Writer/,/^}/
+.code chat/support/defs.go /type.Conn/,/^}/
+
+* Một máy chủ echo
+
+.play chat/support/echo-no-concurrency.go
+
+* Nhìn kỹ hơn về io.Copy
+
+.code chat/support/echo-no-concurrency.go /Copy/
+.code chat/support/defs.go /Copy/,/func/
+.code chat/support/defs.go /type.Conn/,/^}/
+.code chat/support/defs.go /type.Writer/,/^}/
+.code chat/support/defs.go /type.Reader/,/^}/
+
+* Goroutine
+
+Goroutine là các thread nhẹ được quản lý bởi runtime Go. Để chạy một hàm trong goroutine mới, chỉ cần đặt `"go"` trước lời gọi hàm.
+
+.play chat/support/goroutines.go
+
+* Máy chủ echo đồng thời
+
+.play chat/support/echo.go
+
+* "Chat roulette"
+
+Trong buổi nói chuyện này chúng ta sẽ xem xét một chương trình đơn giản, dựa trên trang web "chat roulette" nổi tiếng.
+
+Tóm tắt:
+
+- một người dùng kết nối,
+- một người dùng khác kết nối,
+- mọi thứ người này gõ đều được gửi cho người kia.
+
+* Thiết kế
+
+Chương trình chat tương tự như chương trình echo. Với echo, chúng ta sao chép dữ liệu đến của kết nối trở lại cùng kết nối.
+
+Với chat, chúng ta phải sao chép dữ liệu đến từ kết nối của người dùng này sang kết nối của người kia.
+
+Sao chép dữ liệu thật dễ dàng. Như trong cuộc sống thực, phần khó là ghép nối một người với người khác.
+
+* Sơ đồ thiết kế
+
+.image chat/diagrams.png
+
+* Channel
+
+Goroutine giao tiếp qua channel. Một channel là một ống dẫn có kiểu có thể đồng bộ (không đệm) hoặc bất đồng bộ (có đệm).
+
+.play chat/support/chan.go
+
+* Select
+
+Câu lệnh select giống switch, nhưng nó chọn trên các thao tác channel (và chọn đúng một trong số chúng).
+
+.play chat/support/select.go
+
+* Sửa echo để tạo chat
+
+Trong vòng lặp accept, chúng ta thay lời gọi `io.Copy`:
+
+.code chat/support/echo.go /for {/,/\n	}/
+
+bằng lời gọi hàm mới, `match`:
+
+.code chat/tcp-simple/chat.go /for {/,/\n	}/
+
+* Bộ ghép nối
+
+Hàm `match` đồng thời thử gửi và nhận kết nối trên một channel.
+
+- Nếu gửi thành công, kết nối đã được chuyển sang goroutine khác, vì vậy hàm thoát và goroutine kết thúc.
+- Nếu nhận thành công, kết nối đã được nhận từ goroutine khác. Goroutine hiện tại có hai kết nối, vì vậy nó khởi động phiên chat giữa chúng.
+
+.code chat/tcp-simple/chat.go /var.partner/,/^}/
+
+* Cuộc trò chuyện
+
+Hàm chat gửi lời chào đến mỗi kết nối và sau đó sao chép dữ liệu từ bên này sang bên kia, và ngược lại.
+
+Lưu ý rằng nó khởi chạy một goroutine khác để các thao tác sao chép có thể xảy ra đồng thời.
+
+.code chat/tcp-simple/chat.go /func.chat/,/^}/
+
+* Demo
+
+* Xử lý lỗi
+
+Điều quan trọng là dọn dẹp khi cuộc trò chuyện kết thúc. Để làm điều này chúng ta gửi giá trị lỗi từ mỗi lời gọi `io.Copy` đến một channel, ghi lại các lỗi không nil, và đóng cả hai kết nối.
+
+.code chat/tcp/chat.go /func.chat/,/^}/
+.code chat/tcp/chat.go /func.cp/,/^}/
+
+* Demo
+
+* Đưa lên web
+
+"Chương trình hay đó," bạn nói, "Nhưng ai muốn chat qua kết nối TCP thuần túy?"
+
+Điểm hay đó. Hãy hiện đại hóa nó bằng cách biến nó thành ứng dụng web.
+
+Thay vì TCP socket, chúng ta sẽ dùng websocket.
+
+Chúng ta sẽ phục vụ giao diện người dùng với package `net/http` chuẩn của Go, và hỗ trợ websocket được cung cấp bởi package `websocket` từ sub-repository `go.net`,
+
+* Hello, web
+
+.play chat/support/hello-web.go
+
+* Hello, WebSocket
+
+.code chat/support/websocket.js
+.play chat/support/websocket.go
+
+* Dùng package http và websocket
+
+.code chat/http/chat.go /package/,/^}/
+
+* Phục vụ HTML và JavaScript
+
+.code chat/http/html.go /import/
+.code chat/http/html.go /func/,/<script>/
+.code chat/http/html.go /websocket.=/,/onClose/
+.code chat/http/html.go /<\/html>/,$
+
+* Thêm kiểu socket
+
+Chúng ta không thể chỉ dùng `websocket.Conn` thay cho `net.Conn`, vì `websocket.Conn` được giữ mở bởi hàm handler của nó. Ở đây chúng ta dùng channel để giữ handler chạy cho đến khi phương thức `Close` của socket được gọi.
+
+.code chat/http-noembed/chat.go /type.socket/,/END/
+
+* Nhúng struct
+
+Go hỗ trợ một loại chức năng "mix-in" với tính năng gọi là "nhúng struct". Struct nhúng ủy thác các lời gọi đến các phương thức của kiểu được nhúng.
+
+.play chat/support/embed.go /type/,$
+
+* Nhúng kết nối websocket
+
+Bằng cách nhúng `*websocket.Conn` làm `io.ReadWriter`, chúng ta có thể bỏ các phương thức `Read` và `Write` tường minh của `socket`.
+
+.code chat/http/chat.go /type.socket/,/END/
+
+* Demo
+
+* Giảm bớt sự cô đơn
+
+Nếu bạn kết nối nhưng không có ai ở đó thì sao?
+
+Chẳng phải tốt nếu chúng ta có thể tổng hợp một đối tác chat sao?
+
+Hãy làm điều đó.
+
+* Tạo văn bản với chuỗi Markov
+
+.code chat/support/markov.txt
+
+* Tạo văn bản với chuỗi Markov
+
+Thật may, tài liệu Go có sẵn triển khai chuỗi Markov:
+
+.link /doc/codewalk/markov go.dev/doc/codewalk/markov
+
+Chúng ta sẽ dùng phiên bản đã được sửa đổi để an toàn cho sử dụng đồng thời.
+
+.code chat/markov/markov.go /Chain/,/{/
+.code chat/markov/markov.go /Write/,/{/
+.code chat/markov/markov.go /Generate/,/{/
+
+* Cung cấp dữ liệu cho chuỗi
+
+Chúng ta sẽ dùng tất cả văn bản nhập vào hệ thống để xây dựng chuỗi Markov.
+Để làm điều này chúng ta chia `ReadWriter` của socket thành `Reader` và `Writer`,
+và cung cấp tất cả dữ liệu đến cho instance `Chain`.
+
+.code chat/markov/chat.go /type.socket/,/^}/
+.code chat/markov/chat.go /var.chain/,/^}/
+
+* Bot Markov
+
+.code chat/markov/chat.go /\/\/.Bot/,/^}/
+.code chat/markov/chat.go /type.bot/,/^}/
+.code chat/markov/chat.go /func.+bot.+Write/,/^}/
+.code chat/markov/chat.go /func.+bot.+speak/,/^}/
+
+* Tích hợp bot Markov
+
+Bot nên tham gia nếu một đối tác thực không tham gia.
+Để làm điều này, chúng ta thêm một case vào select kích hoạt sau 5 giây, khởi động chat giữa socket của người dùng và một bot.
+
+.code chat/markov/chat.go /func.match/,/^}/
+
+Hàm `chat` không thay đổi.
+
+* Demo
+
+* Một điều nữa
+
+* TCP và HTTP cùng lúc
+
+.code chat/both/chat.go /func main/,/^}/
+.code chat/both/chat.go /func netListen/,/^}/
+
+* Demo
+
+* Thảo luận
+
+* Đọc thêm
+
+Tất cả về Go:
+
+.link / go.dev
+
+Các slide của buổi nói chuyện này:
+
+.link /talks/2012/chat.slide go.dev/talks/2012/chat.slide
+
+"Go Concurrency Patterns" của Rob Pike:
+
+.link /s/concurrency-patterns go.dev/s/concurrency-patterns

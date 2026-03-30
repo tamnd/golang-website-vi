@@ -1,0 +1,454 @@
+Go dành cho lập trình viên Java
+
+Sameer Ajmani
+Tech Lead Manager, nhóm Go
+Google
+@Sajma
+sameer@golang.org
+
+* Video
+
+Bài nói này được trình bày tại [[http://javasig.com][NYJavaSIG]] vào ngày 23 tháng 4 năm 2015.
+
+.link https://www.youtube.com/watch?v=_c_tQ6_3cCg Xem bài nói trên YouTube
+
+* Đề cương
+
+1. Go là gì và ai đang dùng nó?
+2. So sánh Go và Java
+3. Các ví dụ
+4. Tính đồng thời
+5. Công cụ
+
+# The next several slides are from rsc's 2013/distsys and 2015/mit talks.
+
+* Go là gì?
+
+"Go là ngôn ngữ lập trình mã nguồn mở giúp dễ dàng xây dựng phần mềm đơn giản, đáng tin cậy và hiệu quả."
+
+.link / go.dev
+
+* Lịch sử
+
+Thiết kế bắt đầu vào cuối năm 2007.
+
+- Robert Griesemer, Rob Pike và Ken Thompson.
+- Ian Lance Taylor và Russ Cox.
+
+Mã nguồn mở từ năm 2009 với cộng đồng rất năng động.
+
+Ngôn ngữ ổn định từ Go 1, đầu năm 2012.
+
+* Tại sao Go?
+
+Go là câu trả lời cho các vấn đề về quy mô tại Google.
+
+.image ../2012/splash/datacenter.jpg 500 _
+
+* Quy mô hệ thống
+
+- được thiết kế để mở rộng đến hơn 10⁶ máy
+- các công việc hàng ngày chạy trên hàng nghìn máy
+- các công việc phối hợp, tương tác với nhau trong hệ thống
+- nhiều việc xảy ra đồng thời
+
+Giải pháp: hỗ trợ đồng thời tốt
+
+.image ../2012/waza/gophercomplex6.jpg
+
+* Vấn đề thứ hai: Quy mô kỹ thuật
+
+Năm 2011:
+
+- hơn 5000 lập trình viên tại hơn 40 văn phòng
+- hơn 20 thay đổi mỗi phút
+- 50% codebase thay đổi mỗi tháng
+- 50 triệu trường hợp kiểm thử được thực thi mỗi ngày
+- một cây mã nguồn duy nhất
+
+Giải pháp: thiết kế ngôn ngữ cho các codebase lớn
+
+* Ai dùng Go tại Google?
+
+Nhiều dự án. Hàng nghìn lập trình viên Go. Hàng triệu dòng code Go.
+
+Các ví dụ công khai:
+
+- SPDY proxy cho Chrome trên thiết bị di động
+
+.image go-for-java-programmers/spdy.png 400 _
+
+* Ai dùng Go tại Google?
+
+Nhiều dự án. Hàng nghìn lập trình viên Go. Hàng triệu dòng code Go.
+
+Các ví dụ công khai:
+
+- SPDY proxy cho Chrome trên thiết bị di động
+- Máy chủ tải xuống cho Chrome, ChromeOS, Android SDK, Earth, v.v.
+- Bộ cân bằng tải MySQL Vitess của YouTube
+
+Mục tiêu là các máy chủ mạng, nhưng đây là một ngôn ngữ đa dụng tuyệt vời.
+
+* Ai dùng Go ngoài Google?
+
+.link /wiki/GoUsers go.dev/wiki/GoUsers
+
+Apcera, Bitbucket, bitly, Canonical, CloudFlare, Core OS, Digital Ocean, Docker, Dropbox, Facebook, Getty Images, GitHub, Heroku, Iron.io, Kubernetes, Medium, MongoDB services, Mozilla services, New York Times, pool.ntp.org, Secret, SmugMug, SoundCloud, Stripe, Square, Thomson Reuters, Tumblr, ...
+
+.image ../2014/state-of-go/bus.jpg 300 _
+
+* So sánh Go và Java
+
+* Go và Java có nhiều điểm chung
+
+- Họ C (mệnh lệnh, dấu ngoặc nhọn)
+- Kiểu tĩnh
+- Thu gom rác tự động
+- An toàn bộ nhớ (tham chiếu nil, kiểm tra biên mảng lúc chạy)
+- Biến luôn được khởi tạo (zero/nil/false)
+- Phương thức
+- Interface
+- Kiểm tra kiểu (`instanceof`)
+- Reflection
+
+* Go khác Java ở một số điểm
+
+- Chương trình biên dịch thành mã máy. Không có VM.
+- File nhị phân liên kết tĩnh
+- Kiểm soát bố cục bộ nhớ
+- Giá trị hàm và closure từ vựng
+- Chuỗi tích hợp (UTF-8)
+- Map và mảng/slice tích hợp chung
+- Tính đồng thời tích hợp
+
+* Go cố ý bỏ qua nhiều tính năng
+
+- Không có class
+- Không có constructor
+- Không có kế thừa
+- Không có `final`
+- Không có exception
+- Không có annotation
+- Không có generics do người dùng định nghĩa
+
+* Tại sao Go bỏ qua những tính năng đó?
+
+Sự rõ ràng là điều cốt lõi.
+
+Khi đọc code, phải rõ ràng chương trình sẽ làm gì.
+
+Khi viết code, phải rõ ràng cách làm cho chương trình làm điều bạn muốn.
+
+Đôi khi điều này có nghĩa là viết ra một vòng lặp thay vì gọi một hàm khó hiểu.
+
+(Đừng DRY quá mức.)
+
+Để biết thêm về thiết kế:
+
+- [[http://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html][Less is exponentially more (Pike, 2012)]]
+- [[/talks/2012/splash.article][Go tại Google: Thiết kế ngôn ngữ phục vụ kỹ thuật phần mềm (Pike, 2012)]]
+
+* Các ví dụ
+
+* Go trông quen thuộc với lập trình viên Java
+
+Main.java
+
+.code go-for-java-programmers/hello/Main.java
+
+hello.go
+
+.play go-for-java-programmers/hello/hello.go
+
+* Xin chào, máy chủ web
+
+.play go-for-java-programmers/hello/server.go
+
+Kiểu đứng sau tên trong khai báo.
+Tên xuất khẩu viết hoa. Tên không xuất khẩu viết thường.
+
+* Ví dụ: Giao diện tìm kiếm Google
+
+.image go-for-java-programmers/frontend-screenshot.png _ 1000
+
+.play go-for-java-programmers/frontend.go /func main/,/func handleSearch/
+
+* Kiểm tra truy vấn
+
+.code go-for-java-programmers/frontend.go /func handleSearch/,/ENDQUERY/
+
+`FormValue` là phương thức trên kiểu `*http.Request`:
+
+  package http
+  type Request struct {...}
+  func (r *Request) FormValue(key string) string {...}
+
+`query`:=`req.FormValue("q")` khởi tạo biến mới `query` với
+kiểu của biểu thức ở vế phải, `string`.
+
+* Lấy kết quả tìm kiếm
+
+.code go-for-java-programmers/frontend.go /Run the Google search/,/ENDSEARCH/
+
+`Search` trả về hai giá trị, một slice kết quả và một lỗi.
+
+  func Search(query string) ([]Result, error) {...}
+
+Kết quả chỉ hợp lệ nếu lỗi là nil.
+
+  type error interface {
+      Error() string // thông báo lỗi hữu ích cho người đọc
+  }
+
+Lỗi có thể chứa thông tin bổ sung, truy cập qua type assertion.
+
+* Hiển thị kết quả tìm kiếm
+
+.code go-for-java-programmers/frontend.go /Render the/,/ENDRENDER/
+
+`resultsTemplate.Execute` tạo HTML và ghi vào `io.Writer`:
+
+  type Writer interface {
+          Write(p []byte) (n int, err error)
+  }
+
+`http.ResponseWriter` triển khai interface `io.Writer`.
+
+* Template HTML hoạt động trên các giá trị Go
+
+.play go-for-java-programmers/frontend.go /A Result contains/,/\)\)/
+
+* Gửi truy vấn đến API tìm kiếm Google
+
+.code go-for-java-programmers/frontend.go /func Search/,/resp.Body.Close/
+
+Câu lệnh `defer` sắp xếp để `resp.Body.Close` chạy khi `Search` trả về.
+
+* Phân tích phản hồi JSON thành struct Go
+
+.link https://developers.google.com/web-search/docs/#fonje
+
+.code go-for-java-programmers/frontend.go /var jsonResponse/,/^}/
+
+* Vậy là xong cho giao diện frontend
+
+Tất cả các gói đều từ thư viện chuẩn:
+
+  import (
+  	"encoding/json"
+  	"fmt"
+  	"html/template"
+  	"log"
+  	"net/http"
+  	"net/url"
+  	"time"
+  )
+
+Máy chủ Go mở rộng tốt: mỗi yêu cầu chạy trong _goroutine_ riêng của nó.
+
+Hãy nói về tính đồng thời.
+
+* Communicating Sequential Processes (Hoare, 1978)
+
+Các chương trình đồng thời được cấu trúc như các tiến trình độc lập
+thực thi tuần tự và giao tiếp bằng cách truyền thông điệp.
+
+Thực thi tuần tự dễ hiểu. Callback bất đồng bộ thì không.
+
+"Đừng giao tiếp bằng cách chia sẻ bộ nhớ, hãy chia sẻ bộ nhớ bằng cách giao tiếp."
+
+*Các* *nguyên* *thủy* *Go:* goroutine, channel và câu lệnh `select`.
+
+* Goroutine
+
+Goroutine giống như các luồng nhẹ.
+
+Chúng bắt đầu với stack rất nhỏ và thay đổi kích thước khi cần.
+
+Chương trình Go có thể có hàng trăm nghìn goroutine.
+
+Khởi động goroutine bằng câu lệnh `go`:
+
+  go f(args)
+
+Runtime Go lập lịch goroutine lên các luồng OS.
+
+Goroutine bị chặn không sử dụng luồng nào.
+
+* Channel
+
+Channel cung cấp giao tiếp giữa các goroutine.
+
+  c := make(chan string)
+
+  // goroutine 1
+  c <- "hello!"
+
+  // goroutine 2
+  s := <-c
+  fmt.Println(s) // "hello!"
+
+* Select
+
+Câu lệnh `select` chặn cho đến khi giao tiếp có thể tiến hành.
+
+  select {
+  case n := <-in:
+    fmt.Println("received", n)
+  case out <- v:
+    fmt.Println("sent", v)
+  }
+
+Chỉ case được chọn chạy.
+
+* Ví dụ: Tìm kiếm Google (backend)
+
+H: Google search làm gì?
+
+A: Cho một truy vấn, trả về một trang kết quả tìm kiếm (và một số quảng cáo).
+
+H: Làm thế nào để lấy kết quả tìm kiếm?
+
+A: Gửi truy vấn đến tìm kiếm Web, tìm kiếm Hình ảnh, YouTube, Maps, Tin tức, v.v., sau đó trộn kết quả.
+
+Làm thế nào để triển khai điều này?
+
+* Tìm kiếm Google: Framework giả
+
+Chúng ta có thể mô phỏng hàm Search với thời gian chờ ngẫu nhiên lên đến 100ms.
+
+.code go-for-java-programmers/google-serial.go /START2/,/STOP2/
+
+* Tìm kiếm Google: Kiểm tra framework
+
+.play go-for-java-programmers/google-serial.go /func.main/,/}/
+
+* Tìm kiếm Google (tuần tự)
+
+Hàm Google nhận một truy vấn và trả về một slice kết quả (chỉ là các chuỗi).
+
+Google gọi tìm kiếm Web, Hình ảnh và Video tuần tự, nối thêm vào slice kết quả.
+
+.play go-for-java-programmers/google-serial.go /START1/,/STOP1/
+
+* Tìm kiếm Google (song song)
+
+Chạy tìm kiếm Web, Hình ảnh và Video đồng thời, và chờ tất cả kết quả.
+
+Các literal `func` là closure trên `query` và `c`.
+
+.play go-for-java-programmers/google-parallel.go /Google/,/^}/
+
+* Tìm kiếm Google (timeout)
+
+Đừng chờ các máy chủ chậm.
+
+Không có lock. Không có biến điều kiện. Không có callback.
+
+.play go-for-java-programmers/google-timeout.go /START/,/STOP/
+
+* Tránh timeout
+
+H: Làm thế nào để tránh bỏ kết quả từ các máy chủ chậm?
+
+A: Sao chép các máy chủ. Gửi yêu cầu đến nhiều bản sao, và dùng phản hồi đầu tiên.
+
+.code go-for-java-programmers/first.go /START1/,/STOP1/
+
+* Dùng hàm First
+
+.play go-for-java-programmers/first.go /START2/,/STOP2/
+
+* Tìm kiếm Google (nhân bản)
+
+Giảm độ trễ đuôi bằng cách dùng các máy chủ tìm kiếm nhân bản.
+
+.play go-for-java-programmers/google-first.go /START/,/STOP/
+
+* Và vẫn...
+
+Không có lock. Không có biến điều kiện. Không có callback.
+
+* Tóm tắt
+
+Chỉ với một vài phép biến đổi đơn giản, chúng ta đã dùng các nguyên thủy đồng thời của Go để chuyển đổi một chương trình
+
+- chậm
+- tuần tự
+- nhạy cảm với lỗi
+
+thành một chương trình
+
+- nhanh
+- đồng thời
+- nhân bản
+- mạnh mẽ.
+
+* Công cụ
+
+* Go có các công cụ tuyệt vời
+
+- gofmt và goimports
+- công cụ go
+- godoc
+- Hỗ trợ IDE và trình soạn thảo
+
+Ngôn ngữ được thiết kế cho công cụ.
+
+* gofmt và goimports
+
+Gofmt tự động định dạng code. Không có tùy chọn.
+
+Goimports cập nhật các câu lệnh import dựa trên workspace của bạn.
+
+Hầu hết mọi người chạy các công cụ này khi lưu.
+
+.link /play/p/GPqra77cBK go.dev/play/p/GPqra77cBK
+
+* Công cụ go
+
+Công cụ go biên dịch chương trình Go từ nguồn theo bố cục thư mục thông thường.
+Không cần Makefile hay các cấu hình khác.
+
+Tải công cụ `present` và các dependency của nó, biên dịch và cài đặt:
+
+  % go get golang.org/x/tools/cmd/present
+
+Chạy:
+
+  % present
+
+* godoc
+
+Tài liệu được tạo tự động cho code Go mã nguồn mở trên thế giới:
+
+.link https://pkg.go.dev
+
+* Hỗ trợ IDE và trình soạn thảo
+
+Eclipse, IntelliJ, emacs, vim và nhiều loại khác.
+
+- `gofmt`
+- `goimports`
+- tra cứu `godoc`
+- tự động hoàn thành code
+- điều hướng code
+
+Không có "Go IDE" nào cả.
+
+Công cụ Go đáp ứng bạn ở bất cứ đâu bạn muốn.
+
+* Bước tiếp theo
+
+Tham gia Go Tour trực tuyến.
+
+.link /tour/ go.dev/tour
+
+Nhiều tài liệu hơn.
+
+.link /wiki/Learn go.dev/wiki/Learn
+
+Cộng đồng tuyệt vời.
+
+.link /project go.dev/project

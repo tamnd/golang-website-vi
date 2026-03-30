@@ -1,0 +1,641 @@
+Bắt đầu với Go
+
+Andrew Gerrand
+Google
+https://plus.google.com/106356964679457436995
+@enneff
+https://go.dev
+
+* Giới thiệu
+
+# Trong hướng dẫn này tôi sẽ chỉ cho bạn cách cài đặt và sử dụng ngôn ngữ lập trình Go.
+
+* Go là gì?
+
+Go là một ngôn ngữ lập trình mới, đa dụng.
+
+- Biên dịch
+- Kiểu tĩnh
+- Đồng thời
+- Đơn giản
+- Năng suất cao
+
+"Go là một cách tiếp cận khôn ngoan, sạch sẽ, sâu sắc, tư duy mới mẻ về tập hợp điểm nổi bật của các khái niệm đã được hiểu rõ."
+- Michael T. Jones
+
+
+* Lịch sử
+
+- Dự án bắt đầu tại Google năm 2007 (bởi Griesemer, Pike, Thompson)
+- Bản phát hành mã nguồn mở vào tháng 11 năm 2009
+- Hơn 250 người đóng góp tham gia dự án
+- Bản phát hành version 1.0 vào tháng 3 năm 2012
+
+# Go ban đầu được xây dựng bởi một nhóm tại Google, dẫn đầu bởi Robert Griesemer, Rob Pike và Ken Thompson. Vào tháng 11 năm 2010, Go được ra mắt công khai như một dự án mã nguồn mở. Kể từ đó, một nhóm tại Google và hơn 250 người đóng góp từ cộng đồng mã nguồn mở đã tiếp tục cải thiện ngôn ngữ Go, các thư viện và công cụ.
+
+# Vào tháng 3 năm 2012, chúng tôi công bố Go 1, một phiên bản ngôn ngữ và thư viện sẽ được hỗ trợ trong nhiều năm tới.
+
+* Bắt đầu
+
+* Cài đặt Go
+
+.link /doc/install go.dev/doc/install
+
+- Cài đặt từ các bản phân phối nhị phân hoặc build từ mã nguồn
+- Bộ xử lý x86 và ARM 32 và 64 bit
+- Windows, Mac OS X, Linux và FreeBSD
+- Các nền tảng khác có thể được hỗ trợ bởi `gccgo`
+
+# Go có sẵn ở dạng nhị phân cho Windows, Mac OS X, Linux và FreeBSD chạy trên kiến trúc bộ xử lý x86 32 và 64 bit. Để cài đặt Go trên các hệ thống này, hãy tải file phù hợp từ golang.org và mở trình cài đặt (Windows hoặc OS X) hoặc giải nén archive vào /usr/local/go (Linux và FreeBSD).
+
+# Nếu bạn dùng hệ điều hành hoặc kiến trúc bộ xử lý khác, bạn vẫn có thể dùng Go bằng cách build từ mã nguồn hoặc dùng gccgo (trình biên dịch Go thay thế dựa trên GNU C Compiler). Xem hướng dẫn cài đặt trên golang.org để biết cách làm.
+
+* Kiểm tra cài đặt Go
+
+# Hãy build và chạy một chương trình Go đơn giản để kiểm tra chúng ta có cài đặt Go hợp lệ hay không. Tạo một file tên hello.go ở nơi thuận tiện và điền mã nguồn Go này:
+
+Đặt đoạn mã này vào `hello.go`:
+
+.code tutorial/hello.go
+
+# Bây giờ, từ dấu nhắc lệnh, chạy `go run hello.go`. Lệnh này sẽ build chương trình của bạn, lưu binary thực thi vào một vị trí tạm thời và chạy nó. Bạn sẽ thấy thông báo được in ra màn hình console.
+
+Chạy chương trình:
+
+  $ go run hello.go
+
+
+* Công cụ go
+
+Công cụ `go` là công cụ chuẩn để build, test và cài đặt các chương trình Go.
+
+Biên dịch và chạy `hello.go`:
+
+  $ go run hello.go
+
+Chạy test `zip`:
+
+  $ go test archive/zip
+
+Build và định dạng các file trong thư mục hiện tại:
+
+  $ go build
+  $ go fmt
+
+Tải và cài đặt `websocket`:
+
+  $ go get code.google.com/p/go.net/websocket
+
+
+* Workspace
+
+Công cụ `go` suy ra hướng dẫn build từ mã nguồn Go.
+
+Không cần viết và duy trì các script build.
+
+Để điều này hoạt động, cần có một cấu trúc thư mục được quy định, gọi là workspace.
+
+  workspace/
+    bin # các binary thực thi
+    pkg # các object file đã biên dịch
+    src # mã nguồn
+
+* Tạo workspace
+
+Tạo workspace của bạn ngay bây giờ.
+
+#Tôi thích dùng tên "gocode", nhưng bạn có thể dùng bất cứ tên gì bạn thích.
+
+  $ mkdir -p $HOME/gocode/src
+
+(Thư mục con `bin` và `pkg` sẽ được tạo bởi công cụ `go`.)
+
+Cho công cụ `go` biết workspace của bạn ở đâu bằng cách đặt biến môi trường `GOPATH`:
+# Bạn có thể làm điều này trên OS X, Linux và FreeBSD bằng cách thêm dòng này vào `$HOME/.profile` và khởi động lại các shell đang chạy:
+
+  export GOPATH=$HOME/gocode
+
+# Xem hướng dẫn cài đặt trên golang.org để biết cách đặt `GOPATH` trên Windows.
+
+Bạn cũng có thể muốn thêm thư mục con `bin` của workspace vào `PATH`:
+
+  export PATH=$PATH:$GOPATH/bin
+
+Điều này cho phép bạn chạy các chương trình Go mà không cần chỉ định đường dẫn đầy đủ.
+
+(Bạn có thể muốn đặt các lệnh `export` này vào file `.bash_profile` trong thư mục home của bạn.)
+
+* Chọn không gian tên
+
+Chọn một nơi đặc biệt cho mã Go của bạn.
+
+Tôi dùng `"github.com/nf"`, gốc của tài khoản GitHub của tôi (hữu ích với `go get`).
+
+# Sau khi đã chọn không gian tên, tạo các đường dẫn cần thiết bên trong thư mục `src` của workspace:
+
+  $ mkdir -p $GOPATH/src/github.com/nf
+
+Tạo một thư mục `hello` trong không gian tên của bạn và copy `hello.go` vào đó:
+
+  $ mkdir $GOPATH/src/github.com/nf/hello
+  $ cp hello.go $GOPATH/src/github.com/nf/hello
+
+Bây giờ bạn có thể build và cài đặt chương trình hello với công cụ `go`:
+
+  $ go install github.com/nf/hello
+
+Lệnh này build một file thực thi tên `hello` và cài đặt nó vào thư mục `bin` của workspace.
+
+  $ $GOPATH/bin/hello
+  Hello, fellow gopher
+
+
+* Dự án của chúng ta
+
+* Dự án của chúng ta
+
+Một chương trình dòng lệnh tải và hiển thị các tiêu đề mới nhất từ trang `golang` trên Reddit.
+# (Reddit là một trang tổng hợp liên kết khổng lồ nơi mọi người gửi liên kết và người khác bình chọn và thảo luận về chúng.)
+
+Chương trình sẽ:
+- thực hiện một yêu cầu HTTP tới Reddit API,
+- giải mã phản hồi JSON thành cấu trúc dữ liệu Go, và
+- in tiêu đề, URL và số bình luận của mỗi liên kết.
+
+Để bắt đầu, tạo thư mục bên trong không gian tên của bạn tên `reddit`:
+
+  $ mkdir $GOPATH/src/github.com/nf/reddit
+
+Đây là nơi bạn sẽ đặt các file nguồn Go.
+
+
+* Thực hiện yêu cầu HTTP
+
+Chương trình này thực hiện yêu cầu HTTP đến Reddit API và copy phản hồi ra standard output. Đặt đoạn mã này vào một file tên `main.go` trong thư mục `reddit`.
+
+.code tutorial/1get.go
+
+# Nếu chạy nó bạn sẽ thấy một đoạn dữ liệu JSON, hoặc một thông báo lỗi nếu có gì đó sai.
+
+# Có rất nhiều thứ xảy ra ở đây, vì vậy hãy phân tích nó.
+
+
+* Yêu cầu HTTP: câu lệnh package
+
+Tất cả mã Go đều thuộc về một package.
+
+.code tutorial/1get.go /package/
+
+Chương trình Go bắt đầu với hàm `main` bên trong package `main`.
+
+
+* Yêu cầu HTTP: câu lệnh import
+
+Khai báo import chỉ định các dependency của file.
+
+.code tutorial/1get.go /import/,/\)/
+
+Mỗi chuỗi là một đường dẫn import. Nó cho công cụ Go biết nơi tìm package.
+
+Các package này đều từ thư viện chuẩn Go.
+
+
+* Yêu cầu HTTP: khai báo hàm
+
+.code tutorial/1get.go /func.main/,/^}/ HLfunc
+
+Đây là khai báo hàm. Hàm main không có tham số và không có giá trị trả về.
+
+* Yêu cầu HTTP: http.Get
+
+.code tutorial/1get.go /func.main/,/^}/ HLget
+
+Gọi hàm `Get` từ package `http`, truyền URL của Reddit API làm tham số duy nhất.
+
+Khai báo hai biến (`resp` và `err`) và gán cho chúng các giá trị trả về của lời gọi hàm. (Đúng vậy, hàm Go có thể trả về nhiều giá trị.) Hàm `Get` trả về `*http.Response` và giá trị `error`.
+
+
+* Yêu cầu HTTP: xử lý lỗi
+
+.code tutorial/1get.go /func.main/,/^}/ HLerr
+
+So sánh `err` với `nil`, giá trị zero của kiểu `error` tích hợp.
+
+Biến `err` sẽ là nil nếu yêu cầu thành công.
+
+Nếu không, gọi hàm `log.Fatal` để in thông báo lỗi và thoát chương trình.
+
+# Tôi không thể nhấn mạnh đủ tầm quan trọng của việc kiểm tra lỗi. Bỏ qua giá trị lỗi là nguy hiểm!
+
+
+* Yêu cầu HTTP: kiểm tra trạng thái
+
+.code tutorial/1get.go /func.main/,/^}/ HLstatus
+
+Kiểm tra rằng HTTP server trả về phản hồi "200 OK".
+
+Nếu không, thoát, in thông báo trạng thái HTTP ("500 Internal Server Error", chẳng hạn).
+
+
+* Yêu cầu HTTP: copy
+
+.code tutorial/1get.go /func.main/,/^}/ HLcopy
+
+Dùng `io.Copy` để copy nội dung phản hồi HTTP vào standard output (`os.Stdout`).
+
+#Ở bên trái là phép gán biến lưu giá trị lỗi trả về của Copy vào err. Lưu ý rằng điều này khác với phép gán trước đó vốn cũng là khai báo. Phép gán đơn giản này - được phân biệt bởi sự vắng mặt của dấu hai chấm - gán giá trị trả về thứ hai của Copy cho biến err. Giá trị trả về thứ nhất, được gán cho dấu gạch dưới, bị bỏ đi. Dấu gạch dưới có thể được coi là "biến chỉ ghi".
+
+  package io
+
+  func Copy(dst Writer, src Reader) (written int64, err error)
+
+Kiểu `resp.Body` cài đặt `io.Reader` và `os.Stdout` cài đặt `io.Writer`.
+
+
+* Giải mã phản hồi JSON
+
+* Cấu trúc dữ liệu
+
+Reddit API trả về dữ liệu JSON như thế này:
+
+  {"data": {"children": [
+    {"data": {
+      "title": "The Go homepage",
+      "url": "https://go.dev/",
+      ...
+    }},
+    ...
+  ]}}
+
+Package `json` của Go giải mã dữ liệu được mã hóa JSON thành các cấu trúc dữ liệu Go gốc. Để giải mã phản hồi API, khai báo một số kiểu phản ánh cấu trúc của dữ liệu JSON:
+
+.code tutorial/2json.go /type.Item/,$
+
+
+* Giải mã phản hồi
+
+Thay vì copy nội dung phản hồi HTTP ra standard output
+
+.code tutorial/1get.go /io.Copy/
+
+chúng ta dùng package json để giải mã phản hồi vào cấu trúc dữ liệu Response.
+
+.code tutorial/2json.go /new.Response/,/json.NewDecoder/
+
+Khởi tạo một giá trị `Response` mới, lưu con trỏ tới nó trong biến mới `r`.
+
+Tạo một đối tượng `json.Decoder` mới và giải mã nội dung phản hồi vào `r`.
+
+Khi bộ giải mã phân tích dữ liệu JSON, nó tìm các trường tương ứng cùng tên trong struct `Response`. Trường `"data"` của đối tượng JSON cấp cao nhất được giải mã vào trường `Data` của struct `Response`, mảng JSON `"children"` được giải mã vào slice `Children`, v.v.
+
+
+* In dữ liệu
+
+    for _, child := range r.Data.Children {
+      fmt.Println(child.Data.Title)
+    }
+
+Lặp qua slice `Children`, gán giá trị slice cho `child` ở mỗi lần lặp.
+
+Lời gọi `Println` in `Title` của mục theo sau là newline.
+
+
+* Dọn dẹp
+
+* Tách biệt các mối quan tâm
+
+Cho đến nay, mọi hành động đều xảy ra trong hàm main.
+
+Khi chương trình phát triển, cấu trúc và tính module trở nên quan trọng.
+
+Nếu chúng ta muốn kiểm tra nhiều subreddits? Hoặc chia sẻ chức năng này với một chương trình khác?
+
+Tạo một hàm tên `Get` nhận tên subreddit, thực hiện lời gọi API và trả về các mục từ subreddit đó.
+
+.code tutorial/3func.go /func.Get/
+
+`Get` nhận một chuỗi, `reddit`, và trả về một slice `Item` và giá trị `error`.
+
+* Get: xây dựng URL
+
+.code tutorial/3func.go /func.Get/,/^}/ HLurl
+
+Dùng `fmt.Sprintf` để xây dựng URL yêu cầu từ chuỗi `reddit` được cung cấp.
+
+* Get: trả về
+
+.code tutorial/3func.go /func.Get/,/^}/ HLreturn
+
+Khi thoát hàm, trả về một slice nil và giá trị error không nil, hoặc ngược lại.
+
+* Get: tạo lỗi
+
+.code tutorial/3func.go /func.Get/,/^}/ HLerrors
+
+Trường `Status` của phản hồi chỉ là một chuỗi; dùng hàm `errors.New` để chuyển nó thành giá trị `error`.
+
+* Get: defer công việc dọn dẹp
+
+.code tutorial/3func.go /func.Get/,/^}/ HLclose
+
+Defer một lời gọi đến phương thức `Close` của nội dung phản hồi, để đảm bảo dọn dẹp sau yêu cầu HTTP. Lời gọi sẽ được thực thi sau khi hàm trả về.
+
+# Điều quan trọng là phải Close nội dung phản hồi vì nó cho package http biết bạn đã đọc xong, giải phóng kết nối HTTP để tái sử dụng (package http của Go dùng Keep-Alive và connection pooling theo mặc định). Nếu muốn dùng hàm Get trong ngữ cảnh của một chương trình lớn hơn, nó phải dọn dẹp đúng cách.
+
+# TODO(adg): về defer
+
+* Get: chuẩn bị phản hồi
+
+.code tutorial/3func.go /func.Get/,/^}/ HLprepare
+
+Dùng hàm make để cấp phát một slice `Item` đủ lớn để lưu dữ liệu phản hồi.
+
+* Get: chuyển đổi phản hồi
+
+.code tutorial/3func.go /func.Get/,/^}/ HLconvert
+
+Lặp qua slice `Children` của phản hồi, gán phần tử `Data` của mỗi child cho phần tử tương ứng trong slice items.
+
+* Dùng Get trong main
+
+Trong hàm `main`, thay thế mã yêu cầu http và giải mã JSON bằng một lời gọi duy nhất đến `Get`.
+
+.code tutorial/3func.go /func.main/,/^}/
+
+Vòng lặp in cũng trở nên rõ ràng hơn.
+
+Tuy nhiên, chỉ in tiêu đề của các mục không thực sự hữu ích. Hãy giải quyết điều đó.
+
+
+* Định dạng đầu ra
+
+* Interface Stringer
+
+Package `fmt` biết cách định dạng các kiểu tích hợp, nhưng cũng có thể được nói cách định dạng các kiểu do người dùng định nghĩa.
+
+Khi bạn truyền một giá trị cho các hàm `fmt.Print`, nó kiểm tra xem giá trị đó có cài đặt interface `fmt.Stringer` hay không:
+
+  type Stringer interface {
+    String() string
+  }
+
+Bất kỳ kiểu nào cài đặt phương thức `String() string` đều là `Stringer`, và package `fmt` sẽ dùng phương thức đó để định dạng các giá trị của kiểu đó.
+
+
+* Định dạng Items
+
+Khai báo phương thức giống như khai báo hàm, nhưng receiver đến trước.
+
+Đây là phương thức `String` cho kiểu `Item` trả về tiêu đề, newline và URL:
+
+  func (i Item) String() string {
+    return fmt.Sprintf("%s\n%s", i.Title, i.URL)
+  }
+
+Để in mục, chỉ cần truyền nó cho Println, nó dùng phương thức `String` được cung cấp để định dạng `Item`.
+
+  fmt.Println(item)
+
+
+* Định dạng phong phú hơn (1/2)
+
+Hãy đi xa hơn một bước. Một cách để đánh giá mức độ thú vị của một liên kết là qua các thảo luận xung quanh nó. Hãy hiển thị số bình luận cho mỗi `Item` nữa.
+
+  { "title": "The Go homepage",
+    "url": "https://go.dev/",
+    "num_comments": 10 }
+
+Cập nhật kiểu `Item` để thêm trường `Comments`:
+
+.code tutorial/4method.go /type.Item/,/^}/
+
+Trường `Comments` mới có "struct tag", một chuỗi chú thích trường. Mã Go có thể dùng package `reflect` để kiểm tra thông tin này tại runtime.
+
+Tag này, `json:"num_comments"`, cho package `json` biết giải mã trường `"num_comments"` của đối tượng JSON vào trường `Comments` (và ngược lại khi mã hóa).
+
+* Định dạng phong phú hơn (2/2)
+
+Bây giờ phương thức `String` có thể phức tạp hơn một chút:
+
+.code tutorial/4method.go /func..i.Item..String/,/^}/
+
+Lưu ý rằng, không giống một số ngôn ngữ, câu lệnh switch của Go không fall through theo mặc định.
+
+Bây giờ khi chạy chương trình, chúng ta sẽ thấy danh sách liên kết được định dạng đẹp.
+
+
+* Package
+
+* Package mới (1/3)
+
+Đây là mã hữu ích. Hãy tổ chức nó để dễ tiếp cận hơn với người khác bằng cách đặt nó vào một package có thể import.
+
+Tạo một thư mục mới bên trong thư mục `reddit` của bạn tên `geddit`, và copy file `main.go` vào đó.
+
+`reddit` là tên của thư viện và `geddit` là tên của client dòng lệnh.
+
+  $ cd $GOPATH/src/github.com/nf/reddit
+  $ mkdir geddit
+  $ cp main.go geddit/
+
+Đổi tên `main.go` bên trong thư mục `reddit` thành `reddit.go`. (Không bắt buộc; chỉ là quy ước.)
+
+  $ mv main.go reddit.go
+
+
+* Package mới (2/3)
+
+Thay đổi câu lệnh package ở đầu `reddit.go` từ `package main` thành `package reddit`.
+
+Quy ước là tên package giống với phần tử cuối cùng của đường dẫn import.
+
+Quy ước này làm cho các package dễ đoán khi dùng:
+
+  import "github.com/nf/reddit"
+
+  func foo() {
+    r, err := reddit.Get("golang") // "reddit" ở đây là tên package
+    // ...
+  }
+
+Yêu cầu nghiêm ngặt duy nhất là nó không được là `package main`.
+
+Cũng xóa hàm `main` khỏi `reddit.go` và mọi import package không dùng. (Trình biên dịch sẽ cho bạn biết package nào không dùng.)
+
+
+* Package mới (3/3)
+
+File `reddit.go` bây giờ trông như thế này:
+
+  package reddit
+
+  import (
+    // bỏ qua
+  )
+
+  type Response struct {
+    // bỏ qua
+  }
+
+  type Item struct {
+    // bỏ qua
+  }
+
+  func (i Item) String() string {
+    // bỏ qua
+  }
+
+  func Get(reddit string) ([]Item, error) {
+    // bỏ qua
+  }
+
+
+* Dùng package reddit
+
+Sửa file `geddit/main.go` để xóa các khai báo `Get`, `Item` và `Response`, import package `reddit` và dùng tiền tố `reddit.` trước lời gọi `Get`:
+
+.code tutorial/main.go
+
+
+* Tài liệu
+
+* Tài liệu (1/3)
+
+`Godoc` là công cụ tài liệu Go. Nó đọc tài liệu trực tiếp từ các file nguồn Go. Dễ dàng đồng bộ tài liệu và mã khi chúng cùng nằm ở một nơi.
+
+Đây là package reddit của chúng ta khi xem bằng `godoc`:
+
+  $ godoc github.com/nf/reddit
+  PACKAGE
+
+  package reddit
+      import "github.com/nf/reddit"
+
+  FUNCTIONS
+
+  func Get(reddit string) ([]Item, error)
+
+  TYPES
+
+  type Item struct {
+      Title    string
+      URL      string
+      Comments int `json:"num_comments"`
+  }
+
+  func (i Item) String() string
+
+  type Response struct {
+  	// v.v.
+
+# Ở đây chúng ta thấy tất cả các khai báo cấp cao nhất. Đây là giao diện người dùng của package (không được nhầm lẫn với kiểu interface). Mặc dù thiếu tài liệu, điều đầu tiên đập vào mắt tôi là kiểu Response. Đây là chi tiết cài đặt và không phải thứ mà người dùng package cần thấy.
+
+# Trong Go, các khai báo cấp cao nhất bắt đầu bằng chữ hoa được "export" và do đó hiển thị bên ngoài package. Tất cả các tên khác là private và không thể truy cập bởi mã bên ngoài package. Chúng ta có thể ẩn kiểu Response bằng cách đổi tên nó thành "response".
+
+* Tài liệu (2/3)
+
+Đầu tiên, ẩn kiểu `Response` bằng cách đổi tên thành `response`.
+
+Trong Go, các khai báo cấp cao nhất bắt đầu bằng chữ hoa được "export" (hiển thị bên ngoài package). Tất cả tên khác là private và không thể truy cập bởi mã bên ngoài package.
+
+Để tài liệu hóa các tên hiển thị còn lại, thêm chú thích trực tiếp trước khai báo của chúng:
+
+.code tutorial/reddit/reddit.go /Item.describes/,/type/
+
+.code tutorial/reddit/reddit.go /Get.fetches/,/func/
+
+# Quy ước là bắt đầu chú thích godoc bằng danh từ mà chúng mô tả. Điều này cho phép văn bản được hiển thị trong nhiều ngữ cảnh khác nhau, không nhất thiết phải cạnh khai báo.
+
+Quan trọng nhất, tài liệu hóa bản thân package bằng cách thêm chú thích vào mệnh đề package:
+
+.code tutorial/reddit/reddit.go /Package.reddit/,/package.reddit/
+
+Đừng lo lắng về việc tài liệu hóa phương thức `String`, vì tất cả lập trình viên Go đều quen với nó và mục đích của nó.
+
+* Tài liệu (3/3)
+
+Output `godoc` cho package đã sửa đổi của chúng ta:
+
+  PACKAGE
+
+  package reddit
+      import "github.com/nf/reddit"
+
+      Package reddit implements a basic client for the Reddit API.
+
+  FUNCTIONS
+
+  func Get(reddit string) ([]Item, error)
+      Get fetches the most recent Items posted to the specified subreddit.
+
+  TYPES
+
+  type Item struct {
+      Title    string
+      URL      string
+      Comments int `json:"num_comments"`
+  }
+      Item describes a Reddit item.
+
+  func (i Item) String() string
+
+# Bạn cũng có thể xem nó sẽ trông như thế nào trên web bằng cách chạy một godoc instance cục bộ
+
+#   $ godoc -http=localhost:8080
+
+# và tải http://localhost:8080/ trong trình duyệt.
+
+
+* Chia sẻ công việc của bạn
+
+* Xuất bản thư viện reddit
+
+- Thêm thông báo bản quyền vào mỗi file
+- Chọn giấy phép ưa thích của bạn
+- Khởi tạo kho mã nguồn
+- Thực hiện commit đầu tiên
+- Đẩy lên kho lưu trữ từ xa
+
+
+* Cài đặt với go get
+
+Dùng công cụ go để tự động checkout và cài đặt mã Go:
+
+  $ go get github.com/nf/reddit/geddit
+
+Lệnh này checkout kho lưu trữ vào `$GOPATH/src/github.com/nf/reddit` và cài đặt binary vào `$GOPATH/bin/geddit`. Thư mục `bin` nằm trong PATH của tôi, vì vậy tôi có thể chạy:
+
+  $ geddit
+
+Lệnh `go get` có thể tải mã từ
+
+- Bitbucket
+- GitHub
+- Google Code
+- Launchpad
+
+cũng như các kho lưu trữ Git, Mercurial, Subversion và Bazaar tùy ý.
+
+
+* Bài tập về nhà
+
+Một số gợi ý:
+
+- Cài đặt giao diện dòng lệnh để chỉ định các subreddit cần truy vấn.
+- Mở rộng package reddit để hỗ trợ nhiều hơn các tính năng của Reddit API.
+- Tìm hiểu về các nguyên thủy đồng thời của Go và thực hiện nhiều yêu cầu song song.
+
+
+* Tiếp theo nên làm gì
+
+Học Go:
+
+.link /tour/ go.dev/tour
+
+Tài liệu và bài viết:
+
+.link /doc go.dev/doc
+
+Tài liệu tham chiếu thư viện chuẩn:
+
+.link /pkg go.dev/pkg

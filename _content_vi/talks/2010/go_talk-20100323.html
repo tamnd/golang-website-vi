@@ -1,0 +1,392 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="vi" lang="vi">
+<head>
+<title>Go Tech Talk</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="font-size-adjustment" content="-1" />
+<link rel="stylesheet" href="support/slidy.css"
+  type="text/css" media="screen, projection, print" />
+<script src="support/slidy.js" type="text/javascript">
+</script>
+</head>
+<body>
+<!-- this defines the slide background -->
+
+<div class="background">
+
+  <div class="header">
+  <!-- sized and colored via CSS -->
+  </div>
+
+  <div class="footer"></div>
+  </div>
+
+<div class="slide titlepage">
+<br/>
+<br/>
+<img src="support/go-logo-white.png" width="588px" height="217px">
+<br/>
+<h1 style="padding-right: 0pt; margin-right: 0pt; color: #0066cc; font-size: 250%; border-bottom: 0px;">Ngôn ngữ lập trình Go</h1>
+<div style="color: #ffcc00;">
+<br/>
+<h3>Đại học Sydney<br/><br/>23 tháng 3, 2010</h3>
+</div>
+</div>
+
+<div class="slide">
+	<h1>Go</h1>
+
+	<h2>Mới</h2>
+	<h2>Thực nghiệm</h2>
+	<h2>Đồng thời</h2>
+	<h2>Có bộ gom rác</h2>
+	<h2>Ngôn ngữ hệ thống</h2>
+</div>
+
+<div class="slide">
+	<h1>Hello, world</h1>
+<pre>
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Printf("Hello, 世界\n")
+}
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Hello, world 2.0</h1>
+
+	<h2>Phục vụ <a href="http://localhost:8080/world">http://localhost:8080/world</a></h2>
+<pre>
+package main
+
+import (
+	"fmt"
+	"http"
+)
+
+func handler(c *http.Conn, r *http.Request) {
+	fmt.Fprintf(c, "Hello, %s.", r.URL.Path[1:])
+}
+
+func main() {
+	http.ListenAndServe(":8080",
+			http.HandlerFunc(handler))
+}
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Mới</h1>
+
+	<h2>Ngôn ngữ khoảng hai tuổi:</h2>
+	<ul>
+		<li>Bắt đầu thiết kế vào cuối năm 2007</li>
+		<li>Triển khai bắt đầu hoạt động vào giữa năm 2008</li>
+		<li>Phát hành dưới dạng dự án mã nguồn mở vào tháng 11 năm 2009</li>
+		<li>Phát triển tiếp tục với cộng đồng tích cực</li>
+	</ul>
+
+	<h2>Tại sao lại tạo ra một ngôn ngữ mới? Các ngôn ngữ cũ không được thiết kế cho lập trình đồng thời, nhưng phần mềm hiện đại cần điều đó:</h2>
+	<ul>
+		<li>Tính toán quy mô lớn, kết nối mạng, như tìm kiếm web của Google</li>
+		<li>Phần cứng đa nhân</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Mới</h1>
+
+	<h2>Các ngôn ngữ cũ cũng gây phiền toái trong công việc hàng ngày</h2>
+	<h2>Các ngôn ngữ kiểu tĩnh (C, C++, Java) có những vấn đề:</h2>
+	<ul>
+		<li>Chu trình Sửa-Biên dịch-Chạy mất quá nhiều thời gian</li>
+		<li>Phân cấp kiểu có thể gây hại nhiều như giúp ích</li>
+	</ul>
+<div style="text-align:center">
+<img src="support/java-typing.png" width="800px" height="90px"><br>
+</div>
+
+	<h2>Các ngôn ngữ động (Python, JavaScript) giải quyết một số vấn đề nhưng đưa vào những vấn đề khác:</h2>
+	<ul>
+		<li>Không có biên dịch nghĩa là mã chạy chậm</li>
+		<li>Lỗi xảy ra lúc chạy thay vì bị phát hiện tĩnh</li>
+	</ul>
+
+	<h2>Go có cảm giác nhẹ nhàng như ngôn ngữ kịch bản nhưng được biên dịch</h2>
+</div>
+
+<div class="slide">
+	<h1>Mới</h1>
+
+	<h2>Các chương trình C++ lớn (ví dụ: Firefox, OpenOffice, Chromium) có thời gian build rất lâu:</h2>
+	<ul>
+		<li>XKCD's #1 Programmer Excuse for Legitimately Slacking Off: &quot;<a href="http://xkcd.com/303/">My Code's Compiling</a>&quot;</li>
+	</ul>
+
+	<h2>Trên Mac (OS X 10.5.8, gcc 4.0.1):</h2>
+	<ul>
+		<li>C: <code>#include &lt;stdio.h&gt;</code> đọc 360 dòng từ 9 tệp</li>
+		<li>C++: <code>#include &lt;iostream&gt;</code> đọc 25.326 dòng từ 131 tệp</li>
+		<li>Objective-C: <code>#include &lt;Carbon/Carbon.h&gt;</code> đọc 124.730 dòng từ 689 tệp</li>
+		<li>Và chúng ta vẫn chưa làm được việc gì thực sự!</li>
+	</ul>
+
+	<h2>Trong Go: <code>import "fmt"</code> đọc <i>một</i> tệp: 184 dòng tóm tắt 7 package</h2>
+</div>
+
+<div class="slide">
+	<h1>Mới</h1>
+
+	<h2>Demo biên dịch</h2>
+</div>
+
+<div class="slide">
+	<h1>Thực nghiệm</h1>
+
+	<h2>Go vẫn chưa được kiểm chứng</h2>
+	<h2>Ngôn ngữ vẫn đang phát triển</h2>
+	<h2>Thư viện package chưa hoàn chỉnh</h2>
+	<h2>Thu gom rác đồng thời vẫn là vấn đề nghiên cứu tích cực</h2>
+	<h2>Hồi sinh các khái niệm đã bị lãng quên:</h2>
+	<ul>
+		<li>Lập trình đồng thời của Go chịu ảnh hưởng mạnh từ <i>Communicating Sequential Processes</i> (Hoare, 1978)</li>
+		<li>Go có kiểu và interface, nhưng không có kế thừa. Có thể lập luận rằng nó hướng đối tượng hơn các ngôn ngữ đã đề cập, gần với ý nghĩa Smalltalk gốc (thập niên 1970) hơn</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Đồng thời</h1>
+
+	<h2>Triết lý Unix: viết các <i>chương trình</i> làm tốt một việc duy nhất</h2>
+	<h2>Kết nối chúng bằng <i>pipe</i>:</h2>
+	<ul>
+		<li>Có bao nhiêu dòng mã kiểm thử trong thư viện chuẩn Go?</li>
+		<li><code>find ~/go/src/pkg | grep _test.go$ | xargs wc -l</code></li>
+	</ul>
+
+	<h2>Khác với các ngôn ngữ khác, Go giúp dễ dàng:</h2>
+	<ul>
+		<li>Khởi chạy <i>goroutine</i></li>
+		<li>Kết nối chúng bằng <i>channel</i></li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Đồng thời</h1>
+
+	<h2>Bắt đầu luồng điều khiển mới bằng từ khóa <code>go</code></h2>
+	<h2>Tính toán song song rất dễ dàng:</h2>
+<pre>
+func main() {
+	go expensiveComputation(x, y, z)
+	anotherExpensiveComputation(a, b, c)
+}
+</pre>
+
+	<h2>Về cơ bản, goroutine giống một thread nhưng nhẹ hơn:</h2>
+	<ul>
+		<li>Goroutine có stack phân đoạn, và thường có stack nhỏ hơn</li>
+		<li>Điều này đòi hỏi hỗ trợ của trình biên dịch. Goroutine không thể chỉ là thư viện C++ trên nền thư viện thread</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Đồng thời</h1>
+
+	<h2>Xét các máy chủ web ("bài toán C10k"):</h2>
+	<ul>
+		<li>Cách tiếp cận "một thread một kết nối" về mặt khái niệm gọn gàng, nhưng không mở rộng tốt trong thực tế</li>
+		<li>Những gì mở rộng tốt (callback hướng sự kiện, API bất đồng bộ) khó hiểu, bảo trì và gỡ lỗi hơn</li>
+		<li>Chúng tôi tin rằng "một goroutine một kết nối" có thể mở rộng tốt và về mặt khái niệm gọn gàng</li>
+	</ul>
+<pre>
+	for {
+		rw := socket.Accept()
+		conn := newConn(rw, handler)
+		go conn.serve()
+	}
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Đồng thời</h1>
+
+	<h2>Hãy xem lại phép tính song song đơn giản của chúng ta:</h2>
+<pre>
+func main() {
+	go expensiveComputation(x, y, z)
+	anotherExpensiveComputation(a, b, c)
+}
+</pre>
+
+	<h2>Câu chuyện này chưa đầy đủ:</h2>
+	<ul>
+		<li>Làm sao chúng ta biết hai phép tính đã xong?</li>
+		<li>Giá trị của chúng là gì?</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Đồng thời</h1>
+
+	<h2>Goroutine giao tiếp với nhau qua channel</h2>
+<pre>
+func computeAndSend(ch chan int, x, y, z int) {
+	ch &lt;- expensiveComputation(x, y, z)
+}
+
+func main() {
+	ch := make(chan int)
+	go computeAndSend(ch, x, y, z)
+	v2 := anotherExpensiveComputation(a, b, c)
+	v1 := &lt;-ch
+	fmt.Println(v1, v2)
+}
+</pre>
+
+</div>
+
+<div class="slide">
+	<h1>Đồng thời</h1>
+
+	<h2>Trong các chương trình đồng thời truyền thống, bạn <i>giao tiếp bằng cách chia sẻ bộ nhớ</i>. Trong Go, bạn <i>chia sẻ bộ nhớ bằng cách giao tiếp</i>:</h2>
+	<ul>
+		<li>Giao tiếp (toán tử <code>&lt;-</code>) là chia sẻ và đồng bộ hóa</li>
+	</ul>
+
+	<h2>Thread và lock là các nguyên thủy đồng thời; CSP là một mô hình đồng thời:</h2>
+	<ul>
+		<li>Phép loại suy: &quot;Go To Statement Considered Harmful&quot; (Dijkstra, 1968)</li>
+		<li><code>goto</code> là nguyên thủy điều khiển luồng; lập trình có cấu trúc (<code>if</code>, vòng lặp <code>for</code>, gọi hàm) là mô hình điều khiển luồng</li>
+	</ul>
+
+	<h2>Học CSP thay đổi cách bạn suy nghĩ về lập trình đồng thời:</h2>
+	<ul>
+		<li>Mỗi ngôn ngữ có đặc tính riêng. Nếu chương trình Go của bạn dùng mutex, có thể bạn đang làm trái với đặc tính của ngôn ngữ</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Có bộ gom rác</h1>
+
+	<h2>Quản lý bộ nhớ tự động giúp việc viết (và bảo trì) chương trình dễ hơn</h2>
+	<h2>Đặc biệt trong thế giới đồng thời:</h2>
+	<ul>
+		<li>Ai &quot;sở hữu&quot; một phần bộ nhớ dùng chung, và chịu trách nhiệm giải phóng nó?</li>
+	</ul>
+
+	<h2>Các chương trình C++ lớn thường kết thúc với quản lý bộ nhớ bán tự động thông qua &quot;con trỏ thông minh&quot;</h2>
+	<h2>Kết hợp hai mô hình có thể gây ra vấn đề:</h2>
+	<ul>
+		<li>Trình duyệt dễ bị rò rỉ bộ nhớ; các phần tử DOM là đối tượng C++, nhưng JavaScript có bộ gom rác</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Có bộ gom rác</h1>
+
+	<h2>Go cũng là ngôn ngữ an toàn hơn:</h2>
+	<ul>
+		<li>Con trỏ nhưng không có số học con trỏ</li>
+		<li>Không có con trỏ treo</li>
+		<li>Biến được khởi tạo bằng giá trị 0</li>
+		<li>Truy cập mảng được kiểm tra giới hạn</li>
+	</ul>
+
+	<h2>Không có khai thác tràn bộ đệm</h2>
+</div>
+
+<div class="slide">
+	<h1>Ngôn ngữ hệ thống</h1>
+
+	<h2>Điều này đơn giản có nghĩa là bạn có thể viết các chương trình khá lớn bằng Go:</h2>
+	<ul>
+		<li>Máy chủ web</li>
+		<li>Trình duyệt web</li>
+		<li>Trình thu thập web</li>
+		<li>Bộ lập chỉ mục tìm kiếm</li>
+		<li>Cơ sở dữ liệu</li>
+		<li>Bộ xử lý văn bản</li>
+		<li>Môi trường phát triển tích hợp (IDE)</li>
+		<li>Hệ điều hành</li>
+		<li>...</li>
+	</ul>
+</div>
+
+<div class="slide">
+	<h1>Ngôn ngữ hệ thống</h1>
+
+	<h2>Thu gom rác có tiếng là &quot;chậm hơn&quot;</h2>
+	<h2>Chúng tôi kỳ vọng Go sẽ chậm hơn C được tối ưu một chút, nhưng nhanh hơn Java tùy theo tác vụ. Tuy nhiên:</h2>
+	<ul>
+		<li>Nhanh và có lỗi tệ hơn gần như nhanh và đúng</li>
+		<li>Tối ưu hóa một chương trình đúng dễ hơn sửa một chương trình đã tối ưu</li>
+		<li>Về cơ bản, đây chỉ là sự đánh đổi chúng tôi sẵn lòng thực hiện</li>
+	</ul>
+
+	<h2>Bố cục bộ nhớ có thể ảnh hưởng lớn đến hiệu năng. Hai thiết kế này tương đương trong Go, nhưng khác biệt đáng kể trong Java:</h2>
+<pre>
+type Point struct { X, Y int }
+type Rect struct { P0, P1 Point }
+
+// or ...
+
+type Rect struct { X0, Y0, X1, Y1 int }
+</pre>
+</div>
+
+<div class="slide">
+	<h1>Ngôn ngữ hệ thống</h1>
+
+	<h2>Trích dẫn từ http://loadcode.blogspot.com/2009/12/go-vs-java.html</h2>
+
+<h2>
+&quot;[Git] được biết đến là rất nhanh. Nó được viết bằng C. Phiên bản Java
+JGit đã được tạo ra. Nó chậm hơn đáng kể. Việc xử lý bộ nhớ và thiếu
+kiểu unsigned là một số lý do quan trọng.
+</h2>
+
+<h2>Shawn O. Pearce đã viết trên danh sách email git:</h2>
+<ul><li>&quot;JGit gặp khó khăn vì không có cách hiệu quả để biểu diễn SHA-1. C có thể chỉ nói &quot;unsigned
+char[20]&quot; và nhúng trực tiếp vào phần bộ nhớ cấp phát của container. Một
+byte[20] trong Java sẽ tốn thêm *16 byte bộ nhớ, và truy cập chậm hơn vì các byte nằm ở vùng
+bộ nhớ khác với đối tượng container. Chúng tôi cố xử lý bằng cách
+chuyển đổi từ byte[20] sang 5 int, nhưng điều đó tốn thêm lệnh máy&quot;
+</li></ul>
+
+<h2>
+Như C, Go cho phép kiểu unsigned và định nghĩa cấu trúc dữ liệu
+chứa các cấu trúc dữ liệu khác như các khối bộ nhớ liên tục.&quot;
+</h2>
+</div>
+
+<div class="slide">
+	<h1>Go</h1>
+
+	<h2>Mới</h2>
+	<h2>Thực nghiệm</h2>
+	<h2>Đồng thời</h2>
+	<h2>Có bộ gom rác</h2>
+	<h2>Ngôn ngữ hệ thống</h2>
+
+	<h2>Và còn nhiều hơn nữa:</h2>
+	<ul>
+		<li>Tôi chưa nói về hệ thống kiểu, interface, slice, closure, select, ...</li>
+		<li>Tài liệu, danh sách thư, mã nguồn đều có trực tuyến</li>
+	</ul>
+</div>
+
+<div class="slide titlepage">
+	<h1>Câu hỏi?</h1>
+	<br><br>
+	<center>
+	<img src="support/bumper640x360.png" width="640px" height="360px">
+	</center>
+</div>
+
+</body></html>

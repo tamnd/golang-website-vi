@@ -1,0 +1,712 @@
+Go dành cho lập trình viên C++
+
+Francesc Campoy
+Developer, Advocate và Gopher tại Google
+@francesc
+campoy@golang.org
+
+#go4cpp
+
+* Go dành cho lập trình viên C++
+
+Chương trình nghị sự:
+
+- hãy nói về Go
+
+- làm thế nào để tôi làm X trong Go?
+
+- tính đồng thời, vì nó rất tuyệt vời
+
+- Hỏi & Đáp: nhưng đừng ngại ngắt lời bất cứ lúc nào
+
+- Chúng ta có thể không đi qua hết tất cả các slide
+
+* Về tôi
+
+*2011* Gia nhập Google với tư cách Software Engineer
+
+- viết chủ yếu bằng C++ và Python
+- từng nghĩ rằng _code_thông_minh_ tốt hơn code nhàm chán
+
+*2012* Gia nhập nhóm Go với tư cách Developer Programs Engineer
+
+*2014*đến*nay* Developer Advocate cho Google Cloud Platform
+
+* Hãy nói về Go
+
+* Go là
+
+Go là
+
+- mã nguồn mở
+
+- kiểu tĩnh
+
+- hướng đối tượng (theo ý kiến của tôi)
+
+- biên dịch
+
+- an toàn bộ nhớ
+
+- an toàn kiểu
+
+* Tại sao Go?
+
+Go được tạo ra cho:
+
+- khả năng mở rộng
+
+- tính đồng thời
+
+- sự đơn giản
+
+* Ai dùng Go?
+
+Google:
+
+- YouTube
+- dl.google.com
+
+Những người khác:
+
+- Docker
+- SoundCloud
+- Canonical
+- CloudFlare
+- Mozilla
+- ...
+
+[[/wiki/GoUsers][go.dev/wiki/GoUsers]]
+
+* Ai dùng Go?
+
+.image go4cpp/trends.png _ 800
+
+.caption Google Trends cho [[http://www.google.com/trends/explore#q=golang][golang]]
+
+* Một số tính năng của Go
+
+* Các kiểu Go
+
+- kiểu nguyên thủy
+
+	int, uint, int8, uint8, ...
+	bool, string
+	float32, float64
+	complex64, complex128
+
+- struct
+
+	struct {
+		Name string
+		Age  int
+	}
+
+- slice và mảng
+
+	[]int, [3]string, []struct{ Name string }
+
+- map
+
+	map[string]int
+
+* Các loại kiểu (tiếp theo)
+
+- con trỏ
+
+	*int, *Person
+
+- hàm
+
+	func(int, int) int
+
+- channel
+
+	chan bool
+
+- interface
+
+	interface {
+		Start()
+		Stop()
+	}
+
+* Khai báo kiểu
+
+	type [tên] [đặc tả]
+
+`Person` là kiểu `struct`.
+
+	type Person struct {
+		name string
+		age  int
+	}
+
+`Celsius` là kiểu `float64`.
+
+	type Celsius float64
+
+* Khai báo hàm
+
+	func [tên] ([tham số]) [giá trị trả về]
+	func [tên] ([tham số]) ([các giá trị trả về])
+
+Hàm tính tổng:
+
+	func sum(a int, b int) int {
+		return a + b
+	}
+
+Hàm có nhiều giá trị trả về:
+
+	func divMod(a, b int) (int, int) {
+		return a / b, a % b
+	}
+
+Làm rõ hơn bằng cách đặt tên cho giá trị trả về:
+
+	func divMod(den, div int) (quo, rem int) {
+		return den / div, den % div
+	}
+
+* Khai báo phương thức
+
+	func ([receiver]) [tên] ([tham số]) ([các giá trị trả về])
+
+Một phương thức trên struct:
+
+	func (p Person) IsMinor() bool {
+		return p.age < 18
+	}
+
+Nhưng cũng có thể là phương thức trên `float64`:
+
+	func (c Celsius) Freezing() bool {
+		return c <= 0
+	}
+
+_Ràng_ _buộc:_ Phương thức chỉ có thể được định nghĩa *trên* các kiểu được khai báo trong cùng một gói.
+
+	// Điều này sẽ không biên dịch
+	func (s string) Length() int { return len(s) }
+
+* Khai báo biến
+
+Khai báo thông thường:
+
+    var text string = "hello"
+
+Bạn có thể bỏ qua kiểu:
+
+    var text = "hello"
+
+Và bên trong hàm:
+
+    text := "hello"
+
+Các kiểu khác
+
+    a := 0                             // int
+    b := true                          // boolean
+    f := 1.0                           // float64
+    p := Person{"Francesc", "Campoy"}  // Person
+
+* Không có chuyển đổi số ngầm định
+
+Cho các kiểu:
+
+    type Celsius float64
+
+    type Fahrenheit float64
+
+Và các biến:
+
+    var freezing Fahrenheit = 32
+    var boiling Celsius = 100
+
+Code này sẽ không biên dịch:
+
+    sauna := (freezing + boiling) / 2
+
+Không có chuyển đổi số ngầm định trong Go.
+
+* Con trỏ và cấp phát bộ nhớ
+
+* Con trỏ
+
+Go có con trỏ:
+
+    var p *int
+    p = new(int)
+
+Nhưng không có số học con trỏ:
+
+    var p *int = &a[0]
+    var q = p+2            // không hợp lệ
+
+Có `new` nhưng không có `delete`.
+
+Bộ nhớ được thu gom rác sau khi không còn truy cập được nữa.
+
+* Cấp phát bộ nhớ
+
+Trình biên dịch quyết định nơi cấp phát dựa trên phân tích thoát.
+
+Dùng `new` không có nghĩa là dùng heap:
+
+`stack.go`:
+
+    func get() int {
+        n := new(int)
+        return *n
+    }
+
+Và không phải tất cả giá trị trên heap đều được tạo bằng `new`:
+
+`heap.go`:
+
+    func get() *int {
+        n := 4
+        return &n
+    }
+
+* Chọn loại cấp phát bạn muốn
+
+Bạn *không* thể quyết định nơi một giá trị được cấp phát.
+
+Nhưng bạn có thể xem loại cấp phát nào đang được dùng:
+
+    $ go tool 6g -m stack.go
+
+    stack.go:3: can inline get
+    stack.go:4: get new(int) does not escape
+
+So sánh với:
+
+    $ go tool 6g -m heap.go
+
+    heap.go:3: can inline get
+    heap.go:4: moved to heap: n
+    heap.go:5: &n escapes to heap
+
+* RAII
+
+_Resource_Acquisition_Is_Initialization_ (Khởi tạo khi thu nhận tài nguyên)
+
+Cung cấp:
+
+- đóng gói việc thu nhận và giải phóng tài nguyên
+
+- an toàn với exception
+
+Một ví dụ:
+
+    void write_to_file (const std::string & message) {
+        // mutex bảo vệ truy cập file
+        static std::mutex mutex;
+
+        // lock mutex trước khi truy cập file
+        // ở cuối phạm vi unlock mutex
+        std::lock_guard<std::mutex> lock(mutex);
+
+        // phần truy cập độc quyền
+        ...
+    }
+
+* RAII trong Go: defer
+
+Câu lệnh `defer`:
+
+- lập lịch gọi hàm ở cuối hàm hiện tại
+
+- xếp chồng tất cả các lời gọi defer - vào sau ra trước
+
+    var m sync.Mutex
+
+    func writeToFile(msg string) error {
+        m.Lock()
+        defer m.Unlock()
+
+        // phần truy cập độc quyền
+    }
+
+* Thu gom rác
+
+Go là ngôn ngữ có bộ gom rác
+
+Nhưng dễ dàng giới hạn việc cấp phát heap
+
+- nhiều giá trị được cấp phát trên stack
+
+- pool đối tượng: [[/pkg/sync/#Pool][sync.Pool]]
+
+- vùng bộ nhớ liên tiếp
+
+.play go4cpp/sizes.go /type/,
+
+* Thêm về thu gom rác
+
+Được tin tưởng trong môi trường production.
+
+Bài nói của Brad Fitzpatrick về việc chuyển dl.google.com từ C++ sang Go:
+
+- [[/talks/2013/oscon-dl.slide#1][dl.google.com: Được cung cấp bởi Go]]
+
+Trạng thái hiện tại và kế hoạch:
+
+- [[/s/go14gc][go.dev/s/go14gc]]
+
+* Kế thừa so với Kết hợp
+
+* Kế thừa so với Kết hợp
+
+- Kế thừa phá vỡ tính đóng gói
+
+- Kết hợp gây ra boilerplate để proxy tất cả các phương thức
+
+Ví dụ:
+
+    type Engine struct{}
+
+    func (e Engine) Start() { ... }
+    func (e Engine) Stop()  { ... }
+
+Chúng ta muốn `Car` cũng có thể `Start` và `Stop`.
+
+Thêm chi tiết trong bài nói của tôi [[/talks/2014/go4java.slide#32][Go dành cho Javaneros]]
+
+* Nhúng struct
+
+Kết hợp + Proxy các bộ chọn
+
+.play go4cpp/embedding.go /type/,
+
+* Nhúng struct và bài toán kim cương
+
+Sẽ thế nào nếu hai trường nhúng có cùng kiểu?
+
+.play go4cpp/diamond.go /type/,
+
+* Nhúng struct
+
+Trông giống kế thừa nhưng _không_ _phải_ _là_ _kế_ _thừa_.
+
+Đây là sự kết hợp.
+
+Dùng để chia sẻ triển khai giữa các kiểu khác nhau.
+
+Nếu muốn chia sẻ hành vi thay vì triển khai thì sao?
+
+* Interface
+
+* Interface
+
+Một interface là một tập hợp các phương thức.
+
+Trong Java (C++ không có interface)
+
+    interface Switch {
+        void open();
+        void close();
+    }
+
+Trong Go:
+
+	type OpenCloser interface {
+		Open()
+		Close()
+	}
+
+* Tất cả là về sự thỏa mãn
+
+Interface Java được thỏa mãn *tường* *minh*.
+
+Abstract class trong C++ cần được mở rộng *tường* *minh*
+
+Interface Go được thỏa mãn *ngầm* *định*.
+
+.image //upload.wikimedia.org/wikipedia/commons/thumb/2/29/Rolling_Stones_09.jpg/512px-Rolling_Stones_09.jpg _ 512
+
+.caption Ảnh bởi Gorupdebesanez [[http://creativecommons.org/licenses/by-sa/3.0][CC-BY-SA-3.0]], qua [[http://commons.wikimedia.org/wiki/File%3ARolling_Stones_09.jpg][Wikimedia Commons]]
+
+* Go: thỏa mãn ngầm định
+
+_Nếu_ _một_ _kiểu_ _định_ _nghĩa_ _tất_ _cả_ _các_ _phương_ _thức_ _của_ _một_ _interface,_ _kiểu_ _đó_ _thỏa_ _mãn_ _interface_ _đó._
+
+Lợi ích:
+
+- ít dependency hơn
+- không có hệ phân cấp kiểu
+- kết hợp hữu cơ
+
+* Kiểu con cấu trúc
+
+Tốt hơn duck typing. Được kiểm tra lúc biên dịch.
+
+.image go4cpp/duck.jpg 500 500
+
+* FuncDraw: ví dụ về interface
+
+.image go4cpp/funcdraw.png 500 700
+
+* FuncDraw: gói parser
+
+Gói `parse` cung cấp bộ phân tích cú pháp chuỗi thành hàm.
+
+	func Parse(text string) (*Func, error) { ... }
+
+`Func` là kiểu struct, với phương thức `Eval`.
+
+	type Func struct { ... }
+
+	func (p *Func) Eval(x float64) float64 { ... }
+
+* FuncDraw: gói draw
+
+Gói draw tạo hình ảnh từ một hàm.
+
+	func Draw(f *parser.Func) image.Image {
+		for x := start; x < end; x += inc {
+			y := f.Eval(x)
+			...
+		}
+	}
+
+`draw` phụ thuộc vào `parser`, điều này làm cho việc kiểm thử khó khăn.
+
+* Tách biệt các dependency
+
+Hãy dùng interface thay vào đó
+
+	type Evaluable interface {
+		Eval(float64) float64
+	}
+
+	func Draw(f Evaluable) image.Image image.Image {
+		for x := start; x < end; x += inc {
+			y := f.Eval(x)
+			...
+		}
+	}
+
+* Interface nâng cao và kết hợp
+
+* Nhúng interface vào struct
+
+Nhúng một interface:
+
+- nhiều kiểu hơn có thể được dùng
+- giới hạn những gì được thêm vào kiểu nhúng
+
+Cho:
+
+    type Person struct {
+        First string
+        Last  string
+        Age   int
+    }
+
+`Employee` hiển thị `Age` của `Person`
+
+    type Employee struct {
+        Person
+    }
+
+    e := Employee{Person{"John", "Doe", 49}}
+
+* Chọn những gì cần proxy
+
+Nhưng chúng ta có thể ẩn nó bằng cách chọn interface:
+
+    type Employee struct {
+        Namer
+    }
+
+    type Namer interface {
+        Name() string
+    }
+
+Và chúng ta cần làm `Person` thỏa mãn `Namer`
+
+    func (e Person) Name() string { return e.First + e.Last }
+
+Và phần còn lại của code vẫn hoạt động:
+
+    e := Employee{Person{"John", "Doe", 49}}
+
+* Dễ dàng mock interface
+
+Cho hàm này:
+
+.code go4cpp/mock.go /func/,/^}/
+
+Bạn sẽ kiểm thử nó thế nào?
+
+* Dễ dàng mock interface
+
+`net.Conn` là interface được định nghĩa trong gói `net` của thư viện chuẩn.
+
+    type Conn interface {
+        Read(b []byte) (n int, err error)
+        Write(b []byte) (n int, err error)
+        Close() error
+        LocalAddr() Addr
+        RemoteAddr() Addr
+        SetDeadline(t time.Time) error
+        SetReadDeadline(t time.Time) error
+        SetWriteDeadline(t time.Time) error
+    }
+
+Chúng ta cần một `net.Conn` giả!
+
+* Một giải pháp
+
+Chúng ta có thể định nghĩa kiểu mới thỏa mãn `net.Conn`
+
+    type fakeConn struct {}
+
+    func (c fakeConn) Read(b []byte) (n int, err error) {...}
+    func (c fakeConn) Write(b []byte) (n int, err error) {...}
+    func (c fakeConn) Close() error {...}
+    ...
+
+Nhưng, có cách nào tốt hơn không?
+
+* Cách tốt hơn
+
+.code go4cpp/mock.go /type fakeConn/,/end_fake/
+
+Và bài kiểm thử của chúng ta có thể trông như:
+
+.play go4cpp/mock.go /func main/,
+
+* Tính đồng thời
+
+* Tính đồng thời
+
+Đây là một phần của ngôn ngữ, không phải thư viện.
+
+Dựa trên ba khái niệm:
+
+- goroutine: luồng nhẹ
+- channel: ống có kiểu được dùng để giao tiếp và đồng bộ hóa giữa các goroutine
+- select: cấu trúc điều khiển để phối hợp các hoạt động đồng thời
+
+.image go4cpp/funnelin.jpg 300 700
+
+* Ngủ và nói
+
+.code go4cpp/conc1.go /sleepAndTalk/,/^}/
+
+Chúng ta muốn một thông điệp mỗi giây.
+
+.play go4cpp/conc1.go /func main/,/^}/
+
+Sẽ thế nào nếu chúng ta bắt đầu tất cả `sleepAndTalk` đồng thời?
+
+Chỉ cần thêm `go`!
+
+* Ngủ và nói đồng thời
+
+.play go4cpp/conc2.go /func main/,/^}/
+
+Nhanh quá...
+
+Khi goroutine `main` kết thúc, chương trình kết thúc.
+
+* Ngủ và nói đồng thời với nhiều thời gian ngủ hơn
+
+.play go4cpp/conc3.go /func main/,/^}/
+
+Nhưng đồng bộ hóa bằng `Sleep` là ý tưởng tồi.
+
+* Giao tiếp qua channel
+
+`sleepAndTalk` gửi chuỗi vào channel thay vì in ra.
+
+.code go4cpp/chan.go /sleepAndTalk/,/^}/
+
+Chúng ta tạo channel và truyền nó cho `sleepAndTalk`, sau đó chờ các giá trị được gửi.
+
+.play go4cpp/chan.go /func main/,/^}/
+
+* Ngoài lề: một máy chủ web
+
+Máy chủ web sẵn sàng cho môi trường production.
+
+.play go4cpp/webserver.go
+
+* Hãy đếm trên web
+
+Tại sao điều này sai?
+
+.play go4cpp/badcounter.go /nextID/,
+
+* Hãy đếm đúng trên web
+
+Chúng ta nhận id tiếp theo từ channel.
+
+.code go4cpp/goodcounter.go /nextID/,/^}/
+
+Chúng ta cần gửi các id vào channel.
+
+.code go4cpp/goodcounter.go /counter/,/^}/
+
+* Hãy đếm đúng trên web
+
+Và chúng ta cần làm cả hai cùng lúc.
+
+.play go4cpp/goodcounter.go /func main/,/^}/
+
+* Hãy chiến đấu!
+
+`select` cho phép chúng ta chọn trong số nhiều thao tác channel.
+
+.play go4cpp/battle.go /battle/,/^}/
+
+Go - [[http://localhost:8080/fight?usr=go]]
+C++ - [[http://localhost:8080/fight?usr=cpp]]
+
+* Chuỗi gopher
+
+.image go4cpp/chain.jpg
+
+Ok, tôi chỉ đang khoe khoang thôi
+
+* Chuỗi gopher
+
+.play go4cpp/goroutines.go /func f/,
+
+* Tính đồng thời rất mạnh mẽ
+
+Và còn nhiều điều cần học!
+
+- [[/talks/2012/concurrency.slide#1][Các mẫu đồng thời Go]], của Rob Pike
+- [[/talks/2013/advconc.slide#1][Các mẫu đồng thời nâng cao]], của Sameer Ajmani
+- [[/talks/2012/waza.slide#1][Tính đồng thời không phải là song song]], của Rob Pike
+
+.image go4cpp/busy.jpg
+
+* Kết luận
+
+- Go đơn giản, nhất quán, dễ đọc và thú vị.
+
+- Tất cả các kiểu đều bình đẳng: phương thức trên bất kỳ kiểu nào.
+
+- Thỏa mãn interface ngầm định giúp code dễ tái sử dụng hơn.
+
+- Dùng kết hợp thay vì kế thừa.
+
+- Nhúng struct là công cụ mạnh mẽ.
+
+- Tính đồng thời thật tuyệt vời, và bạn nên thử nó.
+
+* Phải làm gì tiếp theo?
+
+Học Go trên trình duyệt với [[/tour/][go.dev/tour]]
+
+Tìm hiểu thêm về Go tại [[/][go.dev]]
+
+Tham gia cộng đồng tại [[https://groups.google.com/forum/#!forum/Golang-nuts][golang-nuts]]
+
+Liên kết đến các slide [[/talks/2015/go4cpp.slide]]

@@ -1,0 +1,214 @@
+10 điều bạn (có thể) chưa biết về Go
+
+Andrew Gerrand
+Gopher
+https://plus.google.com/106356964679457436995
+@enneff
+https://go.dev
+
+* 1. Struct ẩn danh
+
+- Biến toàn cục nhóm lại
+
+	var config struct {
+		APIKey      string
+		OAuthConfig oauth.Config
+	}
+
+	config.APIKey = "BADC0C0A"
+
+- Dữ liệu template
+
+	data := struct {
+		Title string
+		Users []*User
+	}{
+		title,
+		users,
+	}
+	err := tmpl.Execute(w, data)
+
+(Rẻ hơn và an toàn hơn so với dùng `map[string]interface{}`.)
+
+* 1b. Struct ẩn danh
+
+- Bảng kiểm thử
+
+	var indexRuneTests = []struct {
+		s    string
+		rune rune
+		out  int
+	}{
+		{"a A x", 'A', 2},
+		{"some_text=some_value", '=', 9},
+		{"☺a", 'a', 3},
+		{"a☻☺b", '☺', 4},
+	}
+
+- Nhúng khóa
+
+	var hits struct {
+		sync.Mutex
+		n int
+	}
+
+	hits.Lock()
+	hits.n++
+	hits.Unlock()
+
+
+* 2. Struct lồng nhau
+
+- Giải mã dữ liệu JSON lồng sâu
+
+  {"data": {"children": [
+    {"data": {
+      "title": "The Go homepage",
+      "url": "https://go.dev/"
+    }},
+    ...
+  ]}}
+
+	type Item struct {
+		Title string
+		URL   string
+	}
+
+	type Response struct {
+		Data struct {
+			Children []struct {
+				Data Item
+			}
+		}
+	}
+
+
+* 3. godoc trên dòng lệnh
+
+  % godoc sync Mutex
+  PACKAGE
+
+  package sync
+      import "sync"
+
+  TYPES
+
+  type Mutex struct {
+      // contains filtered or unexported fields
+  }
+      A Mutex is a mutual exclusion lock. Mutexes can be created as part of
+      other structures; the zero value for a Mutex is an unlocked mutex.
+
+  func (m *Mutex) Lock()
+      Lock locks m. If the lock is already in use, the calling goroutine
+      blocks until the mutex is available.
+
+  func (m *Mutex) Unlock()
+      Unlock unlocks m. It is a run-time error if m is not locked on entry to
+      Unlock.
+
+      A locked Mutex is not associated with a particular goroutine. It is
+      allowed for one goroutine to lock a Mutex and then arrange for another
+      goroutine to unlock it.
+
+
+* 4. godoc -src
+
+  % godoc -src sync Mutex
+  // A Mutex is a mutual exclusion lock.
+  // Mutexes can be created as part of other structures;
+  // the zero value for a Mutex is an unlocked mutex.
+  type Mutex struct {
+      state int32
+      sema  uint32
+  }
+
+Hiện cả trạng thái không xuất khẩu! Rất tốt để khám phá.
+
+
+* 5. go get hỗ trợ tên miền tùy chỉnh
+
+Vâng:
+
+	go get camlistore.org/pkg/netutil
+
+Xem `go help importpath` để biết chi tiết.
+
+
+* 6. Giả lập hệ thống tệp
+
+Có package làm việc với hệ thống tệp, nhưng không muốn bài kiểm thử thực sự dùng đĩa?
+
+  var fs fileSystem = osFS{}
+
+  type fileSystem interface {
+  	Open(name string) (file, error)
+  	Stat(name string) (os.FileInfo, error)
+  }
+
+  type file interface {
+  	io.Closer
+  	io.Reader
+  	io.ReaderAt
+  	io.Seeker
+  	Stat() (os.FileInfo, error)
+  }
+
+  // osFS implements fileSystem using the local disk.
+  type osFS struct{}
+
+  func (osFS) Open(name string) (file, error)        { return os.Open(name) }
+  func (osFS) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
+
+Triển khai `fileSystem` giả của bạn và đặt vào `fs` khi kiểm thử.
+
+
+* 7. Biểu thức phương thức
+
+  type T struct {}
+  func (T) Foo(s string) { println(s) }
+
+  var fn func(T, string) = T.Foo
+
+Ví dụ thực tế từ `os/exec`:
+
+  func (c *Cmd) stdin() (f *os.File, err error)
+  func (c *Cmd) stdout() (f *os.File, err error)
+  func (c *Cmd) stderr() (f *os.File, err error)
+
+	type F func(*Cmd) (*os.File, error)
+	for _, setupFd := range []F{(*Cmd).stdin, (*Cmd).stdout, (*Cmd).stderr} {
+		fd, err := setupFd(c)
+		if err != nil {
+			c.closeDescriptors(c.closeAfterStart)
+			c.closeDescriptors(c.closeAfterWait)
+			return err
+		}
+		c.childFiles = append(c.childFiles, fd)
+	}
+
+
+* 8. Gửi và nhận trên cùng một channel
+
+.play 10things/8.go
+
+
+* 9. Dùng close để phát sóng
+
+.play 10things/9.go /func.waiter/,/endmain/
+
+
+* 9b. Dùng close để phát sóng
+
+.play 10things/9b.go /func.worker/,/endmain/
+
+
+* 10. Channel nil trong select
+
+.play 10things/10.go /func.worker/,/endmain/
+
+
+* 11. Tên của chú gopher
+
+.image 10things/gopher.jpg
+
