@@ -1,0 +1,835 @@
+Go dành cho Gopher
+Bài phát biểu bế mạc GopherCon
+25 Apr 2014
+
+Andrew Gerrand
+Google, Inc.
+@enneff
+adg@golang.org
+
+
+* Video
+
+Bài nói chuyện này đã được ghi hình tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=dKGmK_Z1Zl0 Xem bài nói chuyện trên YouTube
+
+
+* Về tôi
+
+.image go4gophers/gopherswim.jpg
+
+Tôi gia nhập Google và nhóm Go vào tháng 2 năm 2010.
+
+Phải suy nghĩ lại một số quan niệm cũ của mình về lập trình.
+
+Hãy để tôi chia sẻ những gì tôi đã học được.
+
+
+* Interface
+
+
+* Interface: ấn tượng ban đầu
+
+Tôi từng nghĩ theo hướng class và kiểu dữ liệu.
+
+Go không đi theo hướng đó:
+
+- Không có kế thừa.
+- Không có đa hình kiểu con.
+- Không có generics.
+
+Thay vào đó nó nhấn mạnh _interface_.
+
+
+* Interface: cách tiếp cận của Go
+
+Interface trong Go rất nhỏ gọn.
+
+	type Stringer interface {
+		String() string
+	}
+
+Một `Stringer` có thể in đẹp chính nó.
+Bất cứ thứ gì triển khai `String` đều là một `Stringer`.
+
+
+* Ví dụ về interface
+
+Một giá trị `io.Reader` phát ra một luồng dữ liệu nhị phân.
+
+	type Reader interface {
+		Read([]byte) (int, error)
+	}
+
+Giống như một UNIX pipe.
+
+
+* Triển khai interface
+
+.code go4gophers/reader.go /ByteReader/,/^}/
+
+
+* Bao bọc interface
+
+.code go4gophers/reader.go /LogReader/,/STOP/
+
+Bao bọc một `ByteReader` với một `LogReader`:
+
+.play go4gophers/reader.go /START/,/STOP/
+
+Bằng cách bao bọc, chúng ta kết hợp _các giá trị_ interface.
+
+
+* Nối chuỗi interface
+
+Bao bọc các wrapper để tạo chuỗi:
+
+.code go4gophers/chain.go /START/,/STOP/
+
+Ngắn gọn hơn:
+
+.play go4gophers/chain.go /LogReader{io/
+
+Cài đặt hành vi phức tạp bằng cách kết hợp các thành phần nhỏ.
+
+
+* Lập trình với interface
+
+Interface tách biệt dữ liệu khỏi hành vi.
+
+Với interface, các hàm có thể thao tác trên _hành vi:_
+
+	// Copy copies from src to dst until either EOF is reached
+	// on src or an error occurs.  It returns the number of bytes
+	// copied and the first error encountered while copying, if any.
+	func Copy(dst Writer, src Reader) (written int64, err error) {
+
+.play go4gophers/chain.go /LogReader{io/
+
+`Copy` không thể biết về các cấu trúc dữ liệu bên dưới.
+
+
+* Một interface lớn hơn
+
+`sort.Interface` mô tả các thao tác cần thiết để sắp xếp một tập hợp:
+
+	type Interface interface {
+	    Len() int
+	    Less(i, j int) bool
+	    Swap(i, j int)
+	}
+
+`IntSlice` có thể sắp xếp một slice số nguyên:
+
+	type IntSlice []int
+
+	func (p IntSlice) Len() int           { return len(p) }
+	func (p IntSlice) Less(i, j int) bool { return p[i] < p[j] }
+	func (p IntSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+`sort.Sort` có thể sắp xếp `[]int` với `IntSlice`:
+
+.play go4gophers/sort.go /START/,/STOP/
+
+
+* Thêm ví dụ về interface
+
+Kiểu `Organ` mô tả một bộ phận cơ thể và có thể in chính nó:
+
+.play go4gophers/organs.go /type Organ/,$
+
+
+* Sắp xếp các cơ quan
+
+Kiểu `Organs` biết cách mô tả và biến đổi một slice các cơ quan:
+
+.code go4gophers/organs2.go /PART1/,/PART2/
+
+Các kiểu `ByName` và `ByWeight` nhúng `Organs` để sắp xếp theo các trường khác nhau:
+
+.code go4gophers/organs2.go /PART2/,/PART3/
+
+Với nhúng, chúng ta kết hợp _các kiểu_.
+
+
+* Sắp xếp các cơ quan (tiếp theo)
+
+Để sắp xếp `[]*Organ`, bọc nó với `ByName` hoặc `ByWeight` và truyền vào `sort.Sort`:
+
+.play go4gophers/organs2.go /START/,/STOP/
+
+
+* Một wrapper khác
+
+Hàm `Reverse` nhận một `sort.Interface` và
+trả về một `sort.Interface` với phương thức `Less` đảo ngược:
+
+.code go4gophers/organs3.go /func Reverse/,$
+
+Để sắp xếp các cơ quan theo thứ tự giảm dần, kết hợp kiểu sort với `Reverse`:
+
+.play go4gophers/organs3.go /START/,/STOP/
+
+
+* Interface: lý do chúng hoạt động
+
+Đây không chỉ là những thủ thuật hay.
+
+Đây là cách chúng ta cấu trúc chương trình trong Go.
+
+
+* Interface: Sigourney
+
+Sigourney là một bộ tổng hợp âm thanh dạng module mà tôi đã viết bằng Go.
+
+.image go4gophers/sigourney.png
+
+Âm thanh được tạo ra bởi một chuỗi các `Processor`:
+
+	type Processor interface {
+		Process(buffer []Sample)
+	}
+
+([[https://github.com/nf/sigourney][github.com/nf/sigourney]])
+
+
+* Interface: Roshi
+
+Roshi là một kho lưu trữ sự kiện chuỗi thời gian được viết bởi Peter Bourgon. Nó cung cấp API này:
+
+	Insert(key, timestamp, value)
+	Delete(key, timestamp, value)
+	Select(key, offset, limit) []TimestampValue
+
+Cùng một API được cài đặt bởi các phần `farm` và `cluster` của hệ thống.
+
+.image go4gophers/roshi.png
+
+Một thiết kế tinh tế thể hiện sự kết hợp.
+([[https://github.com/soundcloud/roshi][github.com/soundcloud/roshi]])
+
+
+* Interface: lý do chúng hoạt động (tiếp theo)
+
+Interface _là_ cơ chế lập trình tổng quát.
+
+Điều này mang lại cho tất cả mã Go một hình dáng quen thuộc.
+
+Ít là nhiều.
+
+
+* Interface: lý do chúng hoạt động (tiếp theo)
+
+Tất cả là về sự kết hợp.
+
+Interface theo thiết kế và quy ước khuyến khích chúng ta viết mã có thể kết hợp.
+
+
+* Interface: lý do chúng hoạt động (tiếp theo)
+
+Kiểu interface chỉ là các kiểu
+và giá trị interface chỉ là các giá trị.
+
+Chúng trực giao với phần còn lại của ngôn ngữ.
+
+
+* Interface: lý do chúng hoạt động (tiếp theo)
+
+Interface tách biệt dữ liệu khỏi hành vi. (Class gộp chúng lại.)
+
+	type HandlerFunc func(ResponseWriter, *Request)
+
+	func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
+		f(w, r)
+	}
+
+
+* Interface: điều tôi đã học
+
+Hãy nghĩ về sự kết hợp.
+
+Tốt hơn là có nhiều thứ nhỏ đơn giản hơn là một thứ lớn phức tạp.
+
+Ngoài ra: những gì tôi nghĩ là nhỏ thực ra khá lớn.
+
+Một số lặp lại nhỏ là ổn khi nó mang lại lợi ích "ở cấp độ lớn".
+
+
+* Đồng thời
+
+
+* Đồng thời: ấn tượng ban đầu
+
+Lần đầu tiếp xúc với đồng thời là trong C, Java và Python.
+Sau đó: các mô hình hướng sự kiện trong Python và JavaScript.
+
+Khi tôi thấy Go, tôi thấy:
+
+"Hiệu năng của mô hình hướng sự kiện mà không có callback hell."
+
+Nhưng tôi có câu hỏi: "Tại sao tôi không thể chờ hay dừng một goroutine?"
+
+
+* Đồng thời: cách tiếp cận của Go
+
+Goroutine cung cấp thực thi đồng thời.
+
+Channel biểu đạt sự giao tiếp và đồng bộ hóa của các tiến trình độc lập.
+
+Select cho phép tính toán trên các thao tác channel.
+
+.image go4gophers/gopherflag.png
+
+
+* Ví dụ về đồng thời
+
+Bài tập so sánh cây nhị phân từ Go Tour.
+
+"Cài đặt một hàm
+
+        func Same(t1, t2 *tree.Tree) bool
+
+so sánh nội dung của hai cây nhị phân."
+
+.image go4gophers/tree.png
+
+
+* Duyệt một cây
+
+	type Tree struct {
+		Left, Right *Tree
+		Value int
+	}
+
+Duyệt cây theo chiều sâu đơn giản:
+
+.play go4gophers/tree-walk.go /func Walk/,$
+
+
+* So sánh cây (1/2)
+
+Một walker đồng thời:
+
+.code go4gophers/tree-thread.go /func Walk/,/STOP/
+
+
+* So sánh cây (2/2)
+
+Duyệt hai cây đồng thời:
+
+.play go4gophers/tree-thread.go /func Same/,$
+
+
+* So sánh cây không dùng channel (1/3)
+
+.code go4gophers/tree-nothread.go /func Same/,/^}/
+
+Hàm `Walk` có gần cùng chữ ký:
+
+.code go4gophers/tree-nothread.go /func Walk/
+.code go4gophers/tree-nothread.go /func.+Next/
+
+(Chúng ta gọi `Next` thay vì nhận từ channel.)
+
+
+* So sánh cây không dùng channel (2/3)
+
+Nhưng cài đặt phức tạp hơn nhiều:
+
+.code go4gophers/tree-nothread.go /func Walk/,/CUT/
+
+
+* So sánh cây không dùng channel (3/3)
+
+.code go4gophers/tree-nothread.go /CUT/,/STOP/
+
+
+* Nhìn lại phiên bản dùng channel
+
+.code go4gophers/tree-thread.go /func Walk/,/STOP/
+
+Nhưng có một vấn đề: khi phát hiện bất bình đẳng,
+một goroutine có thể bị chặn khi gửi vào `ch`.
+
+
+* Dừng sớm
+
+Thêm channel `quit` vào walker để chúng ta có thể dừng nó giữa chừng.
+
+.code go4gophers/tree-select.go /func Walk/,/STOP/
+
+
+* Dừng sớm (tiếp theo)
+
+Tạo một channel `quit` và truyền nó cho mỗi walker.
+Khi đóng `quit` lúc `Same` thoát, mọi walker đang chạy đều bị dừng.
+
+.code go4gophers/tree-select.go /func Same/,/^}/
+
+
+* Tại sao không chỉ dừng goroutine?
+
+Goroutine ẩn khỏi mã Go. Chúng không thể bị dừng hay chờ.
+
+Bạn phải tự xây dựng cơ chế đó.
+
+Có lý do:
+
+Ngay khi mã Go biết mình đang chạy trong thread nào thì bạn sẽ có cục bộ thread.
+
+Cục bộ thread phá vỡ mô hình đồng thời.
+
+
+* Đồng thời: lý do nó hoạt động
+
+Mô hình giúp mã đồng thời dễ đọc và viết.
+(Làm cho đồng thời trở nên *dễ tiếp cận*.)
+
+Điều này khuyến khích phân tách các tính toán độc lập.
+
+
+* Đồng thời: lý do nó hoạt động (tiếp theo)
+
+Sự đơn giản của mô hình đồng thời làm cho nó linh hoạt.
+
+Channel chỉ là các giá trị; chúng phù hợp với hệ thống kiểu.
+
+Goroutine ẩn khỏi mã Go; điều này cho bạn đồng thời ở bất kỳ đâu.
+
+Ít là nhiều.
+
+
+* Đồng thời: điều tôi đã học
+
+Đồng thời không chỉ để làm nhiều việc nhanh hơn.
+
+Nó để viết mã tốt hơn.
+
+
+* Cú pháp
+
+
+* Cú pháp: ấn tượng ban đầu
+
+Ban đầu, cú pháp Go có vẻ cứng nhắc và dài dòng.
+
+Nó không có nhiều tiện ích mà tôi đã quen.
+
+Ví dụ:
+
+- Không có getter/setter cho trường.
+- Không có map/filter/reduce/zip.
+- Không có đối số tùy chọn.
+
+
+* Cú pháp: cách tiếp cận của Go
+
+Ưu tiên khả năng đọc trên tất cả.
+
+Cung cấp đủ tiện ích để làm việc hiệu quả, nhưng không quá nhiều.
+
+
+* Getter và setter (hay "property")
+
+Getter và setter biến các phép gán và đọc thành lời gọi hàm.
+Điều này dẫn đến hành vi ẩn đáng ngạc nhiên.
+
+Trong Go, chỉ cần viết (và gọi) các phương thức.
+
+Luồng điều khiển không thể bị che khuất.
+
+
+* Map/filter/reduce/zip
+
+Map/filter/reduce/zip hữu ích trong Python.
+
+	a = [1, 2, 3, 4]
+	b = map(lambda x: x+1, a)
+
+Trong Go, bạn chỉ cần viết vòng lặp.
+
+	a := []int{1, 2, 3, 4}
+	b := make([]int, len(a))
+	for i, x := range a {
+		b[i] = x+1
+	}
+
+Cách này dài dòng hơn một chút,
+nhưng làm rõ đặc điểm hiệu năng.
+
+Mã dễ viết và bạn có nhiều quyền kiểm soát hơn.
+
+
+* Đối số tùy chọn
+
+Hàm Go không thể có đối số tùy chọn.
+
+Thay vào đó, dùng các biến thể của hàm:
+
+	func NewWriter(w io.Writer) *Writer
+	func NewWriterLevel(w io.Writer, level int) (*Writer, error)
+
+Hoặc một struct tùy chọn:
+
+	func New(o *Options) (*Jar, error)
+
+	type Options struct {
+		PublicSuffixList PublicSuffixList
+	}
+
+Hoặc một danh sách tùy chọn biến đổi.
+
+Tạo nhiều thứ nhỏ đơn giản, không phải một thứ lớn phức tạp.
+
+
+* Cú pháp: lý do nó hoạt động
+
+Ngôn ngữ chống lại mã rối rắm.
+
+Với luồng điều khiển rõ ràng, dễ điều hướng mã lạ.
+
+Thay vào đó chúng ta tạo nhiều thứ nhỏ dễ ghi chép và hiểu.
+
+Vì vậy mã Go dễ đọc.
+
+(Và với gofmt, dễ viết mã dễ đọc.)
+
+
+* Cú pháp: điều tôi đã học
+
+Tôi thường quá khôn ngoan so với khả năng của mình.
+
+Tôi trân trọng tính nhất quán, rõ ràng và _minh bạch_ của mã Go.
+
+Đôi khi tôi nhớ các tiện ích, nhưng hiếm khi.
+
+
+* Xử lý lỗi
+
+
+* Xử lý lỗi: ấn tượng ban đầu
+
+Trước đây tôi dùng exception để xử lý lỗi.
+
+Mô hình xử lý lỗi của Go có vẻ dài dòng hơn so sánh.
+
+Tôi ngay lập tức chán khi gõ:
+
+	if err != nil {
+		return err
+	}
+
+
+* Xử lý lỗi: cách tiếp cận của Go
+
+Go chuẩn hóa lỗi với interface `error` tích hợp sẵn:
+
+	type error interface {
+		Error() string
+	}
+
+Giá trị lỗi được dùng như bất kỳ giá trị nào khác.
+
+	func doSomething() error
+
+	err := doSomething()
+	if err != nil {
+		log.Println("An error occurred:", err)
+	}
+
+Mã xử lý lỗi chỉ là mã thông thường.
+
+(Bắt đầu như một quy ước (`os.Error`). Chúng tôi đã tích hợp sẵn vào Go 1.)
+
+
+* Xử lý lỗi: lý do nó hoạt động
+
+Xử lý lỗi quan trọng.
+
+Go làm cho xử lý lỗi quan trọng như bất kỳ mã nào khác.
+
+
+* Xử lý lỗi: lý do nó hoạt động (tiếp theo)
+
+Lỗi chỉ là các giá trị; chúng phù hợp dễ dàng với phần còn lại của ngôn ngữ
+(interface, channel, v.v.).
+
+Kết quả: mã Go xử lý lỗi đúng đắn và thanh lịch.
+
+
+* Xử lý lỗi: lý do nó hoạt động (tiếp theo)
+
+Chúng ta dùng cùng ngôn ngữ cho lỗi như mọi thứ khác.
+
+Thiếu luồng điều khiển ẩn (throw/try/catch/finally) cải thiện khả năng đọc.
+
+Ít là nhiều.
+
+
+
+* Xử lý lỗi: điều tôi đã học
+
+Để viết mã tốt, chúng ta phải suy nghĩ về lỗi.
+
+Exception làm dễ tránh suy nghĩ về lỗi.
+(Lỗi không nên là "ngoại lệ"!)
+
+Go khuyến khích chúng ta xem xét mọi điều kiện lỗi.
+
+Chương trình Go của tôi mạnh mẽ hơn nhiều so với chương trình trong các ngôn ngữ khác.
+
+Tôi không nhớ exception chút nào.
+
+
+* Gói
+
+
+* Gói: ấn tượng ban đầu
+
+Tôi thấy quy tắc hiển thị bằng chữ hoa kỳ lạ;
+"Hãy để tôi dùng sơ đồ đặt tên của riêng mình!"
+
+Tôi không thích "một gói một thư mục";
+"Hãy để tôi dùng cấu trúc của riêng mình!"
+
+Tôi thất vọng vì thiếu monkey patching.
+
+
+* Gói: cách tiếp cận của Go
+
+Gói Go là không gian tên cho các kiểu, hàm, biến và hằng số.
+
+
+* Khả năng hiển thị
+
+Khả năng hiển thị ở cấp độ gói.
+Các tên được "export" khi bắt đầu bằng chữ hoa.
+
+	package zip
+
+	func NewReader(r io.ReaderAt, size int64) (*Reader, error) // exported
+
+	type Reader struct {    // exported
+		File    []*File     // exported
+		Comment string      // exported
+		r       io.ReaderAt // unexported
+	}
+
+	func (f *File) Open() (rc io.ReadCloser, err error)   // exported
+
+	func (f *File) findBodyOffset() (int64, error)        // unexported
+
+	func readDirectoryHeader(f *File, r io.Reader) error  // unexported
+
+Tốt cho khả năng đọc: dễ thấy một tên có phải là phần của giao diện công khai không.
+Tốt cho thiết kế: kết nối các quyết định đặt tên với các quyết định giao diện.
+
+
+* Cấu trúc gói
+
+Các gói có thể trải rộng trên nhiều tệp.
+
+Cho phép chia sẻ cài đặt riêng tư và tổ chức mã không chính thức.
+
+Các tệp gói phải nằm trong một thư mục duy nhất cho gói.
+
+Đường dẫn đến thư mục đó xác định đường dẫn import của gói.
+
+Hệ thống build xác định các dependency chỉ từ mã nguồn.
+
+
+* "Monkey patching"
+
+Go cấm sửa đổi khai báo gói từ bên ngoài gói.
+
+Nhưng chúng ta có thể đạt được hành vi tương tự bằng biến toàn cục:
+
+	package flag
+
+	var Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		PrintDefaults()
+	}
+
+Hoặc hàm đăng ký:
+
+	package http
+
+	func Handle(pattern string, handler Handler)
+
+Điều này mang lại sự linh hoạt của monkey patching nhưng theo điều khoản của tác giả gói.
+
+(Điều này phụ thuộc vào ngữ nghĩa khởi tạo của Go.)
+
+
+* Gói: lý do chúng hoạt động
+
+Cách tổ chức gói linh hoạt giúp chúng ta viết và tái cấu trúc mã nhanh chóng.
+
+Nhưng các gói khuyến khích lập trình viên xem xét giao diện công khai.
+
+Điều này dẫn đến tên tốt và giao diện đơn giản hơn.
+
+Với mã nguồn là nguồn thông tin chính xác nhất duy nhất,
+không có Makefile nào bị lỗi thời.
+
+(Thiết kế này cho phép các công cụ tuyệt vời như [[https://pkg.go.dev][pkg.go.dev]] và goimports.)
+
+Ngữ nghĩa có thể đoán trước làm cho các gói dễ đọc, hiểu và sử dụng.
+
+
+* Gói: điều tôi đã học
+
+Hệ thống gói của Go dạy tôi ưu tiên người tiêu dùng mã của mình.
+(Ngay cả khi người tiêu dùng đó là tôi.)
+
+Nó cũng ngăn tôi làm những thứ xấu xí.
+
+Gói cứng nhắc ở nơi quan trọng, và linh hoạt ở nơi không quan trọng.
+Nó cảm thấy đúng.
+
+Có lẽ là phần yêu thích nhất của tôi trong ngôn ngữ.
+
+
+* Tài liệu
+
+
+* Tài liệu: ấn tượng ban đầu
+
+Godoc đọc tài liệu từ mã nguồn Go, giống như `pydoc` hay `javadoc`.
+
+Nhưng không giống hai cái kia, nó không hỗ trợ định dạng phức tạp hay siêu dữ liệu khác.
+Tại sao?
+
+
+* Tài liệu: cách tiếp cận của Go
+
+Chú thích Godoc đứng trước khai báo của một định danh được export:
+
+	// Join concatenates the elements of a to create a single string.
+	// The separator string sep is placed between elements in the resulting string.
+	func Join(a []string, sep string) string {
+
+Nó trích xuất các chú thích và trình bày chúng:
+
+	$ godoc strings Join
+	func Join(a []string, sep string) string
+	    Join concatenates the elements of a to create a single string. The
+	    separator string sep is placed between elements in the resulting string.
+
+Cũng được tích hợp với framework testing để cung cấp các hàm ví dụ có thể kiểm thử.
+
+	func ExampleJoin() {
+		s := []string{"foo", "bar", "baz"}
+		fmt.Println(strings.Join(s, ", "))
+		// Output: foo, bar, baz
+	}
+
+
+* Tài liệu: cách tiếp cận của Go (tiếp theo)
+
+.image go4gophers/godoc.png
+
+
+* Tài liệu: lý do nó hoạt động
+
+Godoc muốn bạn viết chú thích tốt, vì vậy mã nguồn trông tuyệt vời:
+
+	// ValidMove reports whether the specified move is valid.
+	func ValidMove(from, to Position) bool
+
+Javadoc chỉ muốn tạo ra tài liệu đẹp, vì vậy mã nguồn trông khủng khiếp:
+
+	/**
+	 * Validates a chess move.
+	 *
+	 * @param fromPos  position from which a piece is being moved
+	 * @param toPos    position to which a piece is being moved
+	 * @return         true if the move is valid, otherwise false
+	 */
+	boolean isValidMove(Position fromPos, Position toPos)
+
+(Ngoài ra, tìm kiếm `"ValidMove"` sẽ trả về dòng đầu tiên của tài liệu.)
+
+
+* Tài liệu: điều tôi đã học
+
+Godoc dạy tôi viết tài liệu _ngay khi tôi code._
+
+Viết tài liệu _cải thiện mã_ mà tôi viết.
+
+
+* Thêm nữa
+
+Có nhiều ví dụ nữa.
+
+Chủ đề bao quát:
+
+- Ban đầu, có điều gì đó có vẻ kỳ lạ hoặc thiếu sót.
+- Tôi nhận ra đó là một quyết định thiết kế.
+
+Những quyết định đó làm ngôn ngữ và mã Go tốt hơn.
+
+Đôi khi bạn phải sống với ngôn ngữ một thời gian mới thấy được.
+
+
+* Bài học
+
+
+* Mã là giao tiếp
+
+Hãy rõ ràng:
+
+- Chọn tên tốt.
+- Thiết kế giao diện đơn giản.
+- Viết tài liệu chính xác.
+- Đừng quá khôn ngoan.
+
+
+* Ít là nhiều theo cấp số nhân
+
+Tính năng mới có thể làm yếu các tính năng hiện có.
+
+Các tính năng nhân lên sự phức tạp.
+
+Sự phức tạp đánh bại tính trực giao.
+
+Tính trực giao rất quan trọng: nó cho phép sự kết hợp.
+
+
+* Kết hợp là chìa khóa
+
+Đừng giải quyết vấn đề bằng cách xây dựng _một_ thứ.
+
+Thay vào đó, kết hợp các công cụ đơn giản và ghép chúng lại.
+
+
+* Thiết kế giao diện tốt
+
+.image go4gophers/gophertraining.png
+
+.html go4gophers/gophertraining.html
+
+
+* Đơn giản là khó
+
+Hãy đầu tư thời gian để tìm ra giải pháp đơn giản.
+
+
+* Tác động của Go với tôi
+
+Những bài học này đều là những thứ tôi đã "biết".
+
+Go giúp tôi thực sự hiểu sâu chúng.
+
+.image go4gophers/gopherhat.jpg
+
+Go làm tôi trở thành lập trình viên tốt hơn.
+
+
+* Thông điệp gửi đến các gopher khắp nơi
+
+Hãy cùng nhau xây dựng những thứ nhỏ, đơn giản và đẹp đẽ.
+
+.image go4gophers/gopherswrench.jpg
