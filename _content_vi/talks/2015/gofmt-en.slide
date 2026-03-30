@@ -1,0 +1,461 @@
+Sự tiến hóa văn hóa của gofmt
+gofmt 的文化演变
+
+Robert Griesemer
+Google, Inc.
+gri@golang.org
+
+
+* gofmt
+
+- Công cụ định dạng mã nguồn Go
+
+- Định nghĩa định dạng Go _de_facto_
+
+- Tất cả code Go được gửi phải được định dạng bằng `gofmt` trong các repo `golang.org`.
+
+- Chức năng có sẵn ngoài gofmt qua thư viện `go/format`.
+
+- Không có nút điều chỉnh!
+
+
+* Động lực ban đầu
+
+- Xem xét code là thực hành tốt nhất trong kỹ thuật phần mềm.
+
+- Xem xét code dựa trên hướng dẫn phong cách, quy định định dạng.
+# Google C++ style guide: ~65 pages (~15p on formatting)
+# Go spec: ~50 pages
+
+- *Quá*nhiều*thời*gian*lãng*phí*vào*việc*xem*xét*định*dạng*thay*vì*code.*
+# Example: Formatting review time 10 min/day, 600 engineers => 100 manhours/day!
+
+- Nhưng đây là công việc hoàn hảo cho một cái máy.
+
+- Quyết định ngay từ ngày đầu là viết một bộ định dạng đẹp cho Go.
+# informed by experience with Java and C++ code reviews at Google
+
+
+* Lịch sử
+
+- Bộ định dạng đẹp và công cụ làm đẹp code đã tồn tại từ những ngày đầu của máy tính.
+
+- Cần thiết để tạo code Lisp dễ đọc:
+	GRINDEF  (Bill Gosper, 1967)           đầu tiên đo độ dài dòng
+
+- Nhiều cái khác:
+	SOAP     (R. Scowen et al, 1969)       Đơn giản hóa chương trình Algol khó hiểu
+	NEATER2  (Ken Conrow, R. Smith, 1970)  Bộ định dạng PL/1, dùng như công cụ phát hiện lỗi sớm
+	cb       (Unix Version 7, 1979)        Công cụ làm đẹp chương trình C
+	indent   (4.2 BSD, 1983)              Thụt đầu dòng và định dạng code nguồn C
+	v.v.
+
+- Gần đây hơn:
+	ClangFormat                            Bộ định dạng C/C++/Objective-C
+	Uncrustify                             Công cụ làm đẹp cho C, C++, C#, ObjectiveC, D, Java, Pawn và VALA
+	v.v.
+
+
+* Kiểm tra thực tế
+
+- Năm 2007, dường như không ai thích bộ định dạng mã nguồn.
+
+- Ngoại lệ: Định dạng do IDE áp đặt.
+
+- Nhưng: Nhiều lập trình viên không dùng IDE...
+
+- Vấn đề: Nếu định dạng tự động có vẻ quá phá hủy, nó sẽ không được dùng.
+
+- Nhận thức bị bỏ lỡ: Phong cách định dạng thống nhất "đủ tốt" tốt hơn là có nhiều định dạng khác nhau.
+
+- Giá trị của hướng dẫn phong cách: Tính nhất quán, không phải sự hoàn hảo.
+
+
+* Vấn đề với bộ định dạng đẹp
+
+- Càng nhiều người suy nghĩ về phong cách định dạng của họ, họ càng gắn bó với nó hơn.
+# religion
+
+- Kết luận sai: Bộ định dạng tự động phải cho phép nhiều tùy chọn định dạng!
+
+- Nhưng: Bộ định dạng có quá nhiều tùy chọn thì thất bại mục đích.
+# e.g., indent
+
+- Ngoài ra: Rất khó để làm tốt.
+# combinatorial explosion of styles to test
+
+- Tôn trọng ý định của người dùng là điều quan trọng nhất.
+
+- Xử lý comment rất khó.
+
+- Ngôn ngữ có thể thêm độ phức tạp thêm (ví dụ: macro C)
+
+
+* Định dạng Go
+
+* Giữ nó đơn giản nhất có thể
+
+- Ngôn ngữ nhỏ làm cho nhiệm vụ đơn giản hơn nhiều.
+
+- Đừng lo lắng về kiểm soát độ dài dòng.
+
+- Thay vào đó, tôn trọng người dùng: Xem xét dấu ngắt dòng trong mã nguồn gốc.
+
+- Đừng hỗ trợ bất kỳ tùy chọn nào.
+
+- Làm cho nó dễ sử dụng.
+
+*Một*phong*cách*định*dạng*để*thống*trị*tất*cả!*
+
+
+* Cấu trúc cơ bản của gofmt
+
+- Phân tích cú pháp mã nguồn
+
+- Định dạng cơ bản
+
+- Cải tiến: Xử lý comment
+
+- Làm đẹp: Căn chỉnh code và comment
+
+- Nhưng: Không có thuật toán bố cục tổng quát lạ mắt.
+
+- Thay vào đó: Tinh chỉnh đặc thù theo từng nút.
+
+
+* Phân tích cú pháp mã nguồn
+
+- Dùng `go/scanner`, `go/parser` và các công cụ liên quan.
+
+- Kết quả là cây cú pháp trừu tượng (`go/ast`) cho mỗi tệp `.go`.
+# misnomer: AST is actually a concrete syntax tree
+
+- Mỗi cấu trúc cú pháp có nút AST tương ứng.
+
+	// Cú pháp của câu lệnh if.
+	IfStmt = "if" [ SimpleStmt ";" ] Expression Block [ "else" ( IfStmt | Block ) ] .
+
+	// Nút IfStmt đại diện cho câu lệnh if.
+	IfStmt struct {
+		If   token.Pos // vị trí của từ khóa "if"
+		Init Stmt      // initialization statement; or nil
+		Cond Expr      // condition
+		Body *BlockStmt
+		Else Stmt // else branch; or nil
+	}
+
+- Nút AST có thông tin vị trí (được chọn).
+
+
+* Định dạng cơ bản
+
+- Duyệt qua AST và in các nút.
+
+	case *ast.IfStmt:
+		p.print(token.IF)
+		p.controlClause(false, s.Init, s.Cond, nil)
+		p.block(s.Body, 1)
+		if s.Else != nil {
+			p.print(blank, token.ELSE, blank)
+			switch s.Else.(type) {
+			case *ast.BlockStmt, *ast.IfStmt:
+				p.stmt(s.Else, nextIsRBrace)
+			default:
+				p.print(token.LBRACE, indent, formfeed)
+				p.stmt(s.Else, true)
+				p.print(unindent, formfeed, token.RBRACE)
+			}
+		}
+
+- Bộ in (`p.print`) nhận một chuỗi token, bao gồm thông tin vị trí và khoảng trắng.
+
+
+* Tinh chỉnh
+
+- Khoảng cách giữa các toán hạng phụ thuộc vào độ ưu tiên.
+# implemented by rsc in gofmt
+
+- Cải thiện khả năng đọc các biểu thức.
+
+	x = a + b
+	x = a + b*c
+	if a+b <= d {
+	if a+b*c <= d {
+
+- Dùng thông tin vị trí để hướng dẫn quyết định ngắt dòng.
+
+- Các heuristic khác.
+
+
+* Xử lý comment
+
+- Comment có thể xuất hiện giữa bất kỳ hai token nào của chương trình.
+
+- Nói chung, không rõ ràng comment thuộc nút AST nào.
+# In retrospect, a heuristic might have been better than the list of comments
+# we have now. See Lessons learned.
+
+- Comment thường xuất hiện theo nhóm:
+
+	// A CommentGroup represents a sequence of comments
+	// with no other tokens and no empty lines between.
+	//
+	type CommentGroup struct {
+		List []*Comment // len(List) > 0
+	}
+
+- Các comment được nhóm lại được xử lý như một comment lớn hơn.
+
+
+* Biểu diễn comment trong AST
+
+- Danh sách tuần tự các nhóm comment được gắn vào nút ast.File.
+# In retrospect this was not a good decision. It's general but puts burden on AST clients.
+
+- Ngoài ra, các comment được xác định là _doc_string_ được gắn vào các nút khai báo.
+
+.image ./gofmt/comments.jpg 425 600
+
+
+* Định dạng với comment
+
+- Ý tưởng cơ bản: Kết hợp "luồng token" với "luồng comment" dựa trên thông tin vị trí.
+
+.image ./gofmt/merge.jpg 425 700
+
+
+* Chi tiết là điều quan trọng
+# It's an entire hell of devils, really.
+
+- Ước tính vị trí hiện tại trong "không gian mã nguồn".
+
+- So sánh vị trí hiện tại với vị trí comment để quyết định tiếp theo là gì.
+
+- Luồng token cũng chứa token "khoảng trắng" - comment phải được xen kẽ đúng cách!
+
+- Duy trì bộ đệm khoảng trắng chưa in, xả trước token tiếp theo, xen kẽ comment.
+
+- Nhiều heuristic để xử lý khoảng trắng đúng cách.
+
+- Nhiều lần thử và sai.
+
+
+* Định dạng từng comment riêng lẻ
+
+- Phân biệt giữa comment dòng và comment tổng quát.
+
+- Cố gắng thụt đầu dòng đúng cách cho comment tổng quát nhiều dòng:
+
+	func f() {              func() {
+	 /*                             /*
+	  * foo                          * foo
+	  * bar         ==>              * bar
+	  * bal                          * bal
+	 */                              */
+	        if ...                   if  ...
+	}                       }
+
+- Không phải lúc nào cũng hoạt động tốt.
+
+- Muốn cả hai: comment được thụt đầu dòng, và nội dung comment không bị thay đổi. Không có giải pháp tốt.
+
+
+* Căn chỉnh
+
+- Căn chỉnh được chọn cẩn thận có thể giúp code dễ đọc hơn:
+
+        var (                                 var (
+                x, y int = 2, 3 // foo                x, y int     = 2, 3 // foo
+                z float32 // bar         ==>          z    float32        // bar
+                s string // bal                       s    string         // bal
+        )                                     )
+
+- Rất khó để duy trì thủ công (tab thông thường không đủ).
+
+- Công việc hoàn hảo cho bộ định dạng.
+
+
+* Tabstop đàn hồi
+
+Tab thông thường (`\t`) đưa vị trí viết đến các tab stop cố định.
+
+Ý tưởng cơ bản: Làm cho tab stop _đàn_ _hồi_.
+
+- Tab được dùng để chỉ ra _kết_ _thúc_ của _ô_ văn bản.
+
+- Một _khối_ _cột_ là một chuỗi các ô liền kề theo chiều dọc không bị gián đoạn.
+
+- Một khối cột rộng bằng đoạn văn bản rộng nhất trong các ô.
+
+Được đề xuất bởi Nick Gravgaard, 2006
+
+.link http://nickgravgaard.com/elastic-tabstops/
+
+Được triển khai bởi gói `text/tabwriter`.
+
+
+* Minh họa tabstop đàn hồi
+
+.image ./gofmt/tabstops.jpg 500 700
+
+
+* Kết hợp tất cả lại (1)
+
+- Bộ phân tích tạo ra AST.
+
+- Bộ in in AST đệ quy, dùng tab (`\t`) để chỉ ra các vị trí tab đàn hồi.
+
+- Luồng token, vị trí và khoảng trắng kết quả được kết hợp với "luồng" comment.
+
+- Token được mở rộng thành chuỗi; tất cả văn bản chảy qua tabwriter.
+
+- Tabwriter thay thế tab bằng số lượng khoảng trắng phù hợp.
+
+Hoạt động tốt với phông chữ có chiều rộng cố định.
+
+Phông chữ tỷ lệ có thể được xử lý bởi trình soạn thảo hỗ trợ tab stop đàn hồi.
+# go/printer can produce output containing elastic tab stops
+
+
+* Kết hợp tất cả lại (2)
+
+.image ./gofmt/bigpic.jpg 550 800
+
+
+* Bức tranh lớn
+
+.image ./gofmt/biggerpic.jpg 400 800
+
+
+* Ứng dụng gofmt
+
+* gofmt như là công cụ biến đổi mã nguồn
+
+- Bộ viết lại Go (Russ Cox), `gofmt`-r`
+
+	gofmt -w -r 'a[i:len(x)] -> a[i:]' *.go
+
+- Bộ đơn giản hóa Go, `gofmt`-s`
+
+- Công cụ cập nhật API (Russ Cox), `go`fix`
+
+- Thay đổi ngôn ngữ (loại bỏ dấu chấm phẩy, các thay đổi khác)
+
+- goimport (Brad Fitzpatrick)
+
+
+* Phản ứng
+
+- Dự án Go yêu cầu tất cả code được gửi phải được định dạng bằng gofmt.
+
+- Lúc đầu, phàn nàn: `gofmt` không theo phong cách _của_ _tôi_!
+
+- Cuối cùng, chấp nhận: Nhóm Go thực sự nghiêm túc!
+
+- Nhận thức sau cùng: Phong cách của gofmt không phải là yêu thích của _ai_, nhưng
+`gofmt` là yêu thích của tất cả mọi người.
+
+- Bây giờ, khen ngợi: `gofmt` là một trong nhiều lý do tại sao mọi người thích Go.
+
+Định dạng đã không còn là vấn đề.
+
+
+* Những người khác đang bắt đầu chú ý
+
+- Bộ định dạng cho các tệp BUILD của Google (Russ Cox).
+
+- Bộ định dạng Java
+
+- Bộ định dạng Clang
+
+- Dartfmt
+.link https://www.dartlang.org/tools/dartfmt/
+
+- v.v.
+
+Định dạng mã nguồn tự động đang trở thành yêu cầu
+cho bất kỳ loại ngôn ngữ nào.
+
+
+* Kết luận
+
+* Sự tiến hóa trong văn hóa lập trình
+
+- `gofmt` là điểm bán hàng quan trọng cho Go
+
+- Nhận thức đang lan rộng rằng định dạng "đủ tốt" thống nhất rất có lợi.
+# no need for detailed formatting style guides
+# no time wasted on formatting
+# improved readability
+# smaller diffs when changing code
+
+- Thao tác mã nguồn ở cấp độ AST cho phép một loại công cụ mới.
+# simple to complex automatic source code transformations
+# various auto-completion mechanisms (e.g. goimport)
+# enables syntax evolution
+
+- Những người khác đang chú ý: Văn hóa lập trình đang dần tiến hóa.
+
+
+* Bài học kinh nghiệm: Ứng dụng
+
+- Định dạng mã nguồn cơ bản là mục tiêu ban đầu tốt.
+
+- Sức mạnh thực sự nằm ở các công cụ biến đổi mã nguồn.
+
+- Tránh các tùy chọn định dạng.
+
+- Giữ nó đơn giản.
+
+Mong muốn:
+
+- Bộ phân tích Go: mã nguồn => cây cú pháp
+
+- Làm cho việc thao tác cây cú pháp theo mọi cách có thể trở nên dễ dàng.
+
+- Bộ in Go: cây cú pháp => mã nguồn
+
+
+* Bài học kinh nghiệm: Triển khai
+
+- Nhiều lần thử và sai trong phiên bản ban đầu.
+
+- Sai lầm lớn nhất: comment không được gắn vào các nút AST.
+
+=> Thiết kế hiện tại làm cho việc thao tác AST cực kỳ khó
+và duy trì comment ở đúng chỗ.
+
+- Cách giải quyết rắc rối: ast.CommentMap
+
+Mong muốn:
+
+- Dễ dàng thao tác cây cú pháp cùng với comment.
+
+
+* Hướng tới tương lai
+
+- Thiết kế cây cú pháp mới đang được phát triển (vẫn còn thử nghiệm).
+
+- Cây cú pháp đơn giản hơn và dễ thao tác hơn (ví dụ: nút khai báo)
+
+- Bộ phân tích và bộ in nhanh hơn và dễ sử dụng hơn.
+
+- Làm cho nó mạnh mẽ và nhanh. Không làm gì khác.
+# no semantic analyses in parser
+# no options in printer
+
+
+# ----------------------------------------------------------------------------------
+#
+#	Implementation size
+#
+#	go/token           849 lines    lexical tokes, source positions
+#	go/scanner         884 lines    tokenization
+#	go/parser         2689 lines    parsing
+#	go/ast            2966 lines    abstract syntax tree, tree traversal
+#	go/printer        2948 lines    actual AST printer
+#	go/format          115 lines    helper library to make printer easy to use
+#	internal/format    161 lines
+#	cmd/gofmt          801 lines    gofmt tool
+#	----------------------------
+#	                 11413 lines

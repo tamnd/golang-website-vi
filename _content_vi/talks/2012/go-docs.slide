@@ -1,0 +1,240 @@
+Tài liệu Go
+Golang-Syd, 17 tháng 10 năm 2012
+
+Rob Pike
+Google, Inc.
+https://go.dev
+
+* Tài liệu
+
+* Văn bản
+
+Có nhiều cách hiển thị tài liệu dưới dạng văn bản
+
+* Trang man: Unix phiên bản 1, 1971
+
+.image go-docs/seek.png
+
+* Trang man: Apple OS X 10.8, 2012
+
+.image go-docs/lseek.png
+
+* Javadoc 1996+
+
+.image go-docs/javadoc.png
+
+* Javadoc 1996+
+
+.image go-docs/javadoc1.png
+
+* Godoc 2009+
+
+.image go-docs/godoc.png
+
+* Godoc 2009+
+
+.image go-docs/godoc1.png
+
+* Godoc
+
+.link /pkg/utf16 go.dev/pkg/utf16
+
+* blog.golang.org
+
+.image go-docs/blog.png
+
+* Hướng dẫn mã
+
+.image go-docs/codewalk.png
+
+* Đóng góp từ cộng đồng
+
+* Go wiki
+
+.link /wiki go.dev/wiki
+
+.image go-docs/gowiki.png
+
+* Gopkgdoc
+
+.link http://go.pkgdoc.org
+
+.image go-docs/gopkgdoc.png
+
+* Gopkgdoc
+
+.link http://go.pkgdoc.org/code.google.com/p/goauth2/oauth
+
+* Go By Example
+
+.link https://gobyexample.com
+
+.image go-docs/gobyexample.png
+
+* Go By Example
+
+.link https://gobyexample.com/timeouts
+
+* Bài thuyết trình
+
+* Thuyết trình
+
+Chúng tôi trình bày rất nhiều buổi nói chuyện.
+
+Hầu hết các công cụ để thuyết trình tập trung vào phong cách, không phải sự dễ dàng tạo ra.
+
+* Present
+
+Trong repo `go.talks`, có công cụ mới: `present`.
+
+	go get code.google.com/p/go.talks/present
+
+- Đơn giản
+- Dễ dùng
+- Dễ dàng, mượt mà khi trình bày
+
+Mất khoảng một tiếng để chuẩn bị buổi nói chuyện này.
+
+Tài liệu:
+
+.link http://go.pkgdoc.org/code.google.com/p/go.talks/present
+
+* Đầu vào cho slide trước
+
+.code go-docs.slide /^\* Present$/,/^\.link/
+
+* Đầu vào cho slide trước redux
+
+.code go-docs.slide /^\*.*previous/,/^\.code/
+
+* Đầu vào cho slide trước phần tiếp theo
+
+.code go-docs.slide /^\*.*redux/,/^\.code/
+
+
+* Nhiều lựa chọn
+
+Nhiều bài thuyết trình, phong cách khác nhau.
+
+* Lỗ hổng nghiêm trọng
+
+Tất cả đều có mã.
+
+Không thể thực thi mã!
+
+Muốn chỉnh sửa và chơi.
+
+* Playground
+
+.image go-docs/play.png
+
+* Có thể chạy mã từ trình duyệt
+
+.link /play/ go.dev/play
+
+* Tour
+
+.image go-docs/tour.png
+
+* Có thể chạy mã từ trình duyệt
+
+.link /tour/ go.dev/tour
+
+* Dùng công nghệ này
+
+Muốn nhúng công nghệ playground vào các phương tiện khác.
+
+Ví dụ kích hoạt: Go Concurrency Patterns, Google I/O, 2012
+
+Cần trình bày lập trình đồng thời và sự trôi qua của thời gian.
+
+* Go Concurrency Patterns
+
+Trích từ buổi nói chuyện.
+
+* Ghép kênh
+
+Các chương trình này làm Joe và Ann đếm theo bước cùng nhau.
+Thay vào đó chúng ta có thể dùng hàm fan-in để cho phép ai sẵn sàng thì nói.
+
+.code go-docs/faninboring.go /START3/,/STOP3/
+.play go-docs/faninboring.go /START1/,/STOP1/
+
+* .code và .play
+
+Đầu vào cho slide trước:
+
+.code go-docs.slide /^\* Multiplexing/,/^.play/
+
+* faninboring.go (I)
+
+	package main
+
+	import (
+		"fmt"
+		"math/rand"
+		"time"
+	)
+
+	// START1 OMIT
+	func main() {
+		c := fanIn(boring("Joe"), boring("Ann")) // HL
+		for i := 0; i < 10; i++ {
+			fmt.Println(<-c) // HL
+		}
+		fmt.Println("You're both boring; I'm leaving.")
+	}
+	// STOP1 OMIT
+
+* faninboring.go (II)
+
+	// START2 OMIT
+	func boring(msg string) <-chan string { // Returns receive-only channel of strings. // HL
+		c := make(chan string)
+		go func() { // We launch the goroutine from inside the function. // HL
+			for i := 0; ; i++ {
+				c <- fmt.Sprintf("%s: %d", msg, i)
+				time.Sleep(time.Duration(rand.Intn(2e3)) * time.Millisecond)
+			}
+		}()
+		return c // Return the channel to the caller. // HL
+	}
+	// STOP2 OMIT
+
+
+	// START3 OMIT
+	func fanIn(input1, input2 <-chan string) <-chan string { // HL
+		c := make(chan string)
+		go func() { for { c <- <-input1 } }() // HL
+		go func() { for { c <- <-input2 } }() // HL
+		return c
+	}
+	// STOP3 OMIT
+
+* .code và .play lại
+
+Đầu vào cho slide Ghép kênh một lần nữa:
+
+.code go-docs.slide /^\* Multiplexing/,/^.play/
+
+* Ghép kênh lại
+
+Các chương trình này làm Joe và Ann đếm theo bước cùng nhau.
+Thay vào đó chúng ta có thể dùng hàm fan-in để cho phép ai sẵn sàng thì nói.
+
+.code go-docs/faninboring.go /START3/,/STOP3/
+.play go-docs/faninboring.go /START1/,/STOP1/
+
+* Tài liệu có thể thực thi
+
+* Kế hoạch
+
+Triển khai ví dụ có thể thực thi trên toàn bộ:
+
+- godoc (đã xong)
+- blog
+- hướng dẫn mã
+- Go By Example
+- wiki
+
+.link /pkg/strings/#example_Contains go.dev/pkg/strings/#example_Contains

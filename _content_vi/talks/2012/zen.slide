@@ -1,0 +1,349 @@
+Go và Triết lý Zen của Python
+
+Andrew Gerrand
+Gopher
+http://andrewgerrand.com/
+@enneff
+https://go.dev
+
+
+* Go là gì?
+
+Một ngôn ngữ lập trình mới. (Bản phát hành đầu tiên vào tháng 11 năm 2009, 1.0 vào tháng 3 năm 2012.)
+
+Tóm lại:
+
+- Ngôn ngữ đơn giản, dễ học và dễ đọc.
+- Kiểu tĩnh, nhưng có cảm giác năng động.
+- Biên dịch sang mã máy gốc, nhưng có chu kỳ phát triển nhanh.
+- Tính năng đồng thời ở cấp độ ngôn ngữ.
+- Thư viện chuẩn "pin kèm theo" rộng lớn.
+- Công cụ tuyệt vời.
+- Mã nguồn mở. (BSD)
+
+
+* Go được dùng cho gì?
+
+Go là một ngôn ngữ lập trình đa dụng, giống Python, Java hoặc C.
+
+Một số ứng dụng phổ biến:
+
+- Daemon máy chủ
+- Công cụ dòng lệnh
+- Ứng dụng web
+- Game
+- Tính toán khoa học
+- Giao dịch tần số cao
+
+Và, tất nhiên, còn nhiều hơn nữa.
+
+Dù bạn làm gì, có khả năng cao Go có thể giúp bạn làm điều đó.
+
+
+* Ai dùng Go?
+
+Một số tên tôi có thể vừa với một slide:
+
+- Anchor
+- BBC World News
+- Bitly
+- Canonical
+- Carbon Games
+- CloudFlare
+- Google
+- Heroku
+- Iron.io
+- ngmoco:)
+- SoundCloud
+
+
+* Go một trang (1/4)
+
+.play zen/hello.go
+
+* Go một trang (2/4)
+
+.play zen/http.go
+
+* Go một trang (3/4)
+
+.play zen/race.go
+
+* Go một trang (4/4)
+
+.code zen/jsonformat.go
+
+
+* Go và tôi
+
+Tôi (adg) gia nhập nhóm Go tại Google vào tháng 2 năm 2010.
+
+Trước đó, Python đã là ngôn ngữ hàng ngày của tôi trong nhiều năm.
+
+Go đã hoàn toàn thay thế Python trong cuộc sống của tôi.
+
+Tôi rõ ràng là thiên vị, nhưng theo ý kiến của tôi: nếu bạn yêu Python, bạn sẽ yêu Go.
+
+
+* Triết lý Zen của Python
+
+  >>> import this
+  The Zen of Python, by Tim Peters
+
+  Beautiful is better than ugly.
+  Explicit is better than implicit.
+  Simple is better than complex.
+  Complex is better than complicated.
+  Flat is better than nested.
+  Sparse is better than dense.
+  Readability counts.
+  Special cases aren't special enough to break the rules.
+  Although practicality beats purity.
+  Errors should never pass silently.
+  Unless explicitly silenced.
+  In the face of ambiguity, refuse the temptation to guess.
+  There should be one-- and preferably only one --obvious way to do it.
+  Although that way may not be obvious at first unless you're Dutch.
+  Now is better than never.
+  Although never is often better than *right* now.
+  If the implementation is hard to explain, it's a bad idea.
+  If the implementation is easy to explain, it may be a good idea.
+  Namespaces are one honking great idea -- let's do more of those!
+
+
+* Zen rất tốt
+
+Đây là danh sách hay.
+
+Tôi đồng ý với hầu hết.
+
+(Mặc dù Python đôi khi không nhất quán.)
+
+
+* Go có tính Zen
+
+Go đáp ứng gần như tất cả các tiêu chí của Tim Peters.
+
+(Có thể không phải cái về việc là người Hà Lan.)
+
+Hãy xem xét một số tiêu chí đó và xem Go phù hợp như thế nào.
+
+
+* "Đẹp hơn xấu."
+
+Go có cú pháp nhẹ nhàng, đều đặn gợi nhớ C (không có những điểm bất cập).
+
+Tôi nghĩ nó đẹp. Tôi chắc chắn đã thấy một số mã Go đẹp.
+
+Nhưng cái đẹp, như người ta nói, nằm trong mắt người nhìn. Vậy thôi về điều đó.
+
+
+* "Đơn giản hơn phức tạp."
+
+Phương thức chỉ là hàm (không có vị trí đặc biệt)
+
+Không có `this` hay `self` - receiver giống như bất kỳ tham số hàm nào khác
+
+  type Vector struct {
+    X, Y float64
+  }
+
+  func (v Vector) Abs() float64 {
+    return math.Sqrt(v.X*v.X + v.Y*v.Y)
+  }
+
+
+* "Đơn giản hơn phức tạp."
+
+Phương thức có thể được khai báo trên bất kỳ kiểu có tên nào (không có class)
+
+  type Scalar float64
+
+  func (s Scalar) Abs() float64 {
+    if s < 0 {
+      return float64(-s)
+    }
+    return float64(s)
+  }
+
+
+* "Đơn giản hơn phức tạp."
+
+Interface chỉ là phương thức (không có dữ liệu)
+
+Interface là ngầm định (không có khai báo `implements`)
+
+  type Abser interface {
+    Abs() float64
+  }
+
+(Cả `Vector` và `Scalar` đều cài đặt `Abser`,
+ngay cả khi chúng không biết `Abser` tồn tại.)
+
+
+* "Đơn giản hơn phức tạp."
+
+Không có constructor hay destructor.
+
+Constructor chỉ là một hàm:
+
+  type Database struct {
+    client *rpc.Client
+  }
+
+  func NewDatabase(addr string) (*Database, error) {
+    client, err := rpc.Dial("tcp", addr)
+    if err != nil {
+      return nil, err
+    }
+    return &Database{client}, nil
+  }
+
+
+* "Đơn giản hơn phức tạp."
+
+Chữ hoa/thường của định danh xác định khả năng hiển thị.
+
+Nếu một tên bắt đầu bằng chữ hoa, nó hiển thị bên ngoài package:
+
+  package foo
+
+  type Foo struct { // kiểu được export
+    bar int // trường không được export
+  }
+
+  func (f Foo) Bar() {} // phương thức được export
+
+  func (f Foo) quux() {} // phương thức không được export
+
+Chỉ mã bên trong package mới có thể thấy các tên không được export ("private").
+
+
+* "Đơn giản hơn phức tạp."
+
+- Chỉ có bộ gom rác
+- Quy tắc phạm vi đều đặn (và shadowing tên)
+
+Và có ít hơn:
+
+- Không có kế thừa subtype* (không có subclass)
+- Không có decorator*
+- Không có tham số có tên hay tùy chọn
+- Không có iterator
+- Không có generator
+- Không có exception
+
+(*Tuy nhiên, "struct embedding" của Go cho phép chức năng tương tự.)
+
+
+* "Tường minh hơn ngầm định."
+
+- Xử lý lỗi tường minh (không có exception)
+- Dependency tường minh
+- Không có chuyển đổi số ngầm định
+- Struct định nghĩa bố cục bộ nhớ (không có chi phí ẩn)
+
+
+* "Phẳng hơn lồng nhau."
+
+"Thoát sớm" là phong cách lập trình thành ngữ
+
+  func badStyle(a int) error {
+    b, err := one(a)
+    if err == nil {
+      c, err := two(b)
+      if err == nil {
+        err = three(c)
+      }
+    }
+    return err
+  }
+
+  func goodStyle(a int) error {
+    b, err := one(a)
+    if err != nil {
+      return err
+    }
+    c, err := two(b)
+    if err != nil {
+      return err
+    }
+    return three(c)
+  }
+
+
+* "Phẳng hơn lồng nhau."
+
+- Phương thức không được lồng bên trong class (không có class, nhớ chứ?)
+- Không gian tên package là phẳng
+- Nhiều file tạo nên một package chia sẻ một không gian tên
+
+
+* "Thưa thớt hơn dày đặc."
+
+Cú pháp Go không khuyến khích các one-liner điên rồ.
+
+- Không có list comprehension
+- Không có toán tử ternary (`expression?true:false`)
+
+Khi đọc mã Go, luồng điều khiển là rõ ràng.
+
+
+* "Thực tế hơn thuần túy."
+
+Go có một số cấu trúc dữ liệu generic tích hợp:
+
+- map (dict)
+- slice (list)
+- channel (một nguyên thủy đồng thời giống queue của Python)
+
+
+* "Khả năng đọc quan trọng."
+
+Go được thiết kế cho các nhóm gồm hàng trăm/nghìn lập trình viên.
+Khả năng đọc có tầm quan trọng hàng đầu.
+
+- Công cụ `gofmt` áp đặt "một phong cách đúng duy nhất." (Không còn tranh luận vô nghĩa.)
+
+- Suy luận kiểu tiết kiệm nhiều thao tác nhập, nhưng không làm giảm khả năng đọc. Kiểu vẫn được yêu cầu khi chúng giúp cho khả năng đọc (khai báo hàm, chẳng hạn).
+
+- Nhiều quyết định thiết kế ngôn ngữ khác được đưa ra vì khả năng đọc (khả năng hiển thị tên dựa trên chữ hoa/thường, chẳng hạn).
+
+
+* Điểm thưởng
+
+Các tính năng đồng thời của Go sẽ thay đổi cách bạn nghĩ về mã:
+
+- chặn là ổn; không cần chia các tiến trình đồng thời thành một loạt callback,
+- mã chạy song song với chi phí bổ sung nhỏ (không có GIL).
+
+Triển khai thật đơn giản:
+
+- biên dịch và vận chuyển một binary được liên kết tĩnh duy nhất,
+- tạm biệt "dependency hell."
+
+Và còn nhiều hơn những gì tôi có thể đưa vào bài nói ngắn này. :-)
+
+
+* "Nên có một cách rõ ràng để làm điều đó."
+
+Tôi lập luận rằng điều này đúng hơn với Go so với Python.
+
+
+* "Bây giờ tốt hơn không bao giờ."
+
+Học Go ngay hôm nay! Dễ thôi.
+
+Quy tắc ngón tay cái của tôi:
+
+- năng suất trong một ngày,
+- hiệu quả trong một tuần,
+- chuyên gia trong một năm.
+
+Tài liệu tham khảo, bài viết, hướng dẫn và nhiều hơn nữa:
+
+.link / go.dev
+
+Tour Go tương tác trên web:
+
+.link /tour/ go.dev/tour

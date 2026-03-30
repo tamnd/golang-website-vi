@@ -1,0 +1,287 @@
+Mười hai thực hành tốt nhất trong Go
+
+Francesc Campoy Flores
+Gopher tại Google
+@francesc
+http://campoy.cat/+
+
+https://go.dev
+
+* Thực hành tốt nhất
+
+Từ Wikipedia:
+
+	"Thực hành tốt nhất là phương pháp hoặc kỹ thuật đã liên tục cho thấy kết quả
+	vượt trội so với các phương tiện khác"
+
+Các kỹ thuật để viết mã Go
+
+- đơn giản,
+- dễ đọc,
+- dễ bảo trì.
+
+.image /doc/gopher/gopherbw.png 200 200
+
+* Một số mã
+
+.code bestpractices/shortercode1.go /type Gopher/,/^}/
+
+.code bestpractices/shortercode1.go /WriteTo/,/^}/
+
+* Tránh lồng nhau bằng cách xử lý lỗi trước
+
+.code bestpractices/shortercode2.go /WriteTo/,/^}/
+
+Ít lồng nhau hơn nghĩa là ít gánh nặng nhận thức hơn cho người đọc
+
+* Tránh lặp lại khi có thể
+
+Triển khai các kiểu tiện ích một lần để đơn giản hóa mã
+
+.code bestpractices/shortercode3.go /binWriter/,/^}/
+
+.code bestpractices/shortercode3.go /Write writes/,/^}/
+
+* Tránh lặp lại khi có thể
+
+Dùng `binWriter`
+
+.code bestpractices/shortercode3.go /WriteTo/,/^}/
+
+* Type switch để xử lý các trường hợp đặc biệt
+
+.code bestpractices/shortercode4.go /func .* Write/,/^}/
+
+.code bestpractices/shortercode4.go /WriteTo/,/^}/
+
+* Type switch với khai báo biến ngắn
+
+.code bestpractices/shortercode5.go /func .* Write/,/^}/
+
+* Viết tất cả hoặc không gì cả
+
+.code bestpractices/shortercode6.go /binWriter/,/^}/
+
+.code bestpractices/shortercode6.go /Write writes/,/^}/
+
+* Viết tất cả hoặc không gì cả
+
+.code bestpractices/shortercode6.go /Flush/,/^}/
+
+.code bestpractices/shortercode6.go /func .* WriteTo/,/^}/
+
+* Function adapters
+
+.code bestpractices/httphandler.go /HANDLER1/,/HANDLER2/
+
+* Function adapters
+
+.code bestpractices/httphandler.go /HANDLER2/,/END/
+
+* Tổ chức mã
+
+* Mã quan trọng đến trước
+
+Thông tin giấy phép, build tag, tài liệu package.
+
+Câu lệnh import, các nhóm liên quan được phân tách bằng dòng trống.
+
+	import (
+		"fmt"
+		"io"
+		"log"
+
+		"golang.org/x/net/websocket"
+	)
+
+Phần còn lại của mã bắt đầu bằng các kiểu quan trọng nhất và kết thúc
+bằng các hàm và kiểu helper.
+
+* Tài liệu hóa mã của bạn
+
+Tên package, với tài liệu liên quan đặt trước.
+
+	// Package playground đăng ký một HTTP handler tại "/compile"
+	// ủy quyền các yêu cầu đến dịch vụ playground golang.org.
+	package playground
+
+Các định danh được export xuất hiện trong `godoc`, chúng nên được tài liệu hóa đúng cách.
+
+	// Author đại diện cho người đã viết và/hoặc đang trình bày tài liệu.
+	type Author struct {
+		Elem []Elem
+	}
+
+	// TextElem trả về các phần tử văn bản đầu tiên của thông tin tác giả.
+	// Điều này được dùng để hiển thị tên, chức danh công việc và công ty
+	// của tác giả mà không có thông tin liên hệ.
+	func (p *Author) TextElem() (elems []Elem) {
+
+[[https://pkg.go.dev/code.google.com/p/go.talks/pkg/present#Author][Tài liệu được tạo ra]]
+
+[[/blog/godoc-documenting-go-code][Godoc: tài liệu hóa mã Go]]
+
+* Ngắn hơn là tốt hơn
+
+hay ít nhất là _dài_hơn_không_luôn_tốt_hơn_.
+
+Cố gắng tìm *tên*ngắn*nhất*mà*vẫn*tự*giải_thích*.
+
+- Ưu tiên `MarshalIndent` hơn `MarshalWithIndentation`.
+
+Đừng quên rằng tên package sẽ xuất hiện trước định danh bạn chọn.
+
+- Trong package `encoding/json` chúng ta thấy kiểu `Encoder`, không phải `JSONEncoder`.
+
+- Nó được tham chiếu là `json.Encoder`.
+
+* Package với nhiều file
+
+Bạn có nên chia package thành nhiều file không?
+
+- Tránh các file quá dài
+
+Package `net/http` từ thư viện chuẩn chứa 15734 dòng trong 47 file.
+
+- Tách mã và test
+
+`net/http/cookie.go` và `net/http/cookie_test.go` đều là một phần của package `http`.
+
+Mã test chỉ được biên dịch *khi* test.
+
+- Tài liệu package tách biệt
+
+Khi có nhiều hơn một file trong package, quy ước là tạo một `doc.go`
+chứa tài liệu package.
+
+* Làm cho package của bạn có thể "go get"
+
+Một số package có thể tái sử dụng, một số thì không.
+
+Package định nghĩa giao thức mạng có thể được tái sử dụng trong khi package định nghĩa
+lệnh thực thi thì không.
+
+.image bestpractices/cmd.png
+
+[[https://github.com/bradfitz/camlistore]]
+
+* API
+
+* Hỏi những gì bạn cần
+
+Hãy dùng kiểu Gopher từ trước
+
+.code bestpractices/shortercode1.go /type Gopher/,/^}/
+
+Chúng ta có thể định nghĩa phương thức này
+
+.code bestpractices/shortercode1.go /WriteToFile/
+
+Nhưng dùng một kiểu cụ thể làm cho mã này khó test, vì vậy chúng ta dùng interface.
+
+.code bestpractices/shortercode1.go /WriteToReadWriter/
+
+Và, vì chúng ta dùng interface, chúng ta chỉ nên hỏi những phương thức mình cần.
+
+.code bestpractices/shortercode1.go /WriteToWriter/
+
+* Giữ các package độc lập độc lập với nhau
+
+.code bestpractices/funcdraw/cmd/funcdraw.go /IMPORT/,/ENDIMPORT/
+
+.code bestpractices/funcdraw/cmd/funcdraw.go /START/,/END/
+
+* Phân tích cú pháp
+
+.code bestpractices/funcdraw/parser/parser.go /START/,/END/
+
+* Vẽ
+
+.code bestpractices/funcdraw/drawer/dependent.go /START/,/END/
+
+Tránh dependency bằng cách dùng interface.
+
+.code bestpractices/funcdraw/drawer/drawer.go /START/,/END/
+
+* Test
+
+Dùng interface thay vì kiểu cụ thể giúp việc test dễ dàng hơn.
+
+.code bestpractices/funcdraw/drawer/drawer_test.go ,/END/
+
+* Tránh đồng thời trong API của bạn
+
+.play bestpractices/concurrency1.go /START/,/END/
+
+Nếu chúng ta muốn dùng nó tuần tự thì sao?
+
+* Tránh đồng thời trong API của bạn
+
+.play bestpractices/concurrency2.go /START/,/END/
+
+Cung cấp các API đồng bộ, gọi chúng đồng thời là dễ dàng.
+
+* Thực hành tốt nhất cho đồng thời
+
+* Dùng goroutines để quản lý trạng thái
+
+Dùng chan hoặc struct với chan để giao tiếp với goroutine
+
+.code bestpractices/server.go /START/,/STOP/
+
+* Dùng goroutines để quản lý trạng thái (tiếp theo)
+
+.play bestpractices/server.go /STOP/,
+
+* Tránh goroutine rò rỉ với buffered chan
+
+.code bestpractices/bufchan.go /SEND/,/BROADCAST/
+
+.code bestpractices/bufchan.go /MAIN/,
+
+* Tránh goroutine rò rỉ với buffered chan (tiếp theo)
+
+.play bestpractices/bufchan.go /BROADCAST/,/MAIN/
+
+- goroutine bị chặn trên chan write
+- goroutine giữ tham chiếu đến chan
+- chan sẽ không bao giờ được thu gom rác
+
+* Tránh goroutine rò rỉ với buffered chan (tiếp theo)
+
+.play bestpractices/bufchanfix.go /BROADCAST/,/MAIN/
+
+- nếu không thể dự đoán dung lượng của channel thì sao?
+
+* Tránh goroutine rò rỉ với quit chan
+
+.play bestpractices/quitchan.go /BROADCAST/,/MAIN/
+
+* Mười hai thực hành tốt nhất
+
+1. Tránh lồng nhau bằng cách xử lý lỗi trước
+2. Tránh lặp lại khi có thể
+3. Mã quan trọng đến trước
+4. Tài liệu hóa mã của bạn
+5. Ngắn hơn là tốt hơn
+6. Package với nhiều file
+7. Làm cho package có thể "go get"
+8. Hỏi những gì bạn cần
+9. Giữ các package độc lập độc lập với nhau
+10. Tránh đồng thời trong API
+11. Dùng goroutines để quản lý trạng thái
+12. Tránh goroutine rò rỉ
+
+* Một số liên kết
+
+Tài nguyên
+
+- Trang chủ Go [[/][go.dev]]
+- Tour tương tác Go [[/tour/][go.dev/tour]]
+
+Các bài nói khác
+
+- Lexical scanning với Go [[http://www.youtube.com/watch?v=HxaD_trXwRE][video]]
+- Concurrency không phải là parallelism [[http://vimeo.com/49718712][video]]
+- Go concurrency patterns [[http://www.youtube.com/watch?v=f6kdp27TYZs][video]]
+- Advanced Go concurrency patterns [[http://www.youtube.com/watch?v=QDDwwePbDtw][video]]
