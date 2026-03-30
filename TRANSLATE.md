@@ -265,7 +265,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/loopvar-preview.md`
 - [x] `blog/maps.md`
 - [x] `blog/matchlang.md`
-- [ ] `blog/matchlang/tags.html`
+- [x] `blog/matchlang/tags.html`
 - [x] `blog/meetups.md`
 - [x] `blog/migrating-to-go-modules.md`
 - [x] `blog/module-compatibility.md`
@@ -273,8 +273,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/modules2019.md`
 - [x] `blog/new-talk-and-tutorials.md`
 - [x] `blog/normalization.md`
-- [ ] `blog/normalization/table1.html`
-- [ ] `blog/normalization/table2.html`
+- [x] `blog/normalization/table1.html`
+- [x] `blog/normalization/table2.html`
 - [x] `blog/open-source.md`
 - [x] `blog/organizing-go-code.md`
 - [x] `blog/oscon.md`
