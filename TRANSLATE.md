@@ -587,7 +587,7 @@ This checklist tracks files that likely require localization work. It excludes s
 ### solutions
 
 - [x] `solutions/allegro.md`
-- [ ] `solutions/americanexpress.md`
+- [x] `solutions/americanexpress.md`
 - [x] `solutions/armut.md`
 - [x] `solutions/bitly.md`
 - [x] `solutions/bytedance.md`
