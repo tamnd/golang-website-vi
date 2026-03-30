@@ -601,7 +601,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `solutions/coredata.md`
 - [ ] `solutions/curve.md`
 - [ ] `solutions/default.tmpl`
-- [ ] `solutions/devops.md`
+- [x] `solutions/devops.md`
 - [ ] `solutions/dropbox.md`
 - [ ] `solutions/facebook.md`
 - [ ] `solutions/firebase.md`
@@ -626,7 +626,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `solutions/twitch.md`
 - [ ] `solutions/uber.md`
 - [ ] `solutions/use-cases.md`
-- [ ] `solutions/webdev.md`
+- [x] `solutions/webdev.md`
 - [ ] `solutions/wildlifestudios.md`
 - [ ] `solutions/x.md`
 
