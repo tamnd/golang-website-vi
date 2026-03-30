@@ -441,7 +441,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/docs.md`
 - [x] `doc/editors.html`
 - [x] `doc/effective_go.html`
-- [ ] `doc/faq.md`
+- [x] `doc/faq.md`
 - [x] `doc/fuzz.md`
 - [x] `doc/gc-guide.html`
 - [x] `doc/gccgo_contribute.html`
