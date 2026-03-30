@@ -586,49 +586,49 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### solutions
 
-- [ ] `solutions/allegro.md`
+- [x] `solutions/allegro.md`
 - [ ] `solutions/americanexpress.md`
-- [ ] `solutions/armut.md`
-- [ ] `solutions/bitly.md`
-- [ ] `solutions/bytedance.md`
-- [ ] `solutions/capital-one.md`
+- [x] `solutions/armut.md`
+- [x] `solutions/bitly.md`
+- [x] `solutions/bytedance.md`
+- [x] `solutions/capital-one.md`
 - [ ] `solutions/case-studies.md`
-- [ ] `solutions/chrome.md`
+- [x] `solutions/chrome.md`
 - [x] `solutions/clis.md`
 - [x] `solutions/cloud.md`
-- [ ] `solutions/cloudflare.md`
-- [ ] `solutions/cockroachlabs.md`
-- [ ] `solutions/coredata.md`
-- [ ] `solutions/curve.md`
+- [x] `solutions/cloudflare.md`
+- [x] `solutions/cockroachlabs.md`
+- [x] `solutions/coredata.md`
+- [x] `solutions/curve.md`
 - [ ] `solutions/default.tmpl`
 - [x] `solutions/devops.md`
-- [ ] `solutions/dropbox.md`
-- [ ] `solutions/facebook.md`
-- [ ] `solutions/firebase.md`
+- [x] `solutions/dropbox.md`
+- [x] `solutions/facebook.md`
+- [x] `solutions/firebase.md`
 - [ ] `solutions/google/chrome.md`
 - [ ] `solutions/google/coredata.md`
 - [ ] `solutions/google/firebase.md`
 - [ ] `solutions/google/index.md`
 - [ ] `solutions/google/sitereliability.md`
-- [ ] `solutions/grail.md`
+- [x] `solutions/grail.md`
 - [x] `solutions/index.md`
 - [ ] `solutions/mercadolibre.md`
-- [ ] `solutions/microsoft.md`
-- [ ] `solutions/monzo.md`
-- [ ] `solutions/netflix.md`
+- [x] `solutions/microsoft.md`
+- [x] `solutions/monzo.md`
+- [x] `solutions/netflix.md`
 - [ ] `solutions/paypal.md`
-- [ ] `solutions/riotgames.md`
-- [ ] `solutions/salesforce.md`
+- [x] `solutions/riotgames.md`
+- [x] `solutions/salesforce.md`
 - [ ] `solutions/sitereliability.md`
-- [ ] `solutions/sixt.md`
-- [ ] `solutions/stream.md`
-- [ ] `solutions/trivago.md`
-- [ ] `solutions/twitch.md`
-- [ ] `solutions/uber.md`
+- [x] `solutions/sixt.md`
+- [x] `solutions/stream.md`
+- [x] `solutions/trivago.md`
+- [x] `solutions/twitch.md`
+- [x] `solutions/uber.md`
 - [ ] `solutions/use-cases.md`
 - [x] `solutions/webdev.md`
-- [ ] `solutions/wildlifestudios.md`
-- [ ] `solutions/x.md`
+- [x] `solutions/wildlifestudios.md`
+- [x] `solutions/x.md`
 
 ### src
 
