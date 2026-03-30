@@ -1,0 +1,642 @@
+## Sự tiến hóa văn hóa của gofmt
+gofmt 的文化演变
+The Cultural Evolution of gofmt
+
+Robert Griesemer
+Google, Inc.
+gri@golang.org
+
+
+* gofmt
+
+## Công cụ định dạng mã nguồn Go
+- Go源代码格式化工具
+
+## Định nghĩa định dạng Go _de_facto_
+- 定义了"标准"格式
+
+## Tất cả code Go được gửi phải được định dạng bằng `gofmt` trong các repo `golang.org`.
+- golang.org代码库中所有提交的Go代码都必须通过gofmt格式化过
+
+## Chức năng có sẵn ngoài gofmt qua thư viện `go/format`.
+- 除了gofmt之外，相同功能可以通过go/format库获得
+
+## Không có nút điều chỉnh!
+- 不需要设置！
+
+## Động lực ban đầu
+* 初衷
+
+## Xem xét code là thực hành tốt nhất trong kỹ thuật phần mềm.
+- 代码审查是软件工程的最佳实践
+
+## Xem xét code dựa trên hướng dẫn phong cách, quy định định dạng.
+- 代码审查是基于代码规范和正规格式的
+# Google C++ style guide: ~65 pages (~15p on formatting)
+# Google C++的规范：～65页（～15页是关于格式）
+# Go spec: ~50 pages
+# Go的细则：50页
+
+## *Quá*nhiều*thời*gian*lãng*phí*vào*việc*xem*xét*định*dạng*thay*vì*code.*
+- *太多时间浪费在审查格式上而不是代码本身了*
+# Example: Formatting review time 10 min/day, 600 engineers => 100 manhours/day!
+# 例子：格式审查需要10分钟／天，600工程师＝>100人时／天
+
+## Nhưng đây là công việc hoàn hảo cho một cái máy.
+- 但是这工作对机器来说是最好不过了的
+
+## Quyết định ngay từ ngày đầu là viết một bộ định dạng đẹp cho Go.
+- 第一个决定就是要写一个好的格式美化器
+# informed by experience with Java and C++ code reviews at Google
+# 基于在Google的Java和C＋＋的代码审查经验
+
+## Lịch sử
+* 历史
+
+## Bộ định dạng đẹp và công cụ làm đẹp code đã tồn tại từ những ngày đầu của máy tính.
+- 格式美化器和代码美化工具在计算机发展的早期就已出现
+
+## Cần thiết để tạo code Lisp dễ đọc:
+- 对于产生可读的Lisp代码很重要的：
+
+	GRINDEF  (Bill Gosper, 1967)           đầu tiên đo độ dài dòng
+
+## Nhiều cái khác:
+- 其他：
+
+	SOAP     (R. Scowen et al, 1969)       Đơn giản hóa chương trình Algol khó hiểu
+	NEATER2  (Ken Conrow, R. Smith, 1970)  Bộ định dạng PL/1, dùng như công cụ phát hiện lỗi sớm
+	cb       (Unix Version 7, 1979)        Công cụ làm đẹp chương trình C
+	indent   (4.2 BSD, 1983)              Thụt đầu dòng và định dạng code nguồn C
+	v.v.
+
+## Gần đây hơn:
+- 最近的：
+
+	ClangFormat                            Bộ định dạng C/C++/Objective-C
+	Uncrustify                             Công cụ làm đẹp cho C, C++, C#, ObjectiveC, D, Java, Pawn và VALA
+	v.v.
+
+
+## Kiểm tra thực tế
+* 事实上
+
+## Năm 2007, dường như không ai thích bộ định dạng mã nguồn.
+- 在2007年，没人喜欢代码格式器
+
+## Ngoại lệ: Định dạng do IDE áp đặt.
+- 例外：IDE强制的格式化
+
+## Nhưng: Nhiều lập trình viên không dùng IDE...
+- 但是：很多程序员不用IDE...
+
+## Vấn đề: Nếu định dạng tự động có vẻ quá phá hủy, nó sẽ không được dùng.
+- 问题：如果是格式化太具有毁坏性，那么就没有人会用
+
+## Nhận thức bị bỏ lỡ: Phong cách định dạng thống nhất "đủ tốt" tốt hơn là có nhiều định dạng khác nhau.
+- 被忽视的观点："刚刚好"的，统一化的格式是好过于各种不同的格式的。
+
+## Giá trị của hướng dẫn phong cách: Tính nhất quán, không phải sự hoàn hảo.
+- 规范的价值在于：整齐划一，而不是完美
+
+
+## Vấn đề với bộ định dạng đẹp
+* 好的格式美化器的问题
+
+## Càng nhiều người suy nghĩ về phong cách định dạng của họ, họ càng gắn bó với nó hơn.
+- 当越多人思考他们自己的格式风格的时候，他们就变得更加固执于此了
+# religion
+# 宗教
+
+## Kết luận sai: Bộ định dạng tự động phải cho phép nhiều tùy chọn định dạng!
+- 错误的结论：自动格式器必须要有很多选项！
+
+## Nhưng: Bộ định dạng có quá nhiều tùy chọn thì thất bại mục đích.
+- 但是有很多选项的格式器其实违背他们的目的
+# e.g., indent
+# 比如说indent
+
+## Ngoài ra: Rất khó để làm tốt.
+- 此外，支持很多选项是难的
+# combinatorial explosion of styles to test
+# 太多组合需要测试
+
+## Tôn trọng ý định của người dùng là điều quan trọng nhất.
+- 尊重用户的想法是最关键的
+
+## Xử lý comment rất khó.
+- 处理注释是很难的
+
+## Ngôn ngữ có thể thêm độ phức tạp thêm (ví dụ: macro C)
+- 语言本身也会增加很多额外的复杂度（比如，C的宏）
+
+
+## Định dạng Go
+* 格式化Go
+
+## Giữ nó đơn giản nhất có thể
+* 尽量保证其简单
+
+## Ngôn ngữ nhỏ làm cho nhiệm vụ đơn giản hơn nhiều.
+- 小的语言能让事情变得简单
+
+## Đừng lo lắng về kiểm soát độ dài dòng.
+- 不要为行长度烦恼
+
+## Thay vào đó, tôn trọng người dùng: Xem xét dấu ngắt dòng trong mã nguồn gốc.
+- 相反的，尊重用户：考虑原有代码中的断行
+
+## Đừng hỗ trợ bất kỳ tùy chọn nào.
+- 不要支持任何选项
+
+## Làm cho nó dễ sử dụng.
+- 使其使用傻瓜化
+
+## *Một*phong*cách*định*dạng*để*thống*trị*tất*cả!*
+*一个格化标准搞定所有！*
+
+
+## Cấu trúc cơ bản của gofmt
+* gofmt的基本结构
+
+## Phân tích cú pháp mã nguồn
+- 源代码的处理
+
+## Định dạng cơ bản
+- 基本的格式化
+
+## Cải tiến: Xử lý comment
+- 附加：注释的处理
+
+## Làm đẹp: Căn chỉnh code và comment
+- 完善：代码和注释的对齐
+
+## Nhưng: Không có thuật toán bố cục tổng quát lạ mắt.
+- 但是，没有牛X的通用布局算法
+
+## Thay vào đó: Tinh chỉnh đặc thù theo từng nút.
+- 相反的：基于节点的精细优化
+
+
+## Phân tích cú pháp mã nguồn
+* 处理源代码
+
+## Dùng `go/scanner`, `go/parser` và các công cụ liên quan.
+- 使用`go/scanner`, `go/parser`及其相关的库
+
+## Kết quả là cây cú pháp trừu tượng (`go/ast`) cho mỗi tệp `.go`.
+- 给每一个go文件生成一个抽象语法树
+# misnomer: AST is actually a concrete syntax tree
+# 用词不当：抽象语法树其实是一个具体语法树
+
+## Mỗi cấu trúc cú pháp có nút AST tương ứng.
+- 每一个语法结构都有相应的AST节点
+
+	// Cú pháp của câu lệnh if.
+	IfStmt = "if" [ SimpleStmt ";" ] Expression Block [ "else" ( IfStmt | Block ) ] .
+
+	// Nút IfStmt đại diện cho câu lệnh if.
+	IfStmt struct {
+		If   token.Pos // vị trí của từ khóa "if"
+		Init Stmt      // câu lệnh khởi tạo; hoặc nil
+		Cond Expr      // điều kiện
+		Body *BlockStmt
+		Else Stmt // nhánh else; hoặc nil
+	}
+
+## Nút AST có thông tin vị trí (được chọn).
+- AST节点有（选择性的）位置信息。
+
+
+## Định dạng cơ bản
+* 基本的格式化
+
+## Duyệt qua AST và in các nút.
+- 遍历AST然后打印每个节点
+
+	case *ast.IfStmt:
+		p.print(token.IF)
+		p.controlClause(false, s.Init, s.Cond, nil)
+		p.block(s.Body, 1)
+		if s.Else != nil {
+			p.print(blank, token.ELSE, blank)
+			switch s.Else.(type) {
+			case *ast.BlockStmt, *ast.IfStmt:
+				p.stmt(s.Else, nextIsRBrace)
+			default:
+				p.print(token.LBRACE, indent, formfeed)
+				p.stmt(s.Else, true)
+				p.print(unindent, formfeed, token.RBRACE)
+			}
+		}
+
+## Bộ in (`p.print`) nhận một chuỗi token, bao gồm thông tin vị trí và khoảng trắng.
+- 打印器（`p.print`）接收包括位置和空格符等的一系列记号
+
+
+## Tinh chỉnh
+* 细致的调节
+
+## Khoảng cách giữa các toán hạng phụ thuộc vào độ ưu tiên.
+- 基于优先级安排操作数之间的空格.
+
+# implemented by rsc in gofmt
+
+## Cải thiện khả năng đọc các biểu thức.
+- 提高表达式的可读性.
+
+	x = a + b
+	x = a + b*c
+	if a+b <= d {
+	if a+b*c <= d {
+
+## Dùng thông tin vị trí để hướng dẫn quyết định ngắt dòng.
+- 使用位置信息决定何时换行.
+
+## Các heuristic khác.
+- 其他一些策略.
+
+
+## Xử lý comment
+* 注释的处理
+
+## Comment có thể xuất hiện giữa bất kỳ hai token nào của chương trình.
+- 注释可以出现在程序的任何两个词汇之间.
+
+## Nói chung, không rõ ràng comment thuộc nút AST nào.
+- 通常情况下，不能很明显的知道注释属于哪个 AST 节点.
+
+# In retrospect, a heuristic might have been better than the list of comments
+# we have now. See Lessons learned.
+
+## Comment thường xuất hiện theo nhóm:
+- 注释经常是成组出现:
+
+	// A CommentGroup represents a sequence of comments
+	// with no other tokens and no empty lines between.
+	//
+	type CommentGroup struct {
+		List []*Comment // len(List) > 0
+	}
+
+## Các comment được nhóm lại được xử lý như một comment lớn hơn.
+- 成组的注释被处理为一个大的注释.
+
+
+## Biểu diễn comment trong AST
+* 注释在 AST 上的表达
+
+## Danh sách tuần tự các nhóm comment được gắn vào nút ast.File.
+- 注释组的连续列表被连接到 AST 的文件节点.
+
+# In retrospect this was not a good decision. It's general but puts burden on AST clients.
+
+## Ngoài ra, các comment được xác định là _doc_string_ được gắn vào các nút khai báo.
+- 另外，一些被标示为  _doc_strings_ 的注释被连接到声明节点.
+
+.image ./gofmt/comments.jpg 425 600
+
+
+## Định dạng với comment
+* 格式化注释
+
+## Ý tưởng cơ bản: Kết hợp "luồng token" với "luồng comment" dựa trên thông tin vị trí.
+- 基本的办法：基于位置信息合并词汇流和注释流.
+
+.image ./gofmt/merge.jpg 425 700
+
+
+## Chi tiết là điều quan trọng
+* 魔鬼就在细节中
+
+# It's an entire hell of devils, really.
+
+## Ước tính vị trí hiện tại trong "không gian mã nguồn".
+- 在源代码中估计当前的位置.
+
+## So sánh vị trí hiện tại với vị trí comment để quyết định tiếp theo là gì.
+- 比较当前的位置和注释的位置去决定下一个是什么.
+
+## Luồng token cũng chứa token "khoảng trắng" - comment phải được xen kẽ đúng cách!
+- 词汇也包含了空格词汇 - 注释必须被合理的分布!
+
+## Duy trì bộ đệm khoảng trắng chưa in, xả trước token tiếp theo, xen kẽ comment.
+- 维持一个未被打印的空格缓冲区，在下一个词汇之前输出，然后分布注释.
+
+## Nhiều heuristic để xử lý khoảng trắng đúng cách.
+- 多种策略得以正确地处理空格.
+
+## Nhiều lần thử và sai.
+- 很多次的尝试和错误.
+
+
+## Định dạng từng comment riêng lẻ
+* 格式化单独的注释
+
+## Phân biệt giữa comment dòng và comment tổng quát.
+- 区分代码行和注释.
+
+## Cố gắng thụt đầu dòng đúng cách cho comment tổng quát nhiều dòng:
+- 努力对多行注释进行合理的缩进.
+
+	func f() {              func() {
+	 /*                             /*
+	  * foo                          * foo
+	  * bar         ==>              * bar
+	  * bal                          * bal
+	 */                              */
+	        if ...                   if  ...
+	}                       }
+
+## Không phải lúc nào cũng hoạt động tốt.
+- 但并不总是能够处理正确.
+
+## Muốn cả hai: comment được thụt đầu dòng, và nội dung comment không bị thay đổi. Không có giải pháp tốt.
+- 想达到两个效果：注释能够缩进，注释的内容不进行处理。还没有好的解决办法.
+
+
+## Căn chỉnh
+* 对齐
+
+## Căn chỉnh được chọn cẩn thận có thể giúp code dễ đọc hơn:
+- 仔细选择的对齐可以让代码更容易阅读.
+
+        var (                                 var (
+                x, y int = 2, 3 // foo                x, y int     = 2, 3 // foo
+                z float32 // bar         ==>          z    float32        // bar
+                s string // bal                       s    string         // bal
+        )                                     )
+
+## Rất khó để duy trì thủ công (tab thông thường không đủ).
+- 很难进行手工维护  (制表符并不能够做到）.
+
+## Công việc hoàn hảo cho bộ định dạng.
+- 但是却非常适合使用格式化工具.
+
+
+## Tabstop đàn hồi
+* 灵活的制表符宽度
+
+## Tab thông thường (`\t`) đưa vị trí viết đến các tab stop cố định.
+通常的制表符把当前的写位置移动到下一个固定的位置.
+
+## Ý tưởng cơ bản: Làm cho tab stop _đàn_ _hồi_.
+基本的办法：让制表符宽度更加灵活.
+
+## Tab được dùng để chỉ ra _kết_ _thúc_ của _ô_ văn bản.
+- 制表符可以标示一个文本单元的结束位置.
+
+## Một _khối_ _cột_ là một chuỗi các ô liền kề theo chiều dọc không bị gián đoạn.
+- 一个列块是一个连续的相邻的单元.
+
+## Một khối cột rộng bằng đoạn văn bản rộng nhất trong các ô.
+- 一个列块的宽度可以到达多个单元里最宽文本的宽度.
+
+## Được đề xuất bởi Nick Gravgaard, 2006
+被 Nick Gravgaard 提出于2006
+
+.link http://nickgravgaard.com/elastic-tabstops/
+
+## Được triển khai bởi gói `text/tabwriter`.
+实现在 `text/tabwriter` 包中.
+
+
+## Minh họa tabstop đàn hồi
+* 灵活制表符宽度的展示
+
+.image ./gofmt/tabstops.jpg 500 700
+
+
+## Kết hợp tất cả lại (1)
+* 综合在一起 (1)
+
+## Bộ phân tích tạo ra AST.
+- 分析器生成 AST.
+
+## Bộ in in AST đệ quy, dùng tab (`\t`) để chỉ ra các vị trí tab đàn hồi.
+- 打印工具递归地打印AST，使用制表符去灵活的标示制表符的位置.
+
+## Luồng token, vị trí và khoảng trắng kết quả được kết hợp với "luồng" comment.
+- 产生的词汇，位置和空格流会和注释流进行合并.
+
+## Token được mở rộng thành chuỗi; tất cả văn bản chảy qua tabwriter.
+- 词汇会扩展为字符串，所有的文本流将会被制表符写入器处理.
+
+## Tabwriter thay thế tab bằng số lượng khoảng trắng phù hợp.
+- 制表符写入器会将制表符替换为合适数量的空格.
+
+## Hoạt động tốt với phông chữ có chiều rộng cố định.
+对于固定宽度的字体，处理的很好.
+
+## Phông chữ tỷ lệ có thể được xử lý bởi trình soạn thảo hỗ trợ tab stop đàn hồi.
+比例大小的字体也可以被编辑器支持，如果这个编辑器可以支持灵活的制表符宽度.
+
+# go/printer can produce output containing elastic tab stops
+
+
+## Kết hợp tất cả lại (2)
+* 综合在一起 (2)
+
+.image ./gofmt/bigpic.jpg 550 800
+
+
+## Bức tranh lớn
+* 从宏观上看
+
+.image ./gofmt/biggerpic.jpg 400 800
+
+
+## Ứng dụng gofmt
+* gofmt 的应用
+
+## gofmt như là công cụ biến đổi mã nguồn
+* gofmt 作为源代码变换工具
+
+## Bộ viết lại Go (Russ Cox), `gofmt`-r`
+- 改写 Go 的代码 (Russ Cox)， `gofmt`-r`
+
+	gofmt -w -r 'a[i:len(x)] -> a[i:]' *.go
+
+## Bộ đơn giản hóa Go, `gofmt`-s`
+- 简化 Go 的代码， `gofmt`-s`
+
+## Công cụ cập nhật API (Russ Cox), `go`fix`
+- 更新 API (Russ Cox), `go`fix`
+
+## Thay đổi ngôn ngữ (loại bỏ dấu chấm phẩy, các thay đổi khác)
+- 改变语言 （去掉分号，其它）
+
+## goimport (Brad Fitzpatrick)
+- goimport (Brad Fitzpatrick)
+
+
+## Phản ứng
+* 大家的反应
+
+## Dự án Go yêu cầu tất cả code được gửi phải được định dạng bằng gofmt.
+- Go 项目要求所有提交的源代码都用 gofmt 的格式。
+
+## Lúc đầu, phàn nàn: `gofmt` không theo phong cách _của_ _tôi_!
+- 一开始，大家都抱怨：`gofmt` 不知道怎样格式成我的风格！
+
+## Cuối cùng, chấp nhận: Nhóm Go thực sự nghiêm túc!
+- 慢慢地，大家不作声了：Go 项目组一定要用 gofmt！
+
+## Nhận thức sau cùng: Phong cách của gofmt không phải là yêu thích của _ai_, nhưng `gofmt` là yêu thích của tất cả mọi người.
+- 最后，大家看清了：gofmt 不是任何人的风格，但所有人都喜欢 gofmt 的风格。
+
+## Bây giờ, khen ngợi: `gofmt` là một trong nhiều lý do tại sao mọi người thích Go.
+- 现在，大家都赞扬： `gofmt` 是大家喜欢 Go 的一个原因。
+
+## Định dạng đã không còn là vấn đề.
+现在，格式已经不是一个问题。
+
+
+## Những người khác đang bắt đầu chú ý
+* 其它语言也在向我们学习
+
+## Bộ định dạng cho các tệp BUILD của Google (Russ Cox).
+- Google 的 BUILD 文件现在也有格式器  (Russ Cox).
+
+## Bộ định dạng Java
+- Java 格式器
+
+## Bộ định dạng Clang
+- Clang 格式器
+
+- Dartfmt
+.link https://www.dartlang.org/tools/dartfmt/
+
+## v.v.
+- 等等
+
+## Định dạng mã nguồn tự động đang trở thành yêu cầu cho bất kỳ loại ngôn ngữ nào.
+现在，任何语言都被要求带有自动的源代码格式器。
+
+
+## Kết luận
+* 总结
+
+## Sự tiến hóa trong văn hóa lập trình
+* 编程文化的演变
+
+## `gofmt` là điểm bán hàng quan trọng cho Go
+- `gofmt` 是 Go 语言的一个重要的卖点
+
+## Nhận thức đang lan rộng rằng định dạng "đủ tốt" thống nhất rất có lợi.
+- 大家渐渐达成共识：一致的"足够好"的格式很有好处
+
+# no need for detailed formatting style guides
+# 无需详细的格式风格手册
+
+# no time wasted on formatting
+# 无需在格式上浪费时间
+
+# improved readability
+# 代码的可读性提高了
+
+# smaller diffs when changing code
+# 改代码时代码的变动变小了
+
+## Thao tác mã nguồn ở cấp độ AST cho phép một loại công cụ mới.
+- 这种在 AST-级别上的源代码操作带动了一系列的新的工具。
+
+# simple to complex automatic source code transformations
+# 各种各样的，从简单到复杂的，自动的源代码变换
+
+# various auto-completion mechanisms (e.g. goimport)
+# 各种自动完成的机制 （例如 goimport）
+
+# enables syntax evolution
+# 使得语法可以慢慢进化
+
+## Những người khác đang chú ý: Văn hóa lập trình đang dần tiến hóa.
+- 其它语言也在向我们学习：编程的文化在慢慢演变。
+
+
+## Bài học kinh nghiệm: Ứng dụng
+* 至今的收获：应用程序
+
+## Định dạng mã nguồn cơ bản là mục tiêu ban đầu tốt.
+- 一开始，基本的源代码格式化是一个很好的目标。
+
+## Sức mạnh thực sự nằm ở các công cụ biến đổi mã nguồn.
+- 但是，真正的用处在于源代码的变换工具。
+
+## Tránh các tùy chọn định dạng.
+- 不要给大家有选择格式的机会。
+
+## Giữ nó đơn giản.
+- 越简单越好。
+
+## Mong muốn:
+我们想要：
+
+## Bộ phân tích Go: mã nguồn => cây cú pháp
+- Go 分析器：源代码 => 语法树
+
+## Làm cho việc thao tác cây cú pháp theo mọi cách có thể trở nên dễ dàng.
+- 尽可能让语法树的操作变得容易。
+
+## Bộ in Go: cây cú pháp => mã nguồn
+- Go 打印器：语法树 => 源代码
+
+
+## Bài học kinh nghiệm: Triển khai
+* 至今的收获：实现过程
+
+## Nhiều lần thử và sai trong phiên bản ban đầu.
+- 最初的版本有很多的尝试和失败。
+
+## Sai lầm lớn nhất: comment không được gắn vào các nút AST.
+- 最大的错误：注释没有连到 AST-节点上.
+
+## => Thiết kế hiện tại làm cho việc thao tác AST cực kỳ khó và duy trì comment ở đúng chỗ.
+=> 现在的设计使得操作 AST 和保持注释在正确的地方十分困难。
+
+## Cách giải quyết rắc rối: ast.CommentMap
+- 很混乱：ast.CommentMap
+
+## Mong muốn:
+我们想要：
+
+## Dễ dàng thao tác cây cú pháp cùng với comment.
+- 容易操作语法树，连带注释。
+
+
+## Hướng tới tương lai
+* 将来的计划
+
+## Thiết kế cây cú pháp mới đang được phát triển (vẫn còn thử nghiệm).
+- 正在设计新的语法树（仍在试验阶段）
+
+## Cây cú pháp đơn giản hơn và dễ thao tác hơn (ví dụ: nút khai báo)
+- 语法树操作起来更加简单和容易（例如：声明结点）
+
+## Bộ phân tích và bộ in nhanh hơn và dễ sử dụng hơn.
+- 更快和更容易地使用分析器和打印器。
+
+## Làm cho nó mạnh mẽ và nhanh. Không làm gì khác.
+- 让工具用起来可靠并且快。其它一概不理。
+
+# no semantic analyses in parser
+# 分析器不作语义分析。
+
+# no options in printer
+# 打印器里没有任何选择。
+
+
+# ----------------------------------------------------------------------------------
+#
+#	Implementation size
+#
+#	go/token           849 lines    lexical tokes, source positions
+#	go/scanner         884 lines    tokenization
+#	go/parser         2689 lines    parsing
+#	go/ast            2966 lines    abstract syntax tree, tree traversal
+#	go/printer        2948 lines    actual AST printer
+#	go/format          115 lines    helper library to make printer easy to use
+#	internal/format    161 lines
+#	cmd/gofmt          801 lines    gofmt tool
+#	----------------------------
+#	                 11413 lines
