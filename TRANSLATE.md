@@ -244,15 +244,15 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/intro-generics.md`
 - [ ] `blog/introducing-go-playground.md`
 - [ ] `blog/introducing-gofix.md`
-- [ ] `blog/io2010-faq.md`
-- [ ] `blog/io2010-preview.md`
-- [ ] `blog/io2010.md`
-- [ ] `blog/io2011.md`
-- [ ] `blog/io2012-videos.md`
-- [ ] `blog/io2013-chat.md`
-- [ ] `blog/io2013-talk-concurrency.md`
-- [ ] `blog/io2013-talks-cloud.md`
-- [ ] `blog/io2014.md`
+- [x] `blog/io2010-faq.md`
+- [x] `blog/io2010-preview.md`
+- [x] `blog/io2010.md`
+- [x] `blog/io2011.md`
+- [x] `blog/io2012-videos.md`
+- [x] `blog/io2013-chat.md`
+- [x] `blog/io2013-talk-concurrency.md`
+- [x] `blog/io2013-talks-cloud.md`
+- [x] `blog/io2014.md`
 - [ ] `blog/ismmkeynote.md`
 - [ ] `blog/json-and-go.md`
 - [ ] `blog/json-rpc-tale-of-interfaces.md`
