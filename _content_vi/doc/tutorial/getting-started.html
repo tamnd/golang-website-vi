@@ -1,0 +1,304 @@
+<!--{
+    "Title": "Hướng dẫn: Bắt đầu với Go",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Trong hướng dẫn này, bạn sẽ được giới thiệu ngắn gọn về lập trình Go. Trong quá trình đó, bạn sẽ:
+</p>
+
+<ul>
+  <li>Cài đặt Go (nếu bạn chưa cài).</li>
+  <li>Viết một số mã "Hello, world" đơn giản.</li>
+  <li>Dùng lệnh <code>go</code> để chạy mã của bạn.</li>
+  <li>
+    Dùng công cụ khám phá gói Go để tìm các gói bạn có thể dùng trong mã của mình.
+  </li>
+  <li>Gọi các hàm từ một module bên ngoài.</li>
+</ul>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Để xem các hướng dẫn khác, xem
+  <a href="/doc/tutorial/index.html">Hướng dẫn</a>.
+</aside>
+
+<h2 id="prerequisites">Điều kiện tiên quyết</h2>
+
+<ul>
+  <li>
+    <strong>Một số kinh nghiệm lập trình.</strong> Mã ở đây khá
+    đơn giản, nhưng sẽ hữu ích nếu bạn biết về hàm.
+  </li>
+  <li>
+    <strong>Công cụ soạn thảo mã.</strong> Bất kỳ trình soạn thảo văn bản nào bạn có đều
+    dùng được. Hầu hết các trình soạn thảo đều hỗ trợ tốt Go. Phổ biến nhất là
+    VSCode (miễn phí), GoLand (trả phí) và Vim (miễn phí).
+  </li>
+  <li>
+    <strong>Thiết bị đầu cuối lệnh.</strong> Go hoạt động tốt trên bất kỳ terminal nào của
+    Linux và Mac, cũng như trên PowerShell hoặc cmd trong Windows.
+  </li>
+</ul>
+
+<h2 id="install">Cài đặt Go</h2>
+
+<p>Chỉ cần làm theo các bước <a href="/doc/install">Tải xuống và cài đặt</a>.</p>
+
+<h2 id="code">Viết một số mã</h2>
+
+<p>
+  Bắt đầu với Hello, World.
+</p>
+
+<ol>
+  <li>
+    Mở dấu nhắc lệnh và cd vào thư mục home của bạn.
+
+    <p>
+      Trên Linux hoặc Mac:
+    </p>
+
+    <pre>
+cd
+</pre
+    >
+
+    <p>
+      Trên Windows:
+    </p>
+
+    <pre>
+cd %HOMEPATH%
+</pre
+    >
+  </li>
+
+  <li>
+    Tạo thư mục hello cho mã nguồn Go đầu tiên của bạn.
+
+    <p>
+      Ví dụ, dùng các lệnh sau:
+    </p>
+
+    <pre>
+mkdir hello
+cd hello
+</pre
+    >
+  </li>
+
+  <li>
+    Bật tính năng theo dõi dependency cho mã của bạn.
+
+    <p>
+      Khi mã của bạn import các gói có trong các module khác, bạn quản lý
+      các dependency đó thông qua module của chính mã. Module đó được xác định
+      bởi tệp go.mod theo dõi các module cung cấp những gói đó. Tệp
+      go.mod này đi kèm với mã của bạn, kể cả trong kho lưu trữ mã nguồn.
+    </p>
+
+    <p>
+      Để bật theo dõi dependency cho mã của bạn bằng cách tạo tệp go.mod, hãy chạy
+      lệnh
+      <a href="/ref/mod#go-mod-init"><code>go mod init</code></a>,
+        truyền vào tên của module mà mã của bạn sẽ nằm trong. Tên đó là
+        đường dẫn module của module.</p>
+    <p>Trong phát triển thực tế, đường dẫn module thường là vị trí kho lưu trữ
+        nơi mã nguồn của bạn sẽ được lưu trữ. Ví dụ, đường dẫn module
+        có thể là <code>github.com/mymodule</code>. Nếu bạn dự định publish
+        module để người khác sử dụng, đường dẫn module <em>phải</em> là
+        một vị trí mà từ đó các công cụ Go có thể tải xuống module của bạn. Để biết thêm về
+        đặt tên module với đường dẫn module, xem
+        <a href="/doc/modules/managing-dependencies#naming_module">Quản lý
+            dependency</a>.
+    </p>
+
+      <p>Trong hướng dẫn này, chỉ cần dùng
+          <code>example/hello</code>.
+    </p>
+
+    <pre>
+$ go mod init example/hello
+go: creating new go.mod: module example/hello
+</pre
+    >
+  </li>
+
+  <li>
+    <p>Trong trình soạn thảo văn bản, tạo tệp hello.go để viết mã.</p>
+  </li>
+
+  <li>
+    <p>Dán đoạn mã sau vào tệp hello.go của bạn và lưu tệp.</p>
+
+    <pre>
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+</pre
+    >
+
+    <p>
+      Đây là mã Go của bạn. Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Khai báo gói <code>main</code> (một gói là cách nhóm các hàm lại,
+        và nó bao gồm tất cả các tệp trong cùng thư mục).
+      </li>
+      <li>
+        Import
+        <a href="https://pkg.go.dev/fmt/">gói <code>fmt</code></a> phổ biến,
+        chứa các hàm để định dạng văn bản, bao gồm in ra
+        console. Gói này là một trong các gói
+        <a href="https://pkg.go.dev/std">thư viện chuẩn</a> bạn có được
+        khi cài đặt Go.
+      </li>
+      <li>
+        Triển khai hàm <code>main</code> để in một thông báo ra
+        console. Hàm <code>main</code> được thực thi mặc định khi bạn chạy
+        gói <code>main</code>.
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    <p>Chạy mã của bạn để xem lời chào.</p>
+
+    <pre>
+$ go run .
+Hello, World!
+</pre
+    >
+
+    <p>
+      Lệnh
+      <a href="/cmd/go/#hdr-Compile_and_run_Go_program"
+        ><code>go run</code></a>
+      là một trong nhiều lệnh <code>go</code> bạn sẽ dùng để làm mọi thứ với
+      Go. Dùng lệnh sau để xem danh sách các lệnh khác:
+    </p>
+
+    <pre>
+$ go help
+</pre
+    >
+  </li>
+</ol>
+
+<h2 id="call">Gọi mã trong một gói bên ngoài</h2>
+
+<p>
+  Khi bạn cần mã làm một việc gì đó mà người khác có thể đã triển khai,
+  bạn có thể tìm một gói có các hàm bạn có thể dùng trong mã của mình.
+</p>
+
+<ol>
+  <li>
+    Làm cho thông điệp in ra thú vị hơn với một hàm từ một
+    module bên ngoài.
+
+    <ol>
+      <li>
+        Truy cập pkg.go.dev và
+        <a href="https://pkg.go.dev/search?q=quote"
+          >tìm kiếm gói "quote"</a
+        >.
+      </li>
+      <li>
+        Trong kết quả tìm kiếm, tìm và nhấp vào phiên bản v1 của gói <code>rsc.io/quote</code>
+        (nó được liệt kê trong "Other major versions" của <code>rsc.io/quote/v4</code>).
+      </li>
+      <li>
+        Trong phần <strong>Documentation</strong>, dưới mục <strong>Index</strong>, hãy ghi chú
+        danh sách các hàm bạn có thể gọi từ mã của mình. Bạn sẽ dùng hàm
+        <code>Go</code>.
+      </li>
+      <li>
+        Ở đầu trang này, ghi chú rằng gói <code>quote</code>
+        nằm trong module <code>rsc.io/quote</code>.
+      </li>
+    </ol>
+
+    <p>
+      Bạn có thể dùng trang pkg.go.dev để tìm các module đã publish mà gói của chúng
+      có các hàm bạn có thể dùng trong mã của mình. Các gói được publish trong
+      các module -- như <code>rsc.io/quote</code> -- để người khác có thể sử dụng.
+      Các module được cải thiện với các phiên bản mới theo thời gian, và bạn có thể nâng cấp mã
+      để dùng các phiên bản cải tiến.
+    </p>
+  </li>
+
+  <li>
+    Trong mã Go của bạn, import gói <code>rsc.io/quote</code> và thêm lời gọi
+    đến hàm <code>Go</code> của nó.
+
+    <p>
+      Sau khi thêm các dòng được đánh dấu, mã của bạn sẽ bao gồm
+      những phần sau:
+    </p>
+
+    <pre>
+package main
+
+import "fmt"
+
+<ins>import "rsc.io/quote"</ins>
+
+func main() {
+    <ins>fmt.Println(quote.Go())</ins>
+}
+</pre>
+  </li>
+
+  <li>
+    Thêm các yêu cầu module mới và các tổng kiểm tra.
+
+    <p>
+      Go sẽ thêm module <code>quote</code> như một yêu cầu, cùng với
+      tệp go.sum dùng để xác thực module. Để biết thêm, xem
+      <a href="/ref/mod#authenticating">Xác thực module</a> trong Tài liệu tham chiếu
+      Go Modules.
+    </p>
+    <pre>
+$ go mod tidy
+go: finding module for package rsc.io/quote
+go: found rsc.io/quote in rsc.io/quote v1.5.2
+</pre
+    >
+  </li>
+
+  <li>
+    Chạy mã của bạn để xem thông điệp được tạo ra bởi hàm bạn đang gọi.
+
+    <pre>
+$ go run .
+Don't communicate by sharing memory, share memory by communicating.
+</pre
+    >
+
+    <p>
+      Lưu ý rằng mã của bạn gọi hàm <code>Go</code>, in ra
+      một thông điệp thú vị về giao tiếp.
+    </p>
+
+    <p>
+      Khi bạn chạy <code>go mod tidy</code>, nó đã xác định và tải xuống module
+      <code>rsc.io/quote</code> chứa gói bạn đã import.
+      Theo mặc định, nó tải xuống phiên bản mới nhất -- v1.5.2.
+    </p>
+  </li>
+</ol>
+
+<h2 id="write-more">Viết thêm mã</h2>
+
+<p>
+  Với phần giới thiệu nhanh này, bạn đã cài đặt Go và học được một số kiến thức cơ bản. Để viết
+  thêm mã với một hướng dẫn khác, hãy xem
+  <a href="/doc/tutorial/create-module.html">Tạo một module Go</a>.
+</p>

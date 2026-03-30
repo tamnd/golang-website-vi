@@ -1,0 +1,212 @@
+<!--{
+    "Title": "Trả lời lời chào cho nhiều người",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Trong những thay đổi cuối cùng bạn sẽ thực hiện với mã của module, bạn sẽ thêm hỗ trợ
+  để nhận lời chào cho nhiều người trong một yêu cầu. Nói cách khác, bạn sẽ
+  xử lý đầu vào nhiều giá trị, rồi ghép các giá trị trong đầu vào đó với một
+  đầu ra nhiều giá trị. Để làm điều này, bạn cần truyền một tập hợp tên vào một
+  hàm có thể trả về lời chào cho mỗi tên trong số đó.
+</p>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Phần này là một phần của hướng dẫn nhiều bước, bắt đầu từ
+  <a href="/doc/tutorial/create-module.html">Tạo một module Go</a>.
+</aside>
+
+<p>
+  Tuy nhiên có một điểm cần lưu ý. Thay đổi tham số của hàm <code>Hello</code>
+  từ một tên đơn lẻ thành một tập hợp tên sẽ thay đổi chữ ký của hàm.
+  Nếu bạn đã publish module <code>example.com/greetings</code>
+  và người dùng đã viết mã gọi <code>Hello</code>, sự thay đổi đó
+  sẽ làm hỏng chương trình của họ.</p>
+
+<p>
+  Trong trường hợp này, lựa chọn tốt hơn là viết một hàm mới với tên khác.
+  Hàm mới sẽ nhận nhiều tham số. Điều này bảo toàn hàm cũ
+  để đảm bảo tính tương thích ngược.
+</p>
+
+<ol>
+  <li>
+    Trong greetings/greetings.go, thay đổi mã của bạn để trông như sau.
+
+    <pre>
+package greetings
+
+import (
+    "errors"
+    "fmt"
+    "math/rand"
+)
+
+// Hello returns a greeting for the named person.
+func Hello(name string) (string, error) {
+    // If no name was given, return an error with a message.
+    if name == "" {
+        return name, errors.New("empty name")
+    }
+    // Create a message using a random format.
+    message := fmt.Sprintf(randomFormat(), name)
+    return message, nil
+}
+
+<ins>// Hellos returns a map that associates each of the named people
+// with a greeting message.
+func Hellos(names []string) (map[string]string, error) {
+    // A map to associate names with messages.
+    messages := make(map[string]string)
+    // Loop through the received slice of names, calling
+    // the Hello function to get a message for each name.
+    for _, name := range names {
+        message, err := Hello(name)
+        if err != nil {
+            return nil, err
+        }
+        // In the map, associate the retrieved message with
+        // the name.
+        messages[name] = message
+    }
+    return messages, nil
+}</ins>
+
+// randomFormat returns one of a set of greeting messages. The returned
+// message is selected at random.
+func randomFormat() string {
+    // A slice of message formats.
+    formats := []string{
+        "Hi, %v. Welcome!",
+        "Great to see you, %v!",
+        "Hail, %v! Well met!",
+    }
+
+    // Return one of the message formats selected at random.
+    return formats[rand.Intn(len(formats))]
+}
+</pre>
+
+    <p>
+      Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Thêm hàm <code>Hellos</code> có tham số là một slice tên
+        thay vì một tên đơn lẻ. Ngoài ra, bạn thay đổi một trong các kiểu trả về của nó từ
+        <code>string</code> sang <code>map</code> để bạn có thể trả về tên
+        được ánh xạ với các thông điệp lời chào.
+      </li>
+      <li>
+        Cho hàm <code>Hellos</code> mới gọi hàm <code>Hello</code> hiện có.
+        Điều này giúp giảm trùng lặp trong khi vẫn giữ cả hai hàm.
+      </li>
+      <li>
+        Tạo một <code>messages</code> map để liên kết mỗi tên nhận được
+        (làm key) với một thông điệp được tạo ra (làm value). Trong Go,
+        bạn khởi tạo một map với cú pháp sau:
+        <code>make(map[<em>key-type</em>]<em>value-type</em>)</code>. Hàm
+        <code>Hellos</code> trả về map này cho người gọi. Để biết thêm
+        về map, xem <a href="/blog/maps">Go maps trong
+        thực tế</a> trên Go blog.
+      </li>
+      <li>
+        Lặp qua các tên mà hàm nhận được, kiểm tra rằng mỗi tên có
+        giá trị không rỗng, rồi liên kết một thông điệp với mỗi tên. Trong vòng lặp
+        <code>for</code> này, <code>range</code> trả về hai giá trị: chỉ số
+        của phần tử hiện tại trong vòng lặp và bản sao của giá trị phần tử. Bạn
+        không cần chỉ số, vì vậy bạn dùng định danh rỗng của Go (dấu gạch dưới)
+        để bỏ qua nó. Để biết thêm, xem
+        <a href="/doc/effective_go.html#blank">Định danh rỗng</a> trong Effective Go.
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    Trong mã gọi hello/hello.go của bạn, truyền vào một slice tên, rồi in
+    nội dung của map tên/thông điệp bạn nhận về.
+
+    <p>
+      Trong hello.go, thay đổi mã của bạn để trông như sau.
+    </p>
+
+    <pre>
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "example.com/greetings"
+)
+
+func main() {
+    // Set properties of the predefined Logger, including
+    // the log entry prefix and a flag to disable printing
+    // the time, source file, and line number.
+    log.SetPrefix("greetings: ")
+    log.SetFlags(0)
+
+    <ins>// A slice of names.
+    names := []string{"Gladys", "Samantha", "Darrin"}
+
+    // Request greeting messages for the names.
+    messages, err := greetings.Hellos(names)</ins>
+    if err != nil {
+        log.Fatal(err)
+    }
+    <ins>// If no error was returned, print the returned map of
+    // messages to the console.
+    fmt.Println(messages)</ins>
+}
+</pre>
+
+    <p>
+      Với những thay đổi này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Tạo biến <code>names</code> có kiểu slice chứa ba tên.
+      </li>
+      <li>
+        Truyền biến <code>names</code> làm đối số cho hàm
+        <code>Hellos</code>.
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    Tại dòng lệnh, chuyển đến thư mục chứa hello/hello.go,
+    rồi dùng <code>go run</code> để xác nhận mã hoạt động.
+
+    <p>
+      Đầu ra phải là biểu diễn chuỗi của map liên kết tên
+      với thông điệp, giống như sau:
+    </p>
+
+    <pre>
+$ go run .
+map[Darrin:Hail, Darrin! Well met! Gladys:Hi, Gladys. Welcome! Samantha:Hail, Samantha! Well met!]
+</pre
+    >
+  </li>
+</ol>
+
+<p>
+  Phần này đã giới thiệu map để biểu diễn các cặp tên/giá trị. Nó cũng
+  giới thiệu ý tưởng bảo toàn tính tương thích ngược
+  bằng cách triển khai một hàm mới cho chức năng mới hoặc đã thay đổi trong một module.
+  Để biết thêm về tính tương thích ngược, xem
+  <a href="/blog/module-compatibility">Giữ cho module của bạn tương thích</a>.
+</p>
+
+<p>Tiếp theo, bạn sẽ dùng các tính năng tích hợp của Go để tạo bài kiểm thử đơn vị cho mã của mình.</p>
+
+<p class="Navigation">
+  <a class="Navigation-prev" href="/doc/tutorial/random-greeting.html"
+    >&lt; Trả về lời chào ngẫu nhiên</a
+  >
+  <a class="Navigation-next" href="/doc/tutorial/add-a-test.html">Thêm một bài kiểm thử &gt;</a>
+</p>

@@ -1,0 +1,226 @@
+<!--{
+	"title": "About the go command"
+}-->
+
+<p>Bản phân phối Go bao gồm một lệnh tên là
+"<code><a href="/cmd/go/">go</a></code>", giúp tự động hóa việc tải xuống, biên dịch,
+cài đặt và kiểm thử các gói và lệnh Go. Tài liệu này giải thích lý do chúng tôi viết
+lệnh mới này, nó là gì, nó không làm gì, và cách sử dụng nó.</p>
+
+<h2>Động lực</h2>
+
+<p>Bạn có thể đã xem các bài trình bày về Go từ những ngày đầu, trong đó Rob Pike đùa rằng
+ý tưởng về Go nảy sinh trong lúc chờ một máy chủ Google lớn biên dịch xong. Đó thực sự là
+động lực cho Go: xây dựng một ngôn ngữ hoạt động tốt cho việc xây dựng phần mềm lớn mà
+Google viết và vận hành. Ngay từ đầu đã rõ rằng ngôn ngữ như vậy phải cung cấp cách biểu
+diễn rõ ràng các dependency giữa các thư viện mã, do đó có cơ chế nhóm gói và các khối
+import tường minh. Cũng rõ ràng ngay từ đầu rằng bạn có thể muốn cú pháp tùy ý để mô tả
+mã được import; đó là lý do tại sao các đường dẫn import là chuỗi ký tự.</p>
+
+<p>Một mục tiêu rõ ràng của Go ngay từ đầu là có thể biên dịch mã Go chỉ bằng thông tin
+có trong chính mã nguồn, không cần viết makefile hay bất kỳ thứ gì thay thế makefile hiện
+đại nào. Nếu Go cần một tệp cấu hình để giải thích cách biên dịch chương trình, thì Go đã
+thất bại.</p>
+
+<p>Lúc đầu chưa có trình biên dịch Go, và việc phát triển ban đầu tập trung vào xây dựng
+trình biên dịch rồi xây dựng các thư viện cho nó. Vì sự thuận tiện, chúng tôi đã tạm hoãn
+việc tự động hóa biên dịch mã Go bằng cách dùng make và viết makefile. Khi biên dịch một
+gói đơn lẻ cần nhiều lần gọi trình biên dịch Go, chúng tôi còn dùng một chương trình để
+viết makefile thay chúng tôi. Bạn có thể tìm thấy nó nếu đào sâu vào lịch sử quản lý mã
+nguồn.</p>
+
+<p>Mục đích của lệnh go mới là sự trở lại với lý tưởng đó: các chương trình Go nên biên
+dịch được mà không cần cấu hình hay thêm bất kỳ nỗ lực nào từ phía nhà phát triển, ngoài
+việc viết các câu lệnh import cần thiết.</p>
+
+<h2>Cấu hình và quy ước</h2>
+
+<p>Cách để đạt được sự đơn giản của một hệ thống không cần cấu hình là thiết lập các quy
+ước. Hệ thống chỉ hoạt động khi các quy ước đó được tuân thủ. Khi chúng tôi ra mắt Go
+lần đầu, nhiều người đã xuất bản các gói phải được cài đặt ở những nơi nhất định, với
+những tên nhất định, dùng những công cụ biên dịch nhất định, thì mới sử dụng được. Điều
+đó dễ hiểu: đó là cách hoạt động trong hầu hết các ngôn ngữ khác. Trong vài năm qua
+chúng tôi đã nhắc nhở mọi người về lệnh <code>goinstall</code>
+(nay đã được thay thế bằng <a href="/cmd/go/#hdr-Download_and_install_packages_and_dependencies"><code>go get</code></a>)
+và các quy ước của nó: thứ nhất, đường dẫn import được suy ra theo cách đã biết từ URL
+của mã nguồn; thứ hai, vị trí lưu trữ mã nguồn trong hệ thống tệp cục bộ được suy ra theo
+cách đã biết từ đường dẫn import; thứ ba, mỗi thư mục trong cây mã nguồn tương ứng với
+một gói duy nhất; và thứ tư, gói được biên dịch chỉ bằng thông tin trong mã nguồn. Ngày
+nay, đại đa số các gói đều tuân theo các quy ước này. Hệ sinh thái Go trở nên đơn giản hơn
+và mạnh mẽ hơn nhờ đó.</p>
+
+<p>Chúng tôi nhận được nhiều yêu cầu cho phép có makefile trong thư mục gói để cung cấp
+thêm một chút cấu hình ngoài những gì có trong mã nguồn. Nhưng điều đó sẽ tạo ra các quy
+tắc mới. Vì chúng tôi không chấp nhận các yêu cầu như vậy, chúng tôi đã có thể viết lệnh
+go và loại bỏ việc dùng make hay bất kỳ hệ thống biên dịch nào khác.</p>
+
+<p>Điều quan trọng cần hiểu là lệnh go không phải là một công cụ biên dịch đa năng. Nó
+không thể được cấu hình và không cố biên dịch bất cứ thứ gì ngoài các gói Go. Đây là
+những giả định đơn giản hóa quan trọng: chúng đơn giản hóa không chỉ phần cài đặt mà
+quan trọng hơn, cả việc sử dụng công cụ này.</p>
+
+<h2>Quy ước của Go</h2>
+
+<p>Lệnh <code>go</code> yêu cầu mã tuân thủ một số quy ước quan trọng đã được thiết lập
+tốt.</p>
+
+<p>Thứ nhất, đường dẫn import được suy ra theo cách đã biết từ URL của mã nguồn. Với
+Bitbucket, GitHub, Google Code và Launchpad, thư mục gốc của kho lưu trữ được xác định
+bởi URL chính của kho lưu trữ, không có tiền tố <code>https://</code>. Các thư mục con
+được đặt tên bằng cách thêm vào đường dẫn đó. Ví dụ, mã nguồn của gói logging của Google
+<code>glog</code> được tải về bằng lệnh</p>
+
+<pre>
+git clone https://github.com/golang/glog
+</pre>
+
+và do đó đường dẫn import của gói
+<a href="https://pkg.go.dev/github.com/golang/glog">glog</a>
+là "<code>github.com/golang/glog</code>".</p>
+
+<p>Các đường dẫn này hơi dài, nhưng đổi lại chúng tôi có không gian tên được quản lý tự
+động cho các đường dẫn import và khả năng để một công cụ như lệnh go nhìn vào một đường
+dẫn import lạ và suy ra nơi lấy mã nguồn.</p>
+
+<p>Thứ hai, vị trí lưu trữ mã nguồn trong hệ thống tệp cục bộ được suy ra theo cách đã
+biết từ đường dẫn import, cụ thể là
+<code>$GOPATH/src/&lt;import-path&gt;</code>.
+Nếu không được đặt, <code>$GOPATH</code> mặc định là thư mục con tên <code>go</code>
+trong thư mục home của người dùng.
+Nếu <code>$GOPATH</code> được đặt thành một danh sách đường dẫn, lệnh go thử
+<code>&lt;dir&gt;/src/&lt;import-path&gt;</code> cho từng thư mục trong danh sách đó.
+</p>
+
+<p>Mỗi cây thư mục đó chứa, theo quy ước, một thư mục cấp cao nhất tên
+"<code>bin</code>", để chứa các tệp thực thi đã biên dịch, và một thư mục cấp cao nhất
+tên "<code>pkg</code>", để chứa các gói đã biên dịch có thể được import, cùng với thư
+mục "<code>src</code>", để chứa các tệp mã nguồn gói. Việc áp đặt cấu trúc này cho phép
+chúng tôi giữ cho mỗi cây thư mục tự đủ: dạng đã biên dịch và mã nguồn luôn ở gần nhau.</p>
+
+<p>Các quy ước đặt tên này cũng cho phép chúng tôi làm việc theo chiều ngược lại, từ tên
+thư mục đến đường dẫn import của nó. Việc ánh xạ này quan trọng với nhiều lệnh con của
+lệnh go, như chúng ta sẽ thấy bên dưới.</p>
+
+<p>Thứ ba, mỗi thư mục trong cây mã nguồn tương ứng với một gói duy nhất. Bằng cách giới
+hạn một thư mục chỉ chứa một gói, chúng tôi không phải tạo các đường dẫn import lai chỉ
+định trước thư mục rồi mới đến gói bên trong thư mục đó. Ngoài ra, hầu hết các công cụ
+quản lý tệp và giao diện người dùng đều làm việc với thư mục như đơn vị cơ bản. Việc gắn
+đơn vị cơ bản của Go, gói, với cấu trúc hệ thống tệp có nghĩa là các công cụ hệ thống
+tệp trở thành công cụ gói Go. Sao chép, di chuyển hoặc xóa một gói tương đương với sao
+chép, di chuyển hoặc xóa một thư mục.</p>
+
+<p>Thứ tư, mỗi gói được biên dịch chỉ bằng thông tin có trong các tệp mã nguồn. Điều này
+làm cho công cụ có nhiều khả năng thích nghi với các môi trường và điều kiện biên dịch
+thay đổi hơn. Ví dụ, nếu chúng tôi cho phép cấu hình thêm như cờ trình biên dịch hay các
+công thức dòng lệnh, thì cấu hình đó sẽ cần được cập nhật mỗi khi các công cụ biên dịch
+thay đổi; nó cũng sẽ gắn liền với việc sử dụng một toolchain cụ thể.</p>
+
+<h2>Bắt đầu với lệnh go</h2>
+
+<p>Cuối cùng, hãy xem nhanh cách sử dụng lệnh go.
+Như đã đề cập ở trên, <code>$GOPATH</code> mặc định trên Unix là <code>$HOME/go</code>.
+Chúng tôi sẽ lưu trữ các chương trình ở đó.
+Để dùng vị trí khác, bạn có thể đặt <code>$GOPATH</code>;
+xem <a href="/doc/code.html">Cách viết mã Go</a> để biết thêm chi tiết.
+
+<p>Trước tiên chúng tôi thêm một số mã nguồn. Giả sử chúng tôi muốn dùng thư viện lập
+chỉ mục từ dự án codesearch cùng với một cây đỏ-đen nghiêng trái. Chúng tôi có thể cài
+đặt cả hai với lệnh con "<code>go get</code>":</p>
+
+<pre>
+$ go get github.com/google/codesearch/index
+$ go get github.com/petar/GoLLRB/llrb
+$
+</pre>
+
+<p>Cả hai dự án này hiện đã được tải xuống và cài đặt vào <code>$HOME/go</code>,
+chứa hai thư mục
+<code>src/github.com/google/codesearch/index/</code> và
+<code>src/github.com/petar/GoLLRB/llrb/</code>, cùng với các gói đã biên dịch
+(trong <code>pkg/</code>) cho các thư viện đó và các dependency của chúng.</p>
+
+<p>Vì chúng tôi dùng hệ thống quản lý phiên bản (Mercurial và Git) để checkout mã nguồn,
+cây mã nguồn cũng chứa các tệp khác trong các kho lưu trữ tương ứng, chẳng hạn các gói
+liên quan. Lệnh con "<code>go list</code>" liệt kê các đường dẫn import tương ứng với các
+đối số của nó, và mẫu "<code>./...</code>" có nghĩa là bắt đầu từ thư mục hiện tại
+("<code>./</code>") và tìm tất cả các gói bên dưới thư mục đó
+("<code>...</code>"):</p>
+
+<pre>
+$ cd $HOME/go/src
+$ go list ./...
+github.com/google/codesearch/cmd/cgrep
+github.com/google/codesearch/cmd/cindex
+github.com/google/codesearch/cmd/csearch
+github.com/google/codesearch/index
+github.com/google/codesearch/regexp
+github.com/google/codesearch/sparse
+github.com/petar/GoLLRB/example
+github.com/petar/GoLLRB/llrb
+$
+</pre>
+
+<p>Chúng tôi cũng có thể kiểm thử các gói đó:</p>
+
+<pre>
+$ go test ./...
+?   	github.com/google/codesearch/cmd/cgrep	[no test files]
+?   	github.com/google/codesearch/cmd/cindex	[no test files]
+?   	github.com/google/codesearch/cmd/csearch	[no test files]
+ok  	github.com/google/codesearch/index	0.203s
+ok  	github.com/google/codesearch/regexp	0.017s
+?   	github.com/google/codesearch/sparse	[no test files]
+?       github.com/petar/GoLLRB/example          [no test files]
+ok      github.com/petar/GoLLRB/llrb             0.231s
+$
+</pre>
+
+<p>Nếu một lệnh con go được gọi mà không có đường dẫn nào, nó sẽ hoạt động trên thư mục
+hiện tại:</p>
+
+<pre>
+$ cd github.com/google/codesearch/regexp
+$ go list
+github.com/google/codesearch/regexp
+$ go test -v
+=== RUN   TestNstateEnc
+--- PASS: TestNstateEnc (0.00s)
+=== RUN   TestMatch
+--- PASS: TestMatch (0.00s)
+=== RUN   TestGrep
+--- PASS: TestGrep (0.00s)
+PASS
+ok  	github.com/google/codesearch/regexp	0.018s
+$ go install
+$
+</pre>
+
+<p>Lệnh con "<code>go install</code>" cài đặt bản sao mới nhất của gói vào thư mục pkg.
+Vì lệnh go có thể phân tích đồ thị dependency, "<code>go install</code>" cũng cài đặt
+mọi gói mà gói này import nhưng đã lỗi thời, theo cách đệ quy.</p>
+
+<p>Lưu ý rằng "<code>go install</code>" có thể xác định tên đường dẫn import cho gói
+trong thư mục hiện tại, nhờ quy ước đặt tên thư mục. Sẽ thuận tiện hơn một chút nếu chúng
+tôi có thể chọn tên thư mục nơi lưu mã nguồn, và có lẽ chúng tôi đã không chọn cái tên
+dài như vậy, nhưng khả năng đó đòi hỏi cấu hình và độ phức tạp bổ sung trong công cụ.
+Gõ thêm một hoặc hai tên thư mục là cái giá nhỏ để đổi lấy sự đơn giản và mạnh mẽ hơn.</p>
+
+<h2>Hạn chế</h2>
+
+<p>Như đã đề cập ở trên, lệnh go không phải là công cụ biên dịch đa năng.
+Cụ thể, nó không có cơ chế tạo các tệp mã nguồn Go <em>trong khi</em> biên dịch, mặc dù
+nó cung cấp
+<a href="/cmd/go/#hdr-Generate_Go_files_by_processing_source"><code>go</code>
+<code>generate</code></a>,
+có thể tự động hóa việc tạo các tệp Go <em>trước khi</em> biên dịch.
+Với các thiết lập biên dịch phức tạp hơn, bạn có thể cần viết makefile (hoặc tệp cấu hình
+cho công cụ biên dịch bạn chọn) để chạy các công cụ tạo tệp Go và sau đó đưa những tệp
+mã nguồn được tạo đó vào kho lưu trữ của bạn. Điều này đòi hỏi nhiều công sức hơn từ
+phía bạn, tác giả gói, nhưng nó ít tốn công hơn đáng kể cho người dùng, những người có
+thể dùng "<code>go get</code>" mà không cần tải về và biên dịch bất kỳ công cụ bổ sung
+nào.</p>
+
+<h2>Thêm thông tin</h2>
+
+<p>Để biết thêm thông tin, hãy đọc <a href="/doc/code.html">Cách viết mã Go</a>
+và xem <a href="/cmd/go/">tài liệu lệnh go</a>.</p>
