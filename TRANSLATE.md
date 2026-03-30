@@ -662,13 +662,13 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2013/go-sreops.slide`
 - [x] `talks/2013/go1.1.slide`
 - [x] `talks/2013/go4python.slide`
-- [ ] `talks/2013/highperf.slide`
+- [x] `talks/2013/highperf.slide`
 - [x] `talks/2013/highperf/cachingembed.html`
 - [x] `talks/2013/highperf/mart/1/app.yaml` (skipped: App Engine config)
 - [x] `talks/2013/highperf/mart/2/app.yaml` (skipped: App Engine config)
 - [x] `talks/2013/highperf/mart/3/app.yaml` (skipped: App Engine config)
 - [x] `talks/2013/highperf/santaembed.html`
-- [ ] `talks/2013/oscon-dl.slide`
+- [x] `talks/2013/oscon-dl.slide`
 - [x] `talks/2014/c2go.slide`
 - [x] `talks/2014/camlistore.slide`
 - [x] `talks/2014/compiling.slide`
@@ -736,10 +736,10 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2016/refactor/version1.html`
 - [x] `talks/2016/refactor/version2.html`
 - [x] `talks/2016/state-of-go.slide`
-- [ ] `talks/2016/token.slide`
-- [ ] `talks/2017/state-of-go-may.slide`
-- [ ] `talks/2017/state-of-go.slide`
-- [ ] `talks/2019/playground-v3/playground-v3.slide`
+- [x] `talks/2016/token.slide`
+- [x] `talks/2017/state-of-go-may.slide`
+- [x] `talks/2017/state-of-go.slide`
+- [x] `talks/2019/playground-v3/playground-v3.slide`
 - [x] `talks/article.tmpl`
 - [x] `talks/dir.tmpl`
 - [x] `talks/slide.tmpl`
