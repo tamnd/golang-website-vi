@@ -612,11 +612,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `solutions/google/sitereliability.md`
 - [x] `solutions/grail.md`
 - [x] `solutions/index.md`
-- [ ] `solutions/mercadolibre.md`
+- [x] `solutions/mercadolibre.md`
 - [x] `solutions/microsoft.md`
 - [x] `solutions/monzo.md`
 - [x] `solutions/netflix.md`
-- [ ] `solutions/paypal.md`
+- [x] `solutions/paypal.md`
 - [x] `solutions/riotgames.md`
 - [x] `solutions/salesforce.md`
 - [ ] `solutions/sitereliability.md`
