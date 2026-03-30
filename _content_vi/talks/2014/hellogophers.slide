@@ -1,0 +1,529 @@
+Xin chào, các Gopher!
+Bài phát biểu khai mạc Gophercon
+24 Apr 2014
+
+Rob Pike
+Google, Inc.
+https://go.dev
+
+* Video
+
+Một video của buổi nói chuyện này đã được ghi hình tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=VoS7DsT1rdM Xem buổi nói chuyện trên YouTube
+
+
+* Xin chào, các gopher!
+
+.image hellogophers/gophers.jpg 500 750
+
+* Xin chào, các gopher!
+
+.play hellogophers/hellogophers.go
+
+* Lịch sử
+
+Đây là một dịp lịch sử.
+
+Go đã đạt đến mức độ thành công xứng đáng có một hội nghị riêng.
+
+* Thành công
+
+Nhiều yếu tố góp phần vào thành công đó.
+
+- tính năng
+- sự thiếu vắng tính năng
+- sự kết hợp các tính năng
+- thiết kế
+- con người
+- thời điểm
+
+* Nghiên cứu điển hình
+
+Nhìn lại, tập trung vào mã nguồn.
+
+* Hai chương trình
+
+Cái nhìn cận cảnh về hai chương trình.
+
+Chương trình đầu tiên là chương trình Go _đầu_tiên_ mà _bạn_ từng thấy. Lịch sử của riêng bạn.
+Chương trình thứ hai là chương trình Go _đầu_tiên_ mà _chúng_tôi_ từng thấy. Lịch sử của tất cả gopher.
+
+Đầu tiên: "hello, world".
+
+* hello.b
+
+.code hellogophers/hello.b
+
+Xuất hiện lần đầu trong một hướng dẫn B năm 1972 của Brian W. Kernighan.
+(Không phải, như đôi khi được khẳng định, vài năm trước đó trong BCPL.)
+
+* hello.c
+
+.code hellogophers/hello.c
+
+Xuất hiện lần đầu trong
+_Lập_trình_bằng_C:_Một_hướng_dẫn_, của Brian W. Kernighan, 1974.
+Đi kèm như một tài liệu với Unix v5.
+
+* hello.c
+
+.code hellogophers/helloKnR.c
+
+Xuất hiện lần đầu trong
+_Ngôn_ngữ_lập_trình_C_, của Brian W. Kernighan và Dennis M. Ritchie, 1978.
+
+* hello.c, Draft ANSI C
+
+.code hellogophers/helloDraftAnsi.c
+
+Xuất hiện trong
+_Ngôn_ngữ_lập_trình_C_,_Ấn_bản_thứ_hai_, (Dựa trên Draft-Proposed ANSI C)
+của Brian W. Kernighan và Dennis M. Ritchie, 1988.
+
+* hello.c, ANSI C89
+
+.code hellogophers/helloAnsi.c
+
+Xuất hiện trong
+_Ngôn_ngữ_lập_trình_C_,_Ấn_bản_thứ_hai_, vòng hai,
+của Brian W. Kernighan và Dennis M. Ritchie, 1988.
+
+"Bạn phải đặt void ở ĐÓ à?" -Ken Thompson
+
+* Một hoặc hai thế hệ sau...
+
+(Bỏ qua tất cả các ngôn ngữ trung gian.)
+
+Các cuộc thảo luận về Go bắt đầu vào cuối năm 2007.
+
+Đặc tả được phác thảo đầu tiên vào tháng 3 năm 2008.
+Để thử nghiệm và tạo mẫu, công việc biên dịch đã bắt đầu.
+Ban đầu tạo ra đầu ra C.
+Sau khi đặc tả xuất hiện, trình biên dịch được viết lại để tạo mã gốc.
+
+* hello.go, ngày 6 tháng 6 năm 2008
+
+.code hellogophers/hello_20080606.go
+
+Bài kiểm tra được check-in đầu tiên.
+Hàm dựng sẵn `print` là tất cả những gì chúng ta có, và `main` trả về `int`.
+Lưu ý: không có dấu ngoặc đơn trên `print`.
+
+* hello.go, ngày 27 tháng 6 năm 2008
+
+.code hellogophers/hello_20080627.go
+
+Khi `main` trả về, chương trình gọi `exit(0)`.
+
+* hello.go, ngày 11 tháng 8 năm 2008
+
+.play hellogophers/hello_20080811.go
+
+Dấu ngoặc đơn bây giờ bắt buộc: `print` bây giờ là một hàm chứ không phải nguyên thủy.
+
+* hello.go, ngày 24 tháng 10 năm 2008
+
+.code hellogophers/hello_20081024.go
+
+"printf như chúng ta biết và yêu thích" được thêm vào.
+(Bài kiểm tra vẫn sử dụng `print` chứ không phải `printf`; chúng ta đã chuyển ví dụ ở đây.)
+
+* hello.go, ngày 15 tháng 1 năm 2009
+
+.play hellogophers/hello_20090115.go
+
+Chữ hoa để xuất. "Casification."
+
+* hello.go, ngày 11 tháng 12 năm 2009
+
+.play hellogophers/hello_20091211.go
+
+Không còn dấu chấm phẩy nữa.
+Một thay đổi lớn xảy ra _sau_ khi phát hành mã nguồn mở (10 tháng 11 năm 2009).
+
+Phiên bản hiện tại.
+
+Chúng tôi đã mất một lúc để đến đây (32 năm!).
+
+Rất nhiều lịch sử.
+
+* Không chỉ là C
+
+Chúng tôi "bắt đầu với C" nhưng Go khác biệt sâu sắc.
+Một số ngôn ngữ đã ảnh hưởng và thông báo cho thiết kế của Go:
+
+C: cú pháp câu lệnh và biểu thức
+Pascal: cú pháp khai báo
+Modula 2, Oberon 2: package
+CSP, Occam, Newsqueak, Limbo, Alef: đồng thời
+BCPL: quy tắc dấu chấm phẩy
+Smalltalk: phương thức
+Newsqueak: `<-`, `:=`
+APL: `iota`
+
+Và những thứ khác. Một số cũng được phát minh hoàn toàn mới: `defer`, hằng số, ví dụ.
+
+Cộng với những bài học tốt và xấu từ tất cả những thứ trên cộng với:
+C++, C#, Java, JavaScript, LISP, Python, Scala, ...
+
+* hello.go, Go phiên bản 1
+
+Điều này đưa chúng ta đến ngày hôm nay.
+
+.play hellogophers/hello.go
+
+Hãy đào sâu hơn, phân tích từng phần.
+
+* Hello, world trong 16 token
+
+`package`
+`main`
+`import`
+`"fmt"`
+`func`
+`main`
+`(`
+`)`
+`{`
+`fmt`
+`.`
+`Println`
+`(`
+`"Hello,`Gophers`(some`of`whom`know`日本語)!"`
+`)`
+`}`
+
+* package
+
+Chủ đề lớn trong các cuộc thảo luận thiết kế ban đầu: Chìa khóa cho khả năng mở rộng.
+
+Package là gì? Ý tưởng từ Modula-2 v.v.
+Tại sao có package?
+Giữ tất cả thông tin bạn cần để build.
+Không có phụ thuộc vòng tròn (import).
+Không có subpackage.
+Tách biệt tên package và đường dẫn package.
+Tầm nhìn là ở cấp package, không phải cấp type.
+Trong một package, bạn có toàn bộ ngôn ngữ, bên ngoài chỉ có những gì bạn cho phép.
+
+* main
+
+Một nơi mà C để lại dấu ấn.
+Ban đầu là `Main` vì một lý do nào đó đã bị quên.
+Package `Main`, hàm `main`.
+Đặc biệt vì là gốc của cây khởi tạo.
+
+* import
+
+Cơ chế để tải một package.
+Được thực hiện bởi trình biên dịch (thay vì một bộ xử lý văn bản).
+Làm việc chăm chỉ để làm cho nó hiệu quả và tuyến tính.
+Import một package, không phải một tập hợp các định danh.
+
+Còn về export: Trước đây nó là một từ khóa.
+
+* "fmt"
+
+Đường dẫn package chỉ là một chuỗi, không phải danh sách các định danh.
+Cho phép ngôn ngữ tránh định nghĩa nó có nghĩa gì — khả năng thích ứng.
+Từ đầu muốn URL là một lựa chọn.
+Cho phép tăng trưởng trong tương lai.
+
+* func
+Một từ khóa giới thiệu các hàm (và type, biến, hằng số) để dễ phân tích cú pháp.
+Phân tích cú pháp dễ dàng là quan trọng với các hàm literal (closure).
+
+Nhân tiện, từ khóa ban đầu là `function`.
+
+* Phụ chú: Chuỗi thư từ ngày 6 tháng 2 năm 2008
+
+From: Ken Thompson <ken@google.com>
+To: gri, r
+
+larry and sergey came by tonight. we
+talked about go for more than an hour.
+they both said they liked it very much.
+
+p.s. one of larrys comments was "why isnt function spelled func?"
+
+---
+
+From: Rob Pike <r@google.com>
+To: ken, gri
+
+fine with me.  seems compatible with 'var'.
+
+anyway we can always say, "larry said to call it 'func'"
+
+* main
+
+Nơi chương trình bắt đầu... ngoại trừ không phải vậy.
+Tách biệt khởi tạo khỏi thực thi bình thường, được lên kế hoạch từ lâu.
+Khởi tạo xảy ra ở đâu?
+Phản hồi lại thiết kế package.
+
+* ()
+
+Nhìn đây, không có `void`.
+Không có giá trị trả về cho `main`: được xử lý bởi runtime.
+Không có đối số hàm (dòng lệnh nằm trong package `os`).
+Không có giá trị trả về.
+
+Giá trị trả về và cú pháp.
+
+* {
+
+Dấu ngoặc nhọn không phải khoảng trắng.
+Và không phải dấu ngoặc vuông.
+Tại sao dòng mới lại đứng sau dấu ngoặc nhọn?
+
+* fmt
+
+Tất cả các định danh được import đều được _đủ_điều_kiện_ bởi import của chúng.
+_Mỗi_ định danh đều là local trong package hay hàm, hoặc được đủ điều kiện bởi type hoặc import.
+Ảnh hưởng sâu sắc đến khả năng đọc.
+
+Tại sao `fmt` mà không phải `format`?
+
+* .
+
+Go có bao nhiêu cách dùng ký hiệu dấu chấm? (Nhiều lắm.)
+Ý nghĩa của `a.B` đòi hỏi sử dụng hệ thống kiểu.
+Nhưng nó rõ ràng với con người và rất dễ đọc.
+
+Tự động thăng cấp con trỏ (không có toán tử `->`).
+
+* Println
+
+`Println` không phải `println`: chữ hoa để export.
+Luôn biết nó sẽ được điều khiển bởi reflection. (An toàn, in không có định dạng.)
+Hàm variadic.
+Kiểu đối số là `(...)`; trở thành `(...interface{})` vào ngày 1 tháng 2 năm 2010.
+
+* (
+
+Cú pháp hàm truyền thống.
+
+* "Hello, Gophers (some of whom know 日本語)!"
+
+Mã nguồn đầu vào UTF-8, vì vậy các chuỗi dưới dạng literal tự động là UTF-8.
+Nhưng chuỗi là gì?
+Một trong những thứ đầu tiên được viết trong đặc tả, hầu như không thay đổi ngày nay.
+
+.link /blog/strings go.dev/blog/strings
+
+* )
+
+Không có dấu chấm phẩy.
+Dấu chấm phẩy biến mất ngay sau khi phát hành.
+Rất nhiều lần loay hoay để cố gắng loại bỏ chúng trong những ngày đầu.
+Cuối cùng chấp nhận cách tiếp cận của BCPL.
+
+* }
+
+Xong.
+
+* Phụ chú: Chưa được thảo luận
+
+- type
+- hằng số
+- phương thức
+- interface
+- thư viện
+- quản lý bộ nhớ
+- đồng thời (sắp tới)
+
+Cộng với công cụ, hệ sinh thái, cộng đồng, ...:
+Ngôn ngữ là trung tâm nhưng chỉ là một phần của câu chuyện.
+
+* Thành công
+
+Các yếu tố:
+
+- xây dựng trên lịch sử
+- xây dựng trên kinh nghiệm
+- quá trình thiết kế
+- ý tưởng ban đầu được tinh chỉnh thành cách tiếp cận cuối cùng
+- nỗ lực tập trung của một nhóm nhỏ tận tụy
+
+Cuối cùng: Cam kết.
+
+Go 1.0 đã khóa ngôn ngữ và thư viện.
+
+* Một vòng nữa
+
+Bây giờ hãy xem sự phát triển tương tự của chương trình thứ hai.
+
+* Bài toán: Sàng số nguyên tố
+
+Đặc tả bài toán từ
+_Communicating_Sequential_Processes_, của C. A. R. Hoare, 1978
+
+"Bài toán: In theo thứ tự tăng dần tất cả các số nguyên tố nhỏ hơn
+10000. Sử dụng một mảng các process, SIEVE, trong đó mỗi
+process nhận đầu vào là một số nguyên tố từ bộ trước và in nó.
+Sau đó process nhận đầu vào là một luồng số tăng dần
+từ bộ trước và chuyển chúng đến bộ kế tiếp,
+loại bỏ bất kỳ số nào là bội số của số nguyên tố ban đầu."
+
+* Giải pháp
+
+Được định nghĩa trong bài báo CSP năm 1978.
+(Lưu ý: không phải sàng Eratosthenes.)
+
+"Giải pháp đẹp này do David Gries đóng góp."
+
+* CSP
+
+Trong bài báo CSP năm 1978 của Hoare
+
+.code hellogophers/sieve.csp
+
+Không có channel, chỉ có process nên số lượng số nguyên tố được cố định bởi chương trình.
+
+* Newsqueak
+
+_khoảng_ 1988.
+Ngôn ngữ của Rob Pike, chương trình của Tom Cargill qua Doug McIlroy.
+
+Sử dụng channel, vì vậy độ dài chạy có thể lập trình được.
+(Ý tưởng về channel đến từ đâu?)
+
+.code hellogophers/sieve.newsqueak 1,/BREAK/
+
+* Newsqueak (tiếp theo)
+
+.code hellogophers/sieve.newsqueak /BREAK/,$
+
+* sieve.go, ngày 5 tháng 3 năm 2008
+
+Phiên bản đầu tiên trong một đặc tả Go, có lẽ là chương trình không tầm thường thứ hai được viết.
+`>` để gửi, `<` để nhận. Channel là con trỏ. `Main` được viết hoa.
+
+.code hellogophers/sieve_20080305.go 1,/BREAK/
+
+* sieve.go, ngày 5 tháng 3 năm 2008 (tiếp theo)
+
+.code hellogophers/sieve_20080305.go /BREAK/,$
+
+* sieve.go, ngày 22 tháng 7 năm 2008
+
+`-<` để gửi, `<-` để nhận. Channel vẫn là con trỏ. Giờ `main` không viết hoa.
+
+.code hellogophers/sieve_20080722.go 1,/BREAK/
+
+* sieve.go, ngày 22 tháng 7 năm 2008 (tiếp theo)
+
+.code hellogophers/sieve_20080722.go /BREAK/,$
+
+* sieve.go, ngày 17 tháng 9 năm 2008
+
+Toán tử giao tiếp bây giờ là tiền tố và hậu tố `<-`. Channel vẫn là con trỏ.
+
+.code hellogophers/sieve_20080917.go 1,/BREAK/
+
+* sieve.go, ngày 17 tháng 9 năm 2008 (tiếp theo)
+
+.code hellogophers/sieve_20080917.go /BREAK/,$
+
+* sieve.go, ngày 6 tháng 1 năm 2009
+
+Hàm dựng sẵn `make` xuất hiện. Không có con trỏ. Mã sai! (Một `*` còn lại, kiểu đối số không đúng.)
+
+.code hellogophers/sieve_20090106.go 1,/BREAK/
+
+* sieve.go, ngày 6 tháng 1 năm 2009 (tiếp theo)
+
+.code hellogophers/sieve_20090106.go /BREAK/,$
+
+* sieve.go, ngày 25 tháng 9 năm 2009
+
+Phiên bản hiện đại đúng đầu tiên. Ngoài ra: không còn viết hoa. Sử dụng `fmt`.
+
+.play hellogophers/sieve_20090925.go 1,/BREAK/
+
+* sieve.go, ngày 25 tháng 9 năm 2009 (tiếp theo)
+
+.play hellogophers/sieve_20090925.go  /BREAK/,$
+
+* sieve.go, ngày 10 tháng 12 năm 2009
+
+Dấu chấm phẩy biến mất. Chương trình như ngày nay.
+
+.play hellogophers/sieve.go 1,/BREAK/
+
+* sieve.go, ngày 10 tháng 12 năm 2009 (tiếp theo)
+
+.play hellogophers/sieve.go /BREAK/,$
+
+"Giải pháp đẹp này do một quá trình thiết kế kéo dài nhiều thập kỷ đóng góp."
+
+* Phụ chú: Chưa được thảo luận
+
+- `select`
+
+Bộ kết nối cốt lõi cho các ứng dụng đồng thời thực sự. (Một sự thật không phải lúc nào cũng được đánh giá cao).
+Nguồn gốc trong các lệnh được bảo vệ của Dijkstra.
+Được tạo ra thực sự đồng thời trong CSP của Hoare.
+Được tinh chỉnh qua Newsqueak, Alef, Limbo và các con đường khác.
+
+Phiên bản của Go được chỉ định vào ngày 26 tháng 3 năm 2008.
+Đơn giản hóa, làm rõ, các cân nhắc cú pháp.
+
+* Ổn định
+
+Chương trình Sieve không thay đổi kể từ cuối năm 2009 — ổn định!
+
+Các hệ thống mã nguồn mở không phải lúc nào cũng tương thích và ổn định một cách đáng tin cậy.
+
+Go thì có.
+
+Đây là một lý do rất quan trọng cho sự thành công của Go.
+
+* Xu hướng
+
+Các đồ thị trong số liệu sử dụng cho thấy điểm bẻ cong tại thời điểm phát hành Go 1.0.
+
+.image hellogophers/trends.png
+
+* Thành công
+
+Các yếu tố cho sự thành công của Go?
+
+Rõ ràng: Tính năng và công cụ.
+
+- đồng thời
+- thu gom rác
+- thực thi hiệu quả
+- kiểu tĩnh nhưng cảm giác động
+- thư viện chuẩn phong phú nhưng giới hạn
+- công cụ (và các yếu tố làm cho điều đó có thể)
+- `gofmt`
+- lập trình quy mô lớn
+
+* Thành công
+
+Ít rõ ràng hơn: quy trình.
+
+- tập trung vào các mục tiêu ban đầu
+- phát triển tập trung theo sau là đóng băng
+- sự đồng thuận của một nhóm cốt lõi nhỏ
+- những đóng góp quan trọng từ một cộng đồng "hiểu biết"
+- hệ sinh thái phong phú được tạo ra như hệ quả
+
+Tóm lại, một cộng đồng mã nguồn mở chia sẻ sứ mệnh của chúng tôi,
+kết hợp với một ngôn ngữ được thiết kế cho thế giới ngày nay.
+
+* Phù hợp với mục đích
+
+Từ _Go:_ngôn_ngữ_mới_nổi_của_cơ_sở_hạ_tầng_đám_mây_ của Donnie Berkholz, tháng 3 năm 2014.
+[[/s/emerging]]
+
+.image hellogophers/emerging.png
+
+* Tương lai
+
+Đây là lúc bạn tham gia!
+
+.image hellogophers/gophers.jpg 500 750

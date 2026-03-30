@@ -1,0 +1,258 @@
+Kỹ thuật kiểm thử
+Google I/O 2014
+
+Andrew Gerrand
+adg@golang.org
+
+* Video
+
+Buổi nói chuyện này được trình bày tại golang-syd vào tháng 7 năm 2014.
+
+.link http://www.youtube.com/watch?v=ndmB0bj7eyw Xem buổi nói chuyện trên YouTube
+
+
+* Cơ bản
+
+* Kiểm thử mã Go
+
+Go có một framework kiểm thử tích hợp sẵn.
+
+Nó được cung cấp bởi package `testing` và lệnh `go` `test`.
+
+Đây là một file kiểm thử hoàn chỉnh kiểm thử hàm `strings.Index`:
+
+.code testing/test1/string_test.go
+
+
+* Kiểm thử dạng bảng
+
+Cú pháp struct literal của Go giúp dễ dàng viết các kiểm thử dạng bảng:
+
+.code testing/test2/string_test.go /func TestIndex/,/^}/
+
+
+* T
+
+Đối số `*testing.T` được sử dụng để báo cáo lỗi:
+
+	t.Errorf("got bar = %v, want %v", got, want)
+	t.Fatalf("Frobnicate(%v) returned error: %v", arg, err)
+	t.Logf("iteration %v", i)
+
+Và kích hoạt kiểm thử song song:
+
+	t.Parallel()
+
+Và kiểm soát liệu một kiểm thử có chạy hay không:
+
+	if runtime.GOARCH == "arm" {
+		t.Skip("this doesn't work on ARM")
+	}
+
+
+* Chạy kiểm thử
+
+Lệnh `go` `test` chạy kiểm thử cho package được chỉ định.
+(Mặc định là package trong thư mục hiện tại.)
+
+	$ go test
+	PASS
+
+	$ go test -v
+	=== RUN TestIndex
+	--- PASS: TestIndex (0.00 seconds)
+	PASS
+
+Để chạy kiểm thử cho tất cả các dự án của tôi:
+
+	$ go test github.com/nf/...
+
+Hoặc cho thư viện chuẩn:
+
+	$ go test std
+
+
+* Độ phủ kiểm thử
+
+Công cụ `go` có thể báo cáo thống kê độ phủ kiểm thử.
+
+	$ go test -cover
+	PASS
+	coverage: 96.4% of statements
+	ok  	strings	0.692s
+
+Công cụ `go` có thể tạo ra các hồ sơ độ phủ có thể được diễn giải bởi công cụ `cover`.
+
+	$ go test -coverprofile=cover.out
+	$ go tool cover -func=cover.out
+	strings/reader.go:    Len             66.7%
+	strings/strings.go:   TrimSuffix     100.0%
+	... nhiều dòng bị bỏ qua ...
+	strings/strings.go:   Replace        100.0%
+	strings/strings.go:   EqualFold      100.0%
+	total:                (statements)    96.4%
+
+* Hiển thị độ phủ
+
+	$ go tool cover -html=cover.out
+
+.image testing/cover.png
+
+
+* Kỹ thuật nâng cao
+
+* Một chương trình ví dụ
+
+*outyet* là một web server thông báo liệu một phiên bản Go cụ thể đã được gắn tag hay chưa.
+
+	go get github.com/golang/example/outyet
+
+.image testing/go1.1.png
+
+
+* Kiểm thử HTTP client và server
+
+Package `net/http/httptest` cung cấp các hàm trợ giúp để kiểm thử mã thực hiện hoặc phục vụ các yêu cầu HTTP.
+
+
+* httptest.Server
+
+Một `httptest.Server` lắng nghe trên một cổng được hệ thống chọn trên giao diện loopback cục bộ, để sử dụng trong các kiểm thử HTTP end-to-end.
+
+	type Server struct {
+		URL      string // URL cơ sở dạng http://ipaddr:port không có dấu gạch chéo ở cuối
+		Listener net.Listener
+
+		// TLS là cấu hình TLS tùy chọn, được điền với cấu hình mới
+		// sau khi TLS được khởi động. Nếu được đặt trên server chưa khởi động trước khi StartTLS
+		// được gọi, các trường hiện có được sao chép vào cấu hình mới.
+		TLS *tls.Config
+
+		// Config có thể thay đổi sau khi gọi NewUnstartedServer và
+		// trước Start hoặc StartTLS.
+		Config *http.Server
+	}
+
+	func NewServer(handler http.Handler) *Server
+
+	func (*Server) Close() error
+
+* httptest.Server trong thực tế
+
+Mã này thiết lập một HTTP server tạm thời phục vụ phản hồi "Hello" đơn giản.
+
+.play testing/httpserver.go /START/,/STOP/
+
+
+* httptest.ResponseRecorder
+
+`httptest.ResponseRecorder` là một cài đặt của `http.ResponseWriter` ghi lại các đột biến của nó để kiểm tra sau trong các kiểm thử.
+
+	type ResponseRecorder struct {
+		Code      int           // mã phản hồi HTTP từ WriteHeader
+		HeaderMap http.Header   // các header phản hồi HTTP
+		Body      *bytes.Buffer // nếu không nil, bytes.Buffer để thêm dữ liệu đã ghi vào
+		Flushed   bool
+	}
+
+* httptest.ResponseRecorder trong thực tế
+
+Bằng cách truyền một `ResponseRecorder` vào một HTTP handler, chúng ta có thể kiểm tra phản hồi được tạo ra.
+
+.play testing/httprecorder.go /START/,/STOP/
+
+
+* Phát hiện Race
+
+Data race xảy ra khi hai goroutine truy cập cùng một biến đồng thời và ít nhất một trong các truy cập là ghi.
+
+Để giúp chẩn đoán các lỗi như vậy, Go bao gồm bộ phát hiện data race tích hợp sẵn.
+
+Truyền cờ `-race` cho công cụ go để kích hoạt bộ phát hiện race:
+
+	$ go test -race mypkg    // để kiểm thử package
+	$ go run -race mysrc.go  // để chạy file nguồn
+	$ go build -race mycmd   // để build lệnh
+	$ go install -race mypkg // để cài đặt package
+
+
+* Kiểm thử với đồng thời
+
+Khi kiểm thử mã đồng thời, có sự cám dỗ sử dụng sleep;
+nó dễ và hoạt động hầu hết thời gian.
+
+Nhưng "hầu hết thời gian" không phải là lúc nào cũng vậy và các kiểm thử không ổn định sẽ xuất hiện.
+
+Chúng ta có thể sử dụng các nguyên thủy đồng thời của Go để làm cho các kiểm thử không ổn định dựa trên sleep trở nên đáng tin cậy.
+
+
+* Tìm lỗi với phân tích tĩnh: vet
+
+Công cụ `vet` kiểm tra mã để phát hiện các lỗi lập trình viên phổ biến:
+
+- định dạng printf sai,
+- build tag sai,
+- sử dụng biến range loop sai trong closure,
+- gán vô ích,
+- mã không thể đến được,
+- sử dụng mutex sai,
+- và nhiều hơn nữa.
+
+Cách sử dụng:
+
+	go vet [package]
+
+
+* Kiểm thử từ bên trong
+
+Hầu hết các kiểm thử được biên dịch như một phần của package đang được kiểm thử.
+
+Điều này có nghĩa là chúng có thể truy cập các chi tiết chưa được xuất, như chúng ta đã thấy.
+
+
+* Kiểm thử từ bên ngoài
+
+Đôi khi bạn muốn chạy các kiểm thử của mình từ bên ngoài package đang được kiểm thử.
+
+(Các file kiểm thử là `package` `foo_test` thay vì `package` `foo`.)
+
+Điều này có thể phá vỡ các chu kỳ phụ thuộc. Ví dụ:
+
+- Package `testing` sử dụng `fmt`.
+- Các kiểm thử `fmt` phải import `testing`.
+- Vì vậy các kiểm thử `fmt` nằm trong package `fmt_test` và có thể import cả `testing` và `fmt`.
+
+
+* Mock và fake
+
+Go tránh mock và fake để ưu tiên viết mã nhận các interface rộng.
+
+Ví dụ, nếu bạn đang viết một trình phân tích cú pháp định dạng file, đừng viết hàm như thế này:
+
+	func Parse(f *os.File) error
+
+thay vào đó, hãy viết các hàm nhận interface bạn cần:
+
+	func Parse(r io.Reader) error
+
+(Một `*os.File` triển khai `io.Reader`, cũng như `bytes.Buffer` hay `strings.Reader`.)
+
+
+* Kiểm thử subprocess
+
+Đôi khi bạn cần kiểm thử hành vi của một process, không chỉ một hàm.
+
+.code testing/subprocess/subprocess.go /func Crasher/,/^}/
+
+Để kiểm thử mã này, chúng ta gọi binary kiểm thử như một subprocess:
+
+.code testing/subprocess/subprocess_test.go /func TestCrasher/,/^}/
+
+
+* Thêm thông tin
+
+.link /pkg/testing/ go.dev/pkg/testing/
+
+.link /cmd/go/ go.dev/cmd/go/
+
+.link / go.dev

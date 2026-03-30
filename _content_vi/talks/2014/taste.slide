@@ -1,0 +1,481 @@
+Nếm thử Go
+August 14, 2014
+
+Robert Griesemer
+Google
+gri@golang.org
+
+
+* Ngôn ngữ lập trình Go
+
+- Hiện đại
+# Hỗ trợ OO nhưng không hướng kiểu
+# hỗ trợ mạnh mẽ cho đồng thời
+- Nhỏ gọn, súc tích, mục đích chung
+- Mệnh lệnh, kiểm tra kiểu tĩnh, an toàn kiểu động
+- Thu gom rác
+- Biên dịch sang mã gốc, liên kết tĩnh
+- Biên dịch nhanh, thực thi hiệu quả
+
+Được thiết kế bởi lập trình viên cho lập trình viên!
+
+
+* Xin chào, Thế giới!
+
+.play taste/hello.go
+
+# Unicode
+# Chương trình được tổ chức trong các package
+# Một package là tập hợp các file package
+# Một file package thể hiện các phụ thuộc của nó vào các package khác thông qua khai báo import
+# Phần còn lại của file package là danh sách các khai báo (hằng số, biến, kiểu và hàm)
+
+
+* Xin chào, Thế giới! Kiểu Internet
+
+.play taste/hellohttp.go
+
+
+* Các phần tử chương trình
+
+* Hằng số
+
+- Được duy trì chính xác:
+	const e = 2.71828182845904523536028747135266249775724709369995957496696763
+	const third = 1.0/3
+- Có kiểu hoặc không có kiểu:
+	const M64 int64 = 1<<20
+        const M = 1<<20
+- Được đánh giá tại thời điểm biên dịch:
+	const big = 1<<100 / 1e30  // biểu thức hằng số hợp lệ
+
+Trình biên dịch báo lỗi nếu một hằng số không vừa vào chỗ nó được _sử_dụng_.
+
+
+* Biến
+
+- Kiểu tĩnh:
+	var x int
+	var s, t string
+- Được khởi tạo ngầm định hoặc tường minh:
+	var x int
+	var s, t string = "foo", "bar"  // gán nhiều giá trị
+
+	var x = 42                      // int
+	var s, b = "foo", true          // string, bool
+- Khai báo biến ngắn gọn (chỉ bên trong hàm):
+	x := 42
+	s, b := "foo", true
+- Có thể lấy địa chỉ của _bất_kỳ_ biến nào một cách an toàn!
+	return &x
+# trình biên dịch sẽ làm điều đúng
+
+
+* Kiểu
+
+- Các kiểu được khai báo sẵn, những kiểu thường gặp:
+	uint8 (byte), uint16, uint32, uint32, uint64,
+	int8, int16, int32, int32 (rune), int64,
+	float32, float64,
+	complex64, complex128,
+	uint, int, uintptr,
+	bool, string,
+	error  // không quá thường gặp
+
+- Kiểu composite:
+	array, struct, pointer, function,
+	slice, map, channel
+
+- Kiểu trừu tượng:
+	interface
+
+
+* Khai báo kiểu
+
+- Thành phần từ trái sang phải (kiểu Pascal):
+	[10]byte  // mảng 10 byte
+
+	struct {
+		name        string
+		left, right *Node
+		action      func(*Node)
+	}
+
+	func(a, b, c int)
+	func(http.ResponseWriter, *http.Request) error
+
+- Khai báo kiểu định nghĩa một kiểu _mới_:
+	type Weekday int
+
+	type Point struct {
+		x, y int
+	}
+
+
+* Slice
+
+	[]T  // slice của T
+
+- Bộ mô tả cho một đoạn mảng bên dưới
+- Có thể phát triển và thu nhỏ
+- Có độ dài và dung lượng
+- Gán một slice sao chép bộ mô tả, không phải mảng bên dưới
+
+Các thao tác slice phổ biến:
+
+	len(s)
+	s[i]
+	s[i:j]
+	append(s, x)  // thêm phần tử x vào slice s và trả về slice mới
+
+- Slice đóng vai trò của mảng có kích thước động
+- Được sử dụng rộng rãi trong mã Go
+
+
+* Map
+
+	map[K]V  // map K -> V
+
+- Map là bảng băm do ngôn ngữ cung cấp
+- Ánh xạ các giá trị kiểu khóa K đến các giá trị kiểu V
+- Gán một map sao chép tham chiếu map, không phải nội dung map
+
+Các thao tác map phổ biến:
+
+	make(map[K]V)
+	len(m)
+	m[k]
+	delete(m, k)
+
+- Thứ tự lặp map không được chỉ định:
+
+	for key, value := range m {
+		// thứ tự của chuỗi khóa khác nhau mỗi lần
+	}
+
+* Câu lệnh
+
+- Dấu ngoặc nhọn (kiểu C)
+- Gán nhiều giá trị và một số cấu trúc mới khác
+- Nhiều cải tiến: dấu ngoặc nhọn bắt buộc, không có ngoặc đơn cho điều kiện, break ngầm định trong switch, không có dấu chấm phẩy, v.v.
+	a, b = b, a                 // hoán đổi
+	f, err = os.Open(filename)
+
+	if x < y {
+		return x
+	} else {
+		return y
+	}
+
+	switch day {
+	case Mon:
+		...
+		// break là ngầm định
+	case Tue, Wed:
+		...
+	}
+
+
+* Một vài lời về cú pháp
+
+_Cú_pháp_không_quan_trọng_trừ_khi_bạn_là_lập_trình_viên._
+-- Rob Pike
+
+Hệ quả:
+
+_Tính_nhỏ_gọn_của_cú_pháp_không_quan_trọng_trừ_khi_bạn_đang_đọc_chương_trình._
+
+Nhỏ gọn không có nghĩa là ngắn gọn khó hiểu. Khả năng đọc là rất quan trọng.
+
+
+* Một ví dụ: IndexOfAny trong Java
+
+	public static int IndexOfAny(String str, char[] chars) {
+		if (isEmpty(str) || ArrayUtils.isEmpty(chars)) {
+			return -1;
+		}
+		for (int i = 0; i < str.length(); i++) {
+			char ch = str.charAt(i);
+			for (int j = 0; j < chars.length; j++) {
+				if (chars[j] == ch) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+
+299 ký tự (100%), 101 token (100%)
+
+
+* IndexOfAny trong Go
+
+.code taste/examples.go /IndexOfAny START/,/IndexOfAny END/
+
+217 ký tự (73%), 62 token (61%)
+
+Ít hơn gần 30% văn bản và ít hơn đáng ngạc nhiên 40% token để đọc!
+
+_Ít_rối_rắm_hơn_có_nghĩa_là_giảm_tải_nhận_thức._
+
+# cải thiện tối thiểu
+# các chương trình Go điển hình có xu hướng đòi hỏi ít hơn nhiều so với 70% kích thước mã của các chương trình tương đương trong các ngôn ngữ khác
+
+
+* Hàm
+
+- Hàm thông thường
+	func Sin(x float64) float64
+	func AddScale(x, y int, f float64) int
+
+- Nhiều giá trị trả về
+	func Write(data []byte) (written int, err error)
+
+- Danh sách tham số variadic không có ma thuật
+	func Printf(format string, args ...interface{})
+
+- Hàm là các giá trị hạng nhất
+	var delta int
+	return func(x int) int { return x + delta }
+
+
+* Giá trị hàm: Một ví dụ
+
+	// walkStdLib gọi f với tên file của mỗi file .go
+	// trong thư viện std cho đến khi f trả về false.
+	func walkStdLib(f func(filename string) bool)
+
+Gọi walkStdLib với một closure:
+
+.code taste/walk.go /example START/,/example END/
+
+Trực tiếp hơn:
+
+.play taste/walk.go /main START/,/main END/
+
+
+* Phương thức
+
+Phương thức là các hàm có tham số _receiver_:
+
+.code taste/point.go /String START/,/String END/
+
+Receiver liên kết phương thức với _kiểu_cơ_sở_ (Point):
+
+.code taste/point.go /Point START/,/Point END/
+
+Phương thức được gọi thông qua ký hiệu dấu chấm thông thường:
+
+.play taste/point.go /main START/,/main END/
+
+
+* Phương thức có thể được định nghĩa cho bất kỳ kiểu do người dùng định nghĩa nào!
+
+Đối với kiểu Weekday:
+
+.code taste/weekday.go /type START/,/type END/
+
+Định nghĩa phương thức String trên Weekday:
+
+.code taste/weekday.go /String START/,/String END/
+
+.play taste/weekday.go /main START/,/main END/
+
+Các cuộc gọi phương thức thông qua kiểu không phải interface được dispatch tĩnh.
+
+* Kiểu interface
+
+- Trừu tượng
+- Định nghĩa tập hợp (có thể rỗng) các chữ ký phương thức
+- Giá trị của _bất_kỳ_kiểu_nào_ triển khai tất cả các phương thức của interface có thể được gán cho biến kiểu interface đó.
+
+Ví dụ:
+
+	interface{}  // interface rỗng
+
+	interface {
+		String() string
+	}
+
+	interface {
+		Len() int
+		Swap(i, j int)
+		Less(i, j int) bool
+	}
+
+
+* Sử dụng interface
+
+.code taste/stringer.go /Stringer START/,/Stringer END/
+
+Cả Weekday và Point đều định nghĩa phương thức String, vì vậy các giá trị của cả hai có thể được gán cho
+một biến kiểu Stringer:
+
+.play taste/stringer.go /main START/,/main END/
+
+Các cuộc gọi phương thức thông qua kiểu interface được dispatch động ("virtual function call").
+
+
+* Một ví dụ lớn hơn
+
+
+* Top 10 định danh trong thư viện chuẩn
+
+.code taste/idents.go
+
+	$ cat $(find $GOROOT -name '*.go') | ./idents | sort | uniq -c | sort -nr | sed 10q
+
+
+* Một biến thể: Histogram của các câu lệnh Go
+
+Một histogram là một map từ tên câu lệnh ("if", "for", v.v.) đến số lần sử dụng:
+
+.code taste/histo0.go /histogram START/,/histogram END/
+
+Thuật toán:
+
+- Sử dụng walkStdLib để duyệt qua tất cả các file của thư viện chuẩn
+- Đối với mỗi file, phân tích cú pháp và tạo cây cú pháp trừu tượng
+- Duyệt cây cú pháp và thêm mỗi câu lệnh vào histogram
+- In kết quả
+
+.code taste/histo0.go /main START/,/main END/
+
+
+* Xử lý một file mã nguồn Go
+
+.code taste/histo0.go /add START/,/add END/
+
+
+* In histogram
+
+.play taste/histo0.go /print START/,/print END/
+
+Lưu ý: Thứ tự lặp histogram (map) không được chỉ định.
+
+* Sắp xếp
+
+sort.Sort hoạt động trên bất kỳ kiểu nào triển khai sort.Interface:
+
+	interface {
+		Len() int
+		Swap(i, j int)
+		Less(i, j int) bool
+	}
+
+Ví dụ, để sắp xếp một slice chuỗi theo thứ tự từ điển, hãy định nghĩa:
+
+.code taste/sort.go /lexical START/,/lexical END/
+
+Và sắp xếp:
+
+	sort.Sort(lexical(s))  // trong đó s là một slice []string
+
+
+* Sắp xếp các mục histogram
+
+.code taste/histo.go /byCount START/,/byCount END/
+
+
+* In histogram được cải thiện
+
+.play taste/histo.go /print START/,/print END/
+
+
+* Đồng thời
+
+* Goroutine
+
+- Câu lệnh _go_ khởi chạy một lời gọi hàm như một goroutine
+	go f()
+	go f(x, y, ...)
+
+- Một goroutine chạy đồng thời (nhưng không nhất thiết song song)
+- Một goroutine có stack riêng của nó
+
+
+* Một ví dụ đơn giản
+
+.code taste/concurrency1.go /f START/,/f END/
+
+Hàm f được khởi chạy như 3 goroutine khác nhau, tất cả chạy đồng thời:
+
+.play taste/concurrency1.go /main START/,/main END/
+
+
+* Giao tiếp qua channel
+
+Một kiểu channel chỉ định kiểu giá trị channel (và có thể là hướng giao tiếp):
+
+	chan int
+	chan<- string  // channel chỉ gửi
+	<-chan T       // channel chỉ nhận
+
+Một channel là một biến kiểu channel:
+
+	var ch chan int
+	ch := make(chan int)  // khai báo và khởi tạo với channel mới tạo
+
+Một channel cho phép _gửi_ và _nhận_ giá trị:
+
+	ch <- 1   // gửi giá trị 1 trên channel ch
+	x = <-ch  // nhận một giá trị từ channel ch (và gán cho x)
+
+Các thao tác channel đồng bộ hóa các goroutine đang giao tiếp.
+
+* Các goroutine giao tiếp
+
+Mỗi goroutine gửi kết quả của nó qua channel ch:
+
+.code taste/concurrency2.go /f START/,/f END/
+
+Goroutine main nhận (và in) tất cả kết quả từ cùng channel:
+
+.play taste/concurrency2.go /main START/,/main END/
+
+
+* Kết hợp tất cả lại
+
+
+* Phân tích file đồng thời, kiểu map-reduce
+
+Mapper:
+
+.code taste/histop.go /mapper START/,/mapper END/
+
+Reducer:
+
+.code taste/histop.go /reducer START/,/reducer END/
+
+.code taste/histop.go /merge START/,/merge END/
+
+
+* Từ chương trình tuần tự...
+
+.play taste/histo.go /main START/,/main END/
+
+
+* ... đến chương trình đồng thời
+
+.play taste/histop.go /main START/,/main END/
+
+
+* Còn rất nhiều thứ nữa!
+
+- Thư viện chuẩn phong phú
+
+.link /pkg/ go.dev/pkg/
+
+- Các công cụ mạnh mẽ
+
+.link /play/p/Au02fFpYdf go.dev/play/p/Au02fFpYdf
+
+# playground, gofmt
+
+- Hỗ trợ đa nền tảng
+
+.link http://build.golang.org/
+
+- Tài liệu tuyệt vời
+
+.link /tour/ go.dev/tour

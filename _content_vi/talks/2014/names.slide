@@ -1,0 +1,235 @@
+Tên gọi có ý nghĩa gì?
+October 2014
+
+Andrew Gerrand
+Google Inc.
+adg@golang.org
+@enneff
+https://go.dev/
+
+
+* Tên gọi quan trọng
+
+Khả năng đọc là đặc tính xác định của mã tốt.
+
+Tên gọi tốt là điều cốt yếu cho khả năng đọc.
+
+Bài nói chuyện này về việc đặt tên trong Go.
+
+
+* Tên gọi tốt
+
+Một tên tốt là:
+
+- Nhất quán (dễ đoán),
+- Ngắn gọn (dễ gõ),
+- Chính xác (dễ hiểu).
+
+
+* Quy tắc ngón tay cái
+
+Khoảng cách giữa khai báo tên và nơi sử dụng càng lớn,
+thì tên nên càng dài.
+
+
+* Sử dụng MixedCase
+
+Tên trong Go nên sử dụng `MixedCase`.
+
+(Đừng sử dụng `names_with_underscores`.)
+
+Từ viết tắt nên viết hoa toàn bộ, như trong `ServeHTTP` và `IDProcessor`.
+
+
+* Biến cục bộ
+
+Giữ chúng ngắn; tên dài che khuất những gì mã _thực_sự_làm_.
+
+Các kết hợp biến/kiểu phổ biến có thể sử dụng tên rất ngắn:
+
+Thích `i` hơn `index`.
+Thích `r` hơn `reader`.
+Thích `b` hơn `buffer`.
+
+Tránh tên dư thừa, xét theo ngữ cảnh của chúng:
+
+Thích `count` hơn `runeCount` bên trong một hàm tên là `RuneCount`.
+Thích `ok` hơn `keyInMap` trong câu lệnh
+
+	v, ok := m[k]
+
+Tên dài hơn có thể giúp ích trong các hàm dài, hoặc các hàm có nhiều biến cục bộ.
+(Nhưng thường điều này có nghĩa là bạn nên tái cấu trúc.)
+
+
+* Xấu
+
+	func RuneCount(buffer []byte) int {
+		runeCount := 0
+		for index := 0; index < len(buffer); {
+			if buffer[index] < RuneSelf {
+				index++
+			} else {
+				_, size := DecodeRune(buffer[index:])
+				index += size
+			}
+			runeCount++
+		}
+		return runeCount
+	}
+
+
+* Tốt
+
+	func RuneCount(b []byte) int {
+		count := 0
+		for i := 0; i < len(b); {
+			if b[i] < RuneSelf {
+				i++
+			} else {
+				_, n := DecodeRune(b[i:])
+				i += n
+			}
+			count++
+		}
+		return count
+	}
+
+
+* Tham số
+
+Tham số hàm giống như biến cục bộ,
+nhưng chúng cũng đóng vai trò là tài liệu.
+
+Khi các kiểu mang tính mô tả, chúng nên ngắn:
+
+	func AfterFunc(d Duration, f func()) *Timer
+
+	func Escape(w io.Writer, s []byte)
+
+Khi các kiểu mơ hồ hơn, tên có thể cung cấp tài liệu:
+
+	func Unix(sec, nsec int64) Time
+
+	func HasPrefix(s, prefix []byte) bool
+
+
+* Giá trị trả về
+
+Giá trị trả về trên các hàm đã xuất chỉ nên được đặt tên cho mục đích tài liệu.
+
+Đây là những ví dụ tốt về giá trị trả về được đặt tên:
+
+	func Copy(dst Writer, src Reader) (written int64, err error)
+
+	func ScanBytes(data []byte, atEOF bool) (advance int, token []byte, err error)
+
+
+* Receiver
+
+Receiver là một loại đối số đặc biệt.
+
+Theo quy ước, chúng là một hoặc hai ký tự phản ánh kiểu receiver,
+vì chúng thường xuất hiện trên hầu hết mọi dòng:
+
+	func (b *Buffer) Read(p []byte) (n int, err error)
+
+	func (sh serverHandler) ServeHTTP(rw ResponseWriter, req *Request)
+
+	func (r Rectangle) Size() Point
+
+Tên receiver nên nhất quán qua các phương thức của một kiểu.
+(Đừng sử dụng `r` trong một phương thức và `rdr` trong phương thức khác.)
+
+
+* Tên ở cấp package đã xuất
+
+Tên đã xuất được đủ điều kiện bởi tên package của chúng.
+
+Hãy nhớ điều này khi đặt tên cho các biến, hằng số, hàm và kiểu đã xuất.
+
+Đó là lý do tại sao chúng ta có `bytes.Buffer` và `strings.Reader`,
+không phải `bytes.ByteBuffer` và `strings.StringReader`.
+
+
+* Kiểu Interface
+
+Interface chỉ chỉ định một phương thức thường chỉ là tên hàm đó với 'er' được thêm vào.
+
+	type Reader interface {
+		Read(p []byte) (n int, err error)
+	}
+
+Đôi khi kết quả không phải tiếng Anh đúng, nhưng chúng ta vẫn làm vậy:
+
+	type Execer interface {
+		Exec(query string, args []Value) (Result, error)
+	}
+
+Đôi khi chúng ta dùng tiếng Anh để làm nó đẹp hơn:
+
+	type ByteReader interface {
+		ReadByte() (c byte, err error)
+	}
+
+Khi một interface bao gồm nhiều phương thức, hãy chọn tên mô tả chính xác mục đích của nó (ví dụ: `net.Conn`, `http.ResponseWriter`, `io.ReadWriter`).
+
+
+* Lỗi
+
+Kiểu lỗi nên có dạng `FooError`:
+
+	type ExitError struct {
+		...
+	}
+
+Giá trị lỗi nên có dạng `ErrFoo`:
+
+	var ErrFormat = errors.New("image: unknown format")
+
+
+* Package
+
+Chọn tên package mang lại ý nghĩa cho các tên mà chúng xuất.
+
+Tránh xa `util`, `common` và những thứ tương tự.
+
+
+* Đường dẫn import
+
+Thành phần cuối cùng của đường dẫn package nên giống với tên package.
+
+	"compress/gzip" // package gzip
+
+Tránh lặp lại trong đường dẫn repository và package:
+
+	"code.google.com/p/goauth2/oauth2" // bad; my fault
+
+Đối với thư viện, thường hoạt động tốt khi đặt mã package trong thư mục gốc của repo:
+
+	"github.com/golang/oauth2" // package oauth2
+
+Cũng tránh các chữ cái viết hoa (không phải tất cả hệ thống file đều phân biệt chữ hoa/thường).
+
+* Thư viện chuẩn
+
+Nhiều ví dụ trong bài nói chuyện này đến từ thư viện chuẩn.
+
+Thư viện chuẩn là nơi tuyệt vời để tìm mã Go tốt.
+Hãy tìm đến nó để lấy cảm hứng.
+
+Nhưng hãy lưu ý:
+
+Khi thư viện chuẩn được viết, chúng tôi vẫn đang học hỏi.
+Hầu hết chúng tôi đã làm đúng, nhưng chúng tôi cũng mắc một số sai lầm.
+
+
+* Kết luận
+
+Sử dụng tên ngắn.
+
+Nghĩ về ngữ cảnh.
+
+Sử dụng phán đoán của bạn.
+
+

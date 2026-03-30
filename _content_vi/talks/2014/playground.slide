@@ -1,0 +1,320 @@
+Bên trong Go playground
+
+Francesc Campoy Flores
+Developer Advocate, Gopher
+@francesc
+campoy@golang.org
+http://campoy.cat
+
+* Chương trình nghị sự
+
+- Go playground là gì
+
+- Điều gì có thể xảy ra sai
+
+- Chúng ta đã làm gì để tránh điều đó
+
+- Một chuyến tàu ASCII có hoạt hình
+
+* Go playground
+
+.image playground/img/play.png 500 _
+.caption [[/play/][go.dev/play]]
+
+* Pastebin thực tế của cộng đồng Go
+
+.image playground/img/share.png 500 _
+.caption [[/play/p/bJYnajZ6Kp][go.dev/play/p/bJYnajZ6Kp]]
+
+* Go tour
+
+.image playground/img/tour.png 500 _
+.caption [[/tour/][go.dev/tour]]
+
+* Ví dụ có thể chạy trên tài liệu
+
+.image playground/img/examples.png 500 _
+.caption [[/pkg/strings/#example_Fields][go.dev/pkg/strings]]
+
+* Mã có thể chạy trên bài viết blog
+
+.image playground/img/blog.png 500 _
+.caption [[/blog/slices][go.dev/blog/slices]]
+
+* Slide có thể chạy
+
+.play playground/hello.go
+
+Các slide này được điều khiển bởi công cụ Go `present`
+
+	go get code.google.com/go.tools/cmd/present
+
+* Cài đặt đơn giản
+
+* Kiến trúc
+
+.image playground/img/arch.png 500 _
+
+* Backend
+
+Hãy bắt đầu với thứ gì đó đơn giản
+
+- nhận mã
+- biên dịch nó
+- chạy nó
+
+* Điều gì có thể xảy ra sai?
+
+.image playground/img/areyousure.png 500 _
+
+###########
+## Issues #
+###########
+
+* Cạn kiệt tài nguyên
+
+* Tràn bộ nhớ stack
+
+`stack`overflow`
+
+.play playground/stack.go
+
+Runtime bắt được lỗi và panic.
+
+* Quá nhiều bộ nhớ heap
+
+`out`of`memory`
+
+.play playground/heap.go
+
+Runtime lại bắt được lỗi và panic.
+
+* Quá nhiều thời gian CPU
+
+.play playground/loop.go
+
+* Chiếm tài nguyên bằng cách ngủ
+
+.play playground/sleep.go
+
+Một chương trình đang ngủ vẫn tiêu thụ tài nguyên.
+
+Cách dễ dàng để thực hiện tấn công Từ chối Dịch vụ.
+
+* Truy cập những thứ không được phép
+
+* Truy cập hệ thống file
+
+Mã người dùng không nên có thể sửa đổi hệ thống file của backend.
+
+- Đọc thông tin nhạy cảm
+
+- Cài đặt backdoor
+
+- Gây hỗn loạn nói chung
+
+.play playground/removeall.go /func main/,/^}/
+
+* Truy cập mạng
+
+.play playground/http.go /func main/,/^}/
+
+* Hãy dùng trí tưởng tượng của bạn
+
+.image playground/img/cat.jpg 500 _
+
+###################
+# Countermeasures #
+###################
+
+* Biện pháp đối phó
+
+* Giới hạn sử dụng tài nguyên với ulimit
+
+Giới hạn mặc định không đủ an toàn.
+
+`ulimit` có thể giải quyết điều này.
+
+	-d    maximum size of data segment or heap (in kbytes)
+
+	-s    maximum size of stack segment (in kbytes)
+
+	-t    maximum CPU time (in seconds)
+
+	-v    maximum size of virtual memory (in kbytes)
+
+* Native Client
+
+Ban đầu được thiết kế để thực thi mã gốc trong Chrome một cách an toàn.
+
+NaCl định nghĩa các hạn chế trên các binary được thực thi.
+
+Mã chạy trong một sandbox được cô lập khỏi hệ điều hành bên dưới.
+
+- Không truy cập file
+- Không truy cập mạng
+
+.image playground/img/nacl.png 300 _
+
+* Cô lập thực thi process với NaCl
+
+Chúng ta dùng NaCl để:
+
+- giới hạn thời gian CPU
+
+- giới hạn bộ nhớ
+
+- cô lập khỏi hệ thống file
+
+- cô lập khỏi mạng
+
+Process chỉ có thể ghi vào stdout/stderr.
+
+* Giới hạn thời gian người dùng
+
+"Không ngủ trong playground."
+
+Runtime tùy chỉnh với package `time` giả.
+
+	func Sleep(d time.Duration) {
+		panic("No sleeping in the playground")
+	}
+
+* Khôi phục chức năng
+
+* Giả lập hệ thống file
+
+Package `syscall` là liên kết duy nhất giữa mã người dùng và nhân hệ điều hành.
+
+Runtime playground có package `syscall` tùy chỉnh.
+
+Các thao tác hệ thống file hoạt động trên hệ thống file ảo trong bộ nhớ.
+
+.play playground/file.go /func main/,
+
+* Giả lập mạng
+
+Tất cả các thao tác mạng cũng sử dụng package `syscall`.
+
+Ngăn xếp mạng cũng được giả lập trong bộ nhớ.
+
+.play playground/net.go /func main/,/^}/
+
+* Giả lập mạng (tiếp theo)
+
+.play playground/net.go /func dial/,/^}/
+
+##########
+## TIME ##
+##########
+
+* Ngủ trong playground
+
+Go là về đồng thời.
+
+Chúng ta cần trình bày đồng thời trong bài viết blog và buổi nói chuyện.
+
+Và việc trình bày đồng thời mà không có `time` thật khó.
+
+* Phải làm gì nếu một dự án mã nguồn mở thiếu một tính năng?
+
+.image playground/img/gopherbw.png 500 _
+
+* Báo cáo lỗi!
+
+.image playground/img/bug.png 500 _
+.caption [[https://code.google.com/p/go/issues/detail?id=4280][bug 4280]]
+
+* Hành vi bình thường
+
+Có một goroutine đặc biệt quản lý timer `T`.
+
+Một goroutine `G` gọi `time.Sleep`:
+
+1. `G` thêm một timer vào heap timer.
+
+2. `G` tự đưa vào trạng thái ngủ.
+
+3. `T` yêu cầu hệ điều hành đánh thức nó khi timer tiếp theo hết hạn và tự đưa vào trạng thái ngủ.
+
+4. Khi `T` được đánh thức, nó nhìn vào timer ở đầu heap và đánh thức goroutine tương ứng.
+
+* Xen kẽ: deadlock
+
+.play playground/deadlock.go
+
+Nhiều dạng deadlock.
+
+Một thuộc tính chung: tất cả goroutine đều đang ngủ.
+
+* Hành vi mới
+
+Một goroutine `G` gọi `time.Sleep`:
+
+1. `G` thêm một timer vào heap timer.
+
+2. `G` tự đưa vào trạng thái ngủ.
+
+3. Scheduler phát hiện deadlock, kiểm tra heap timer để tìm các timer đang chờ.
+
+4. Đồng hồ nội bộ được tăng lên đến lần hết hạn timer tiếp theo.
+
+5. Các goroutine tương ứng được đánh thức.
+
+* Ngủ nhanh
+
+Giả lập thời gian cho phép thời gian ngủ chính xác.
+
+.play playground/sleepfast.go
+
+* Vậy không có giấc ngủ thực sự?
+
+Syscall `write` của playground chèn một dấu thời gian trước mỗi lần ghi.
+
+Frontend dịch điều đó thành một loạt "sự kiện" mà trình duyệt có thể phát lại.
+
+.play playground/sleep.go /func main/,
+
+Trả về ngay lập tức
+
+	{
+		"Errors":"",
+		"Events":[
+			{"Message":"Good night\n","Delay":0},
+			{"Message":"Good morning\n","Delay":28800000000000}
+		]
+	}
+
+* Vậy lỗi đã được sửa
+
+.image playground/img/andrew.png _ 1000
+.caption [[/play/p/3fv0L3-z0s][go.dev/play/p/3fv0L3-z0s]]
+
+* Và mọi người vui mừng
+
+.image playground/img/brad.png _ 1000
+.caption [[/play/p/rX_3WcpUOZ][go.dev/play/p/rX_3WcpUOZ]]
+
+* Rất vui mừng
+
+.image playground/img/jan.png _ 1000
+.caption [[/play/p/P-Dk0NH_vf][go.dev/play/p/P-Dk0NH_vf]]
+
+.image playground/img/mattn.png _ 1000
+.caption [[/play/p/NOycgN2i6b][go.dev/play/p/NOycgN2i6b]]
+
+* Tham khảo
+
+Các slide này: [[/talks/2014/playground.slide]]
+
+Thêm về Go tour:
+
+- Bên trong Go playground: [[/blog/playground][go.dev/blog/playground]]
+
+- Go tour: [[/tour/][go.dev/tour]]
+
+Thêm về Go trên NaCl:
+
+- Chạy Go dưới Native Client: [[https://code.google.com/p/go-wiki/wiki/NativeClient]]
+
+- Go 1.3 Native Client Support: [[/s/go13nacl]]
