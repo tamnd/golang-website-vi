@@ -417,11 +417,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `doc/articles/wiki/view.html`
 - [ ] `doc/build-cover.md`
 - [x] `doc/cmd.html`
-- [ ] `doc/code.html`
+- [x] `doc/code.html`
 - [ ] `doc/comment.md`
 - [ ] `doc/conduct.md`
 - [ ] `doc/contrib.md`
-- [ ] `doc/contribute.html`
+- [x] `doc/contribute.html`
 - [x] `doc/copyright.md`
 - [x] `doc/database/cancel-operations.md`
 - [x] `doc/database/change-data.md`
