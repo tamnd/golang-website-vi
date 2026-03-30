@@ -1,0 +1,667 @@
+Go dành cho Javaneros (Javaïstes?)
+ #go4java
+
+Francesc Campoy
+Gopher và Developer Advocate
+Google
+@francesc
+campoy@golang.org
+
+* Go là gì?
+
+Go là ngôn ngữ lập trình mã nguồn mở
+
+- được tạo ra tại Google,
+- để giải quyết các vấn đề quy mô Google.
+
+.image go4java/img/gopher.jpg 450 _
+
+* Ai dùng Go?
+
+Google:
+
+- YouTube
+- dl.google.com
+
+Những người khác:
+
+- dotCloud (Docker)
+- SoundCloud
+- Canonical
+- CloudFlare
+- Mozilla
+- ...
+
+[[/wiki/GoUsers][go.dev/wiki/GoUsers]]
+
+* Ai dùng Go?
+
+.image go4java/img/trends.png _ 800
+
+.caption Google Trends cho [[http://www.google.com/trends/explore#q=golang][golang]]
+
+* Tại sao dùng Go?
+
+* Đơn giản
+
+Thiết kế tối giản
+
+.image go4java/img/perfection.jpg
+
+* Nhất quán
+
+Các tính năng trực giao
+
+.image go4java/img/lego.jpg 400 _
+
+.caption By Kenny Louie from Vancouver, Canada [[http://creativecommons.org/licenses/by/2.0][CC-BY-2.0]], via Wikimedia Commons
+
+* Dễ đọc
+
+"Tỷ lệ thời gian đọc (mã) so với viết là hơn 10 trên 1 ... (do đó) làm cho việc đọc dễ dàng giúp viết dễ hơn."
+- Robert C. Martin
+
+.image go4java/img/piet.png 500 600
+
+* An toàn
+
+An toàn kiểu, không tràn bộ đệm, không số học con trỏ.
+
+.image go4java/img/baby.jpg 500 500
+
+* Tính năng đồng thời tích hợp sẵn
+
+"Trong thế giới đồng thời, lập trình mệnh lệnh là mặc định sai!" - Tim Sweeney
+
+Communicating Sequential Processes - Hoare (1978)
+
+.image go4java/img/conc.jpg _ 1000
+
+* Tốc độ
+
+.image go4java/img/fast.jpg 500 _
+
+* Hãy đi sâu vào
+
+* Điểm chung giữa Go và Java
+
+Go và Java đều:
+
+- hướng đối tượng
+
+- thu gom rác
+
+- kiểu tĩnh
+
+- thuộc họ C
+
+* Phong cách hướng đối tượng
+
+Go hướng đối tượng, nhưng không có từ khóa:
+
+- `class`,
+- `extends`, hay
+- `implements`.
+
+* Tất cả các kiểu đều bình đẳng
+
+* Các kiểu trong Go
+
+- Kiểu nguyên thủy
+
+	int, uint, int8, uint8, ...
+	bool, string
+	float32, float64
+	complex64, complex128
+
+- Struct
+
+	struct {
+		Name string
+		Age  int
+	}
+
+- Slice và mảng
+
+	[]int, [3]string, []struct{ Name string }
+
+- Map
+
+	map[string]int
+
+* Các loại kiểu (tiếp theo)
+
+- Con trỏ
+
+	*int, *Person
+
+- Hàm
+
+	func(int, int) int
+
+- Channel
+
+	chan bool
+
+- Interface
+
+	interface {
+		Start()
+		Stop()
+	}
+
+* Khai báo kiểu
+
+	type [name] [specification]
+
+`Person` là kiểu `struct`.
+
+	type Person struct {
+		name string
+		age  int
+	}
+
+`Celsius` là kiểu `float64`.
+
+	type Celsius float64
+
+* Khai báo hàm
+
+	func [name] ([params]) [return value]
+	func [name] ([params]) ([return values])
+
+Hàm tổng:
+
+	func sum(a int, b int) int {
+		return a + b
+	}
+
+Hàm với nhiều giá trị trả về:
+
+	func div(a, b int) (int, int)
+		return a / b, a % b
+	}
+
+Rõ ràng hơn khi đặt tên giá trị trả về:
+
+	func div(den, div int) (q, rem int)
+		return a / b, a % b
+	}
+
+* Khai báo phương thức
+
+	func ([receiver]) [name] ([params]) ([return values])
+
+Phương thức trên struct:
+
+	func (p Person) Major() bool {
+		return p.age >= 18
+	}
+
+Nhưng cũng có phương thức trên `float64`:
+
+	func (c Celsius) Freezing() bool {
+		return c <= 0
+	}
+
+_Ràng buộc:_ Phương thức chỉ có thể định nghĩa *trong cùng* gói với kiểu.
+
+	// This won't compile
+	func (s string) Length() int { return len(s) }
+
+* Khoan, con trỏ?
+
+Dùng `&` để lấy địa chỉ của biến.
+
+	a := "hello"
+	p := &a
+
+Dùng `*` để dereference con trỏ.
+
+	fmt.Print(*p + ", world")
+
+Không có số học con trỏ, không có con trỏ đến bộ nhớ không an toàn.
+
+	a := "hello"
+	p := &a
+
+	p += 4  // no, you can't
+
+* Tại sao cần con trỏ?
+
+Kiểm soát những gì bạn truyền vào hàm.
+
+- truyền giá trị, không có tác dụng phụ:
+
+	func double(x int) {
+		x *= 2
+	}
+
+- truyền con trỏ: có thể có tác dụng phụ:
+
+	func double(x *int) {
+		*x *= 2
+	}
+
+Kiểm soát bố cục bộ nhớ của bạn.
+
+- so sánh []Person và []*Person
+
+* Khai báo phương thức trên con trỏ
+
+Receiver hoạt động như bất kỳ đối số nào khác.
+
+Con trỏ cho phép sửa đổi receiver được trỏ đến:
+
+	func (p *Person) IncAge() {
+		p.age++
+	}
+
+Receiver của phương thức là bản sao của con trỏ (trỏ đến cùng địa chỉ).
+
+Gọi phương thức trên receiver nil hoàn toàn hợp lệ (và hữu ích!).
+
+	func (p *Person) Name() string {
+		if p == nil {
+			return "anonymous"
+		}
+		return p.name
+	}
+
+* Interface
+
+* Interface
+
+Interface là một tập hợp phương thức.
+
+Trong Java:
+
+	interface Switch {
+		void open();
+		void close();
+	}
+
+Trong Go:
+
+	type OpenCloser interface {
+		Open()
+		Close()
+	}
+
+* Tất cả là về sự thỏa mãn
+
+Interface Java được thỏa mãn *tường minh*.
+
+Interface Go được thỏa mãn *ngầm định*.
+
+.image //upload.wikimedia.org/wikipedia/commons/thumb/2/29/Rolling_Stones_09.jpg/512px-Rolling_Stones_09.jpg _ 512
+
+.caption Picture by Gorupdebesanez [[http://creativecommons.org/licenses/by-sa/3.0][CC-BY-SA-3.0]], via [[http://commons.wikimedia.org/wiki/File%3ARolling_Stones_09.jpg][Wikimedia Commons]]
+
+* Go: thỏa mãn ngầm định
+
+_Nếu_một_kiểu_định_nghĩa_tất_cả_phương_thức_của_interface,_kiểu_đó_thỏa_mãn_interface._
+
+Lợi ích:
+
+- ít dependency hơn
+- không có phân cấp kiểu
+- kết hợp tự nhiên
+
+* Kiểu con cấu trúc
+
+Hãy nghĩ về duck typing tĩnh, được xác minh tại thời điểm biên dịch.
+
+.image go4java/img/duck.jpg 500 500
+
+* FuncDraw: ví dụ về interface
+
+.image go4java/img/funcdraw.png 500 700
+
+* FuncDraw: gói parser
+
+Gói `parse` cung cấp bộ phân tích cú pháp chuỗi thành hàm.
+
+	func Parse(text string) (*Func, error) { ... }
+
+`Func` là kiểu struct, với phương thức `Eval`.
+
+	type Func struct { ... }
+
+	func (p *Func) Eval(x float64) float64 { ... }
+
+* FuncDraw: gói draw
+
+Gói draw tạo hình ảnh từ một hàm.
+
+	func Draw(f *parser.Func) image.Image {
+		for x := start; x < end; x += inc {
+			y := f.Eval(x)
+			...
+		}
+	}
+
+`draw` phụ thuộc vào `parser`
+
+- khó kiểm thử
+
+Hãy dùng interface thay thế
+
+	type Evaluable interface {
+		Eval(float64) float64
+	}
+
+	func Draw(f Evaluable) image.Image { ... }
+
+* Kế thừa so với kết hợp
+
+* Kế thừa so với kết hợp
+
+Nhiều bài viết đã nói về chủ đề này.
+
+Nói chung, kết hợp được ưa thích hơn kế thừa.
+
+Hãy xem tại sao.
+
+* Runner
+
+.code go4java/BadInheritance.java /START_RUNNER/,/END_RUNNER/
+
+* RunCounter là một Runner đếm được
+
+.code go4java/BadInheritance.java /START_COUNTING/,/END_COUNTING/
+
+* Hãy chạy và đếm
+
+Mã này sẽ in gì?
+
+.code go4java/BadInheritance.java /START_MAIN/,/END_MAIN/
+
+Tất nhiên, mã này in:
+
+	running one
+	running two
+	running three
+	my runner ran 6 tasks
+
+Khoan! Bao nhiêu?
+
+* My runner ran 6 tasks? Sáu?
+
+Kế thừa gây ra:
+
+- đóng gói yếu,
+- ghép nối chặt chẽ,
+- lỗi đáng ngạc nhiên.
+
+.image go4java/img/badinheritance.png
+
+* Giải pháp: dùng kết hợp
+
+.code go4java/Composition.java /START_COUNTING/,/BREAK_COUNTING/
+
+* Giải pháp: dùng kết hợp (tiếp theo)
+
+.code go4java/Composition.java /BREAK_COUNTING/,/END_COUNTING/
+
+* Giải pháp: dùng kết hợp (tiếp theo)
+
+*Ưu điểm*
+
+- Lỗi đã biến mất!
+- `Runner` hoàn toàn độc lập với `RunCounter`.
+- Việc tạo `Runner` có thể bị trì hoãn đến khi (và nếu) cần.
+
+*Nhược điểm*
+
+- Chúng ta cần định nghĩa tường minh các phương thức `Runner` trên `RunCounter`:
+
+	public String getName() { return runner.getName(); }
+
+- Điều này có thể gây ra nhiều lặp lại và cuối cùng là lỗi.
+
+* Không có kế thừa trong Go
+
+* Không có kế thừa trong Go
+
+Hãy dùng kết hợp trực tiếp:
+
+# .code go4java/runner/runner.go /type Task/,/END_TASK/
+
+.code go4java/runner/runner.go /type Runner/,/END_RUNNER/
+
+Tất cả rất giống phiên bản Java.
+
+* RunCounter
+
+`RunCounter` có một trường `Runner`.
+
+.code go4java/runner/runner.go /type RunCounter/,
+
+* Kết hợp trong Go
+
+Ưu nhược điểm giống phiên bản kết hợp trong Java.
+
+Chúng ta cũng có mã boilerplate để proxy các phương thức từ `Runner`.
+
+.code go4java/runner/runner.go /runner.Name/
+
+Nhưng chúng ta có thể bỏ nó!
+
+* Nhúng struct
+
+Được biểu đạt trong Go như các trường không có tên trong struct.
+
+Đây vẫn là *kết hợp*.
+
+Các trường và phương thức của kiểu được nhúng được định nghĩa trên kiểu nhúng.
+
+Tương tự kế thừa, nhưng kiểu được nhúng không biết nó đang được nhúng.
+
+* Ví dụ về nhúng struct
+
+Cho kiểu `Person`:
+
+.code go4java/embedsample.go /Person/,/Hi/
+
+Chúng ta có thể định nghĩa kiểu `Employee` nhúng `Person`:
+
+.code go4java/embedsample.go /Employee/,/}/
+
+Tất cả trường và phương thức từ `Person` đều có sẵn trên `Employee`:
+
+.code go4java/embedsample.go /var/,/Introduce/
+
+* Nhúng struct
+
+.code go4java/runner/embed.go /type RunCounter2/,
+
+* Nhúng struct có giống kế thừa không?
+
+Không, nó tốt hơn!
+
+Nó là kết hợp.
+
+- Bạn không thể can thiệp vào kiểu khác và thay đổi cách hoạt động của nó.
+
+- Dispatch phương thức tường minh.
+
+Nó tổng quát hơn.
+
+- Nhúng struct của interface.
+
+* Nhúng struct có giống kế thừa không?
+
+Nhúng struct có tính chọn lọc.
+
+.code go4java/writecounter.go /WriteCounter/,/MAIN/
+
+WriteCounter có thể dùng với bất kỳ `io.ReadWriter` nào.
+
+.play go4java/writecounter.go /func main/,/^}/
+
+* Giả lập dễ dàng
+
+Nếu chúng ta muốn giả một phần của `net.Conn`?
+
+	type Conn interface {
+	        Read(b []byte) (n int, err error)
+	        Write(b []byte) (n int, err error)
+	        Close() error
+	        LocalAddr() Addr
+	        RemoteAddr() Addr
+	        SetDeadline(t time.Time) error
+	        SetReadDeadline(t time.Time) error
+	        SetWriteDeadline(t time.Time) error
+	}
+
+Tôi muốn kiểm thử `handleCon`:
+
+.code go4java/loopback.go /handleCon/
+
+- Chúng ta có thể tạo `fakeConn` và định nghĩa tất cả phương thức của `Conn` trên nó.
+
+- Nhưng đó là nhiều mã nhàm chán.
+
+* Nhúng struct của interface
+
+_CẢNH BÁO: Nội dung hay_
+
+Nếu kiểu T có trường nhúng kiểu E, tất cả phương thức của E sẽ được định nghĩa trên T.
+
+Do đó, nếu E là interface, T thỏa mãn E.
+
+* Nhúng struct của interface (tiếp theo)
+
+Chúng ta có thể kiểm thử `handleCon` với kiểu `loopBack`.
+
+.code go4java/loopback.go /loopBack/,/^}/
+
+Bất kỳ lời gọi nào đến phương thức của `net.Conn` sẽ thất bại, vì trường là nil.
+
+Chúng ta định nghĩa lại các thao tác chúng ta hỗ trợ:
+
+.code go4java/loopback.go /Read/,
+
+* Đồng thời
+
+* Đồng thời
+
+Đây là một phần của ngôn ngữ, không phải thư viện.
+
+Dựa trên hai khái niệm:
+
+- goroutine: luồng nhẹ
+- channel: pipe có kiểu để giao tiếp và đồng bộ giữa các goroutine
+
+Rẻ đến mức bạn có thể dùng bất cứ khi nào muốn.
+
+.image go4java/img/funnelin.jpg 300 700
+
+* Sleep và talk
+
+.code go4java/conc1.go /sleepAndTalk/,/^}/
+
+Chúng ta muốn một tin nhắn mỗi giây.
+
+.play go4java/conc1.go /func main/,/^}/
+
+Nếu chúng ta bắt đầu tất cả `sleepAndTalk` đồng thời thì sao?
+
+Chỉ cần thêm `go`!
+
+* Sleep và talk đồng thời
+
+.play go4java/conc2.go /func main/,/^}/
+
+Nhanh quá...
+
+Khi goroutine `main` kết thúc, chương trình kết thúc.
+
+* Sleep và talk đồng thời với ngủ thêm
+
+.play go4java/conc3.go /func main/,/^}/
+
+Nhưng đồng bộ hóa bằng `Sleep` là ý tưởng tồi.
+
+* Giao tiếp qua channel
+
+`sleepAndTalk` gửi chuỗi vào channel thay vì in.
+
+.code go4java/chan.go /sleepAndTalk/,/^}/
+
+Chúng ta tạo channel và truyền nó cho `sleepAndTalk`, rồi chờ các giá trị được gửi.
+
+.play go4java/chan.go /func main/,/^}/
+
+* Hãy đếm trên web
+
+Chúng ta nhận ID tiếp theo từ một channel.
+
+.code go4java/goodcounter.go /nextID/,/^}/
+
+Chúng ta cần một goroutine gửi ID vào channel.
+
+.play go4java/goodcounter.go /func main/,/^}/
+
+[[http://localhost:8080/next]]
+
+* Hãy chiến đấu!
+
+`select` cho phép chúng ta chọn giữa nhiều thao tác channel.
+
+.play go4java/battle.go /battle/,/^}/
+
+Go - [[http://localhost:8080/fight?usr=go]]
+Java - [[http://localhost:8080/fight?usr=java]]
+
+* Chuỗi gopher
+
+.image go4java/img/chain.jpg
+
+Oke, tôi chỉ đang khoe thôi
+
+* Chuỗi gopher
+
+.play go4java/goroutines.go /func f/,
+
+* Đồng thời rất mạnh mẽ
+
+Và còn nhiều điều để học!
+
+- [[/talks/2012/concurrency.slide#1][Go Concurrency Patterns]], bởi Rob Pike
+- [[/talks/2013/advconc.slide#1][Advanced Concurrency Patterns]], bởi Sameer Ajmani
+- [[/talks/2012/waza.slide#1][Concurrency is not Parallelism]], bởi Rob Pike
+
+.image go4java/img/busy.jpg
+
+* Kết luận
+
+Go đơn giản, nhất quán, dễ đọc và thú vị.
+
+Tất cả các kiểu đều bình đẳng
+
+- phương thức trên bất kỳ kiểu nào
+
+Interface ngầm định
+
+- Kiểu cấu trúc
+- Ít dependency hơn
+- Mã có thể kiểm thử và tái sử dụng
+
+Dùng kết hợp thay vì kế thừa
+
+- Nhúng struct để bỏ boilerplate.
+- Nhúng struct của interface để thỏa mãn chúng nhanh.
+
+Đồng thời tuyệt vời, hãy tìm hiểu thêm.
+
+* Làm gì tiếp theo?
+
+Học Go trên trình duyệt với [[/tour/][go.dev/tour]]
+
+Tìm hiểu thêm về Go tại [[/][go.dev]]
+
+Tham gia cộng đồng tại [[https://groups.google.com/forum/#!forum/Golang-nuts][golang-nuts]]
+
+Liên kết đến slides [[/talks/2014/go4java.slide]]

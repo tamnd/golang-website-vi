@@ -1,0 +1,378 @@
+Các mẫu đồng thời nâng cao trong Go
+
+Sameer Ajmani
+Google
+http://profiles.google.com/ajmani
+@Sajma
+https://go.dev
+
+* Video
+
+Bài nói này được trình bày tại Google I/O vào tháng 5 năm 2013.
+
+.link https://www.youtube.com/watch?v=QDDwwePbDtw Xem bài nói trên YouTube
+
+* Chuẩn bị
+
+.image advconc/gopherswim.jpg 400 400
+
+* Go hỗ trợ tính đồng thời
+
+Trong ngôn ngữ và runtime, không phải thư viện.
+
+Điều này thay đổi cách bạn cấu trúc chương trình.
+
+* Goroutines và Channels
+
+Goroutines là các hàm thực thi độc lập trong cùng không gian địa chỉ.
+
+   go f()
+   go g(1, 2)
+
+Channel là các giá trị có kiểu cho phép goroutines đồng bộ hóa và trao đổi thông tin.
+
+  c := make(chan int)
+  go func() { c <- 3 }()
+  n := <-c
+
+Để biết thêm về cơ bản, xem [[/talks/2012/concurrency.slide#1][Go Concurrency Patterns (Pike, 2012)]].
+
+* Ví dụ: ping-pong
+
+.play advconc/pingpong/pingpong.go /STARTMAIN1/,/STOPMAIN1/
+
+* Phát hiện deadlock
+
+.play advconc/pingpongdeadlock/pingpongdeadlock.go /STARTMAIN1/,/STOPMAIN1/
+
+* Panic hiển thị các stack
+
+.play advconc/pingpongpanic/pingpongpanic.go /STARTMAIN1/,/STOPMAIN1/
+
+* Dễ dàng bắt đầu, nhưng làm sao dừng lại?
+
+Các chương trình chạy lâu cần dọn dẹp.
+
+Hãy xem cách viết các chương trình xử lý giao tiếp, sự kiện định kỳ và hủy bỏ.
+
+Cốt lõi là câu lệnh `select` của Go: giống như `switch`, nhưng quyết định dựa trên khả năng giao tiếp.
+
+  select {
+  case xc <- x:
+      // đã gửi x trên xc
+  case y := <-yc:
+      // đã nhận y từ yc
+  }
+
+* Ví dụ: trình đọc feed
+
+Feed reader yêu thích của tôi đã biến mất. Tôi cần cái mới.
+
+Tại sao không tự viết?
+
+Bắt đầu từ đâu?
+
+* Tìm một RSS client
+
+Tìm kiếm [[https://pkg.go.dev][pkg.go.dev]] cho *"rss"* cho ra nhiều kết quả, bao gồm một cái cung cấp:
+
+  // Fetch fetches Items for uri and returns the time when the next
+  // fetch should be attempted.  On failure, Fetch returns an error.
+  func Fetch(uri string) (items []Item, next time.Time, err error)
+
+  type Item struct{
+      Title, Channel, GUID string // a subset of RSS fields
+  }
+
+Nhưng tôi muốn một luồng:
+
+  <-chan Item
+
+Và tôi muốn nhiều subscription.
+
+* Đây là những gì chúng ta có
+
+  type Fetcher interface {
+      Fetch() (items []Item, next time.Time, err error)
+  }
+
+  func Fetch(domain string) Fetcher {...} // tải Items từ domain
+
+* Đây là những gì chúng ta muốn
+
+  type Subscription interface {
+      Updates() <-chan Item // luồng Items
+      Close() error         // tắt luồng
+  }
+
+  func Subscribe(fetcher Fetcher) Subscription {...} // chuyển Fetches thành luồng
+
+  func Merge(subs ...Subscription) Subscription {...} // hợp nhất nhiều luồng
+
+* Ví dụ
+
+.play advconc/fakemain/fakemain.go /func main/,/^}/
+
+* Subscribe
+
+`Subscribe` tạo một `Subscription` mới liên tục tải các mục cho đến khi `Close` được gọi.
+
+  func Subscribe(fetcher Fetcher) Subscription {
+      s := &sub{
+          fetcher: fetcher,
+          updates: make(chan Item), // cho Updates
+      }
+      go s.loop()
+      return s
+  }
+
+  // sub cài đặt interface Subscription.
+  type sub struct {
+      fetcher Fetcher   // tải items
+      updates chan Item // chuyển items đến người dùng
+  }
+
+  // loop tải items dùng s.fetcher và gửi chúng
+  // trên s.updates. loop thoát khi s.Close được gọi.
+  func (s *sub) loop() {...}
+
+* Cài đặt Subscription
+
+Để cài đặt interface `Subscription`, định nghĩa `Updates` và `Close`.
+
+.code advconc/fakemain/fakemain.go /func.* Updates/,/^}/
+
+  func (s *sub) Close() error {
+      // TODO: làm cho loop thoát
+      // TODO: tìm hiểu về bất kỳ lỗi nào
+      return err
+  }
+
+* loop làm gì?
+
+- gọi `Fetch` định kỳ
+- gửi các mục đã tải trên channel `Updates`
+- thoát khi `Close` được gọi, báo cáo bất kỳ lỗi nào
+
+* Cài đặt ngây thơ
+
+# Không đủ chỗ cho cái này; thử lại sau khi thay đổi định dạng:
+# .play advconc/naivemain/naivemain.go /naiveSub\) loop/,/^}/
+# cũng trên các slide tiếp theo.
+
+.play advconc/naivemain/naivemain.go /STARTNAIVE /,/STOPNAIVE /
+.code advconc/naivemain/naivemain.go /naiveSub\) Close/,/^}/
+
+* Lỗi 1: truy cập không đồng bộ vào s.closed/s.err
+
+.code advconc/naivemain/naivemain.go /STARTNAIVE /,/STOPNAIVE / HLsync
+.code advconc/naivemain/naivemain.go /naiveSub\) Close/,/^}/ HLsync
+
+* Race Detector
+
+  go run -race naivemain.go
+
+# bản gốc là 400x1500
+.image advconc/race.png 150 562
+.play advconc/naivemain/naivemain.go /STARTNAIVE /,/s.err/ HLsync
+.code advconc/naivemain/naivemain.go /naiveSub\) Close/,/^}/ HLsync
+
+* Lỗi 2: time.Sleep có thể giữ loop đang chạy
+
+.code advconc/naivemain/naivemain.go /STARTNAIVE /,/STOPNAIVE / HLsleep
+
+* Lỗi 3: loop có thể chặn mãi mãi trên s.updates
+
+.code advconc/naivemain/naivemain.go /STARTNAIVE /,/STOPNAIVE / HLsend
+
+* Giải pháp
+
+Thay đổi phần thân của `loop` thành một `select` với ba trường hợp:
+
+- `Close` đã được gọi
+- đã đến lúc gọi `Fetch`
+- gửi một mục trên `s.updates`
+
+* Cấu trúc: vòng lặp for-select
+
+`loop` chạy trong goroutine riêng của nó.
+
+`select` cho phép `loop` tránh chặn vô thời hạn ở bất kỳ trạng thái nào.
+
+  func (s *sub) loop() {
+      ... khai báo trạng thái có thể thay đổi ...
+      for {
+          ... thiết lập channels cho các trường hợp ...
+          select {
+          case <-c1:
+              ... đọc/ghi trạng thái ...
+          case c2 <- x:
+              ... đọc/ghi trạng thái ...
+          case y := <-c3:
+              ... đọc/ghi trạng thái ...
+          }
+      }
+  }
+
+Các trường hợp tương tác thông qua trạng thái cục bộ trong `loop`.
+
+* Trường hợp 1: Close
+
+`Close` giao tiếp với `loop` thông qua `s.closing`.
+
+  type sub struct {
+      closing chan chan error
+  }
+
+Dịch vụ (`loop`) lắng nghe yêu cầu trên channel của nó (`s.closing`).
+
+Client (`Close`) gửi yêu cầu trên `s.closing`: _thoát_và_trả_lời_với_lỗi_
+
+Trong trường hợp này, thứ duy nhất trong yêu cầu là _channel_trả_lời_.
+
+* Trường hợp 1: Close
+
+`Close` yêu cầu loop thoát và chờ phản hồi.
+
+.code advconc/fakemain/fakemain.go /\*sub\) Close/,/^}/ HLchan
+
+`loop` xử lý `Close` bằng cách trả lời với lỗi `Fetch` và thoát.
+
+.code advconc/fakemain/fakemain.go /STARTCLOSEONLY /,/STOPCLOSEONLY / HLchan
+
+* Trường hợp 2: Fetch
+
+Lên lịch cho `Fetch` tiếp theo sau một khoảng thời gian chờ.
+
+.code advconc/fakemain/fakemain.go /STARTFETCHONLY /,/STOPFETCHONLY /
+
+* Trường hợp 3: Gửi
+
+Gửi các mục đã tải, từng cái một.
+
+	var pending []Item // được thêm vào bởi fetch; được tiêu thụ bởi send
+	for {
+		select {
+		case s.updates <- pending[0]:
+			pending = pending[1:]
+		}
+	}
+
+Ooops. Cái này sẽ crash.
+
+.image advconc/gopherswrench.jpg 200 337
+
+* Select và nil channels
+
+Gửi và nhận trên nil channels sẽ chặn.
+
+Select không bao giờ chọn một trường hợp chặn.
+
+.play advconc/nilselect/nilselect.go /func main/,/^}/
+
+* Trường hợp 3: Gửi (đã sửa)
+
+Chỉ cho phép gửi khi pending không rỗng.
+
+.code advconc/fakemain/fakemain.go /STARTSENDONLY /,/STOPSENDONLY / HLupdates
+
+* Select
+
+Kết hợp ba trường hợp lại:
+
+.code advconc/fakemain/fakemain.go /STARTSELECT /,/STOPSELECT /
+
+Các trường hợp tương tác thông qua `err`, `next` và `pending`.
+
+Không có lock, không có biến điều kiện, không có callback.
+
+* Các lỗi đã được sửa
+
+- Lỗi 1: truy cập không đồng bộ vào `s.closed` và `s.err`
+- Lỗi 2: `time.Sleep` có thể giữ loop đang chạy
+- Lỗi 3: `loop` có thể chặn mãi mãi khi gửi trên `s.updates`
+
+.code advconc/fakemain/fakemain.go /STARTSELECT /,/STOPSELECT / HLcases
+
+* Chúng ta có thể cải thiện loop thêm
+
+* Vấn đề: Fetch có thể trả về các bản sao
+
+.code advconc/fakemain/fakemain.go /STARTFETCHVARS /,/STOPFETCHVARS / HLfetch
+.code advconc/fakemain/fakemain.go /STARTFETCHCASE /,/STOPFETCHCASE / HLfetch
+
+* Sửa: Lọc các mục trước khi thêm vào pending
+
+.code advconc/fakemain/fakemain.go /STARTSEEN /,/STOPSEEN / HLseen
+.code advconc/fakemain/fakemain.go /STARTDEDUPE /,/STOPDEDUPE / HLdupe
+
+* Vấn đề: Hàng đợi pending tăng không giới hạn
+
+.code advconc/fakemain/fakemain.go /STARTDEDUPE /,/STOPDEDUPE / HLdupe
+
+* Sửa: Vô hiệu hóa trường hợp fetch khi pending quá nhiều
+
+  const maxPending = 10
+
+.code advconc/fakemain/fakemain.go /STARTCAP /,/STOPCAP / HLcap
+
+Có thể thay vào đó bỏ các mục cũ hơn từ đầu `pending`.
+
+* Vấn đề: Loop chặn trên Fetch
+
+.code advconc/fakemain/fakemain.go /STARTDEDUPE /,/STOPDEDUPE / HLfetch
+
+* Sửa: Chạy Fetch bất đồng bộ
+
+Thêm một trường hợp `select` mới cho `fetchDone`.
+
+  type fetchResult struct{ fetched []Item; next time.Time; err error }
+
+.code advconc/fakemain/fakemain.go /STARTFETCHDONE /,/STOPFETCHDONE / HLfetch
+.code advconc/fakemain/fakemain.go /STARTFETCHIF /,/STOPFETCHIF / HLfetch
+.code advconc/fakemain/fakemain.go /STARTFETCHASYNC /,/STOPFETCHASYNC / HLfetch
+
+* Đã cài đặt Subscribe
+
+Phản hồi nhanh. Dọn dẹp đúng. Dễ đọc và thay đổi.
+
+Ba kỹ thuật:
+
+- vòng lặp `for-select`
+- channel dịch vụ, channel trả lời (`chan`chan`error`)
+- nil channels trong các trường hợp `select`
+
+Chi tiết thêm trực tuyến, bao gồm `Merge`.
+
+.image advconc/gopherhat.jpg 200 158
+
+* Kết luận
+
+Lập trình đồng thời có thể phức tạp.
+
+Go làm cho nó dễ hơn:
+
+- channel truyền dữ liệu, sự kiện timer, tín hiệu hủy bỏ
+- goroutines tuần tự hóa truy cập vào trạng thái có thể thay đổi cục bộ
+- stack trace và bộ phát hiện deadlock
+- race detector
+
+.image advconc/race.png 200 750
+
+* Liên kết
+
+Go Concurrency Patterns (2012)
+
+.link /talks/2012/concurrency.slide go.dev/talks/2012/concurrency.slide
+
+Concurrency không phải là parallelism
+
+.link /s/concurrency-is-not-parallelism go.dev/s/concurrency-is-not-parallelism
+
+Chia sẻ bộ nhớ bằng cách giao tiếp
+
+.link /doc/codewalk/sharemem go.dev/doc/codewalk/sharemem
+
+Go Tour (học Go trong trình duyệt)
+
+.link /tour/ go.dev/tour

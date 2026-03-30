@@ -1,0 +1,306 @@
+Go bằng Go
+Gopherfest
+26 tháng 5 năm 2015
+
+Rob Pike
+Google
+r@golang.org
+https://go.dev/
+
+* Go bằng Go
+
+Kể từ bản phát hành 1.5 của Go, toàn bộ hệ thống hiện được viết bằng Go.
+(Và một ít assembler.)
+
+C đã biến mất.
+
+Lưu ý thêm: `gccgo` vẫn đang hoạt động mạnh.
+Bài nói này nói về trình biên dịch gốc `gc`.
+
+* Tại sao nó lại viết bằng C?
+
+Bootstrapping.
+
+(Ngoài ra Go không chủ yếu được dự định là ngôn ngữ triển khai trình biên dịch.)
+
+* Tại sao chuyển trình biên dịch sang Go?
+
+Không phải để xác nhận; chúng ta có những lý do thực tế hơn:
+
+- Go dễ viết (đúng) hơn C.
+- Go dễ gỡ lỗi hơn C (ngay cả khi không có debugger).
+- Go là ngôn ngữ duy nhất bạn cần biết; khuyến khích đóng góp.
+- Go có tính mô-đun tốt hơn, công cụ, kiểm thử, profiling, ...
+- Go làm cho việc thực thi song song trở nên đơn giản.
+
+Đã thấy lợi ích, và vẫn còn sớm.
+
+Tài liệu thiết kế: [[/s/go13compiler]]
+
+* Tại sao chuyển runtime sang Go?
+
+Chúng ta có trình biên dịch C riêng chỉ để biên dịch runtime.
+Chúng ta cần trình biên dịch với cùng ABI với Go, như segmented stack.
+
+Chuyển nó sang Go có nghĩa là chúng ta có thể loại bỏ trình biên dịch C.
+Điều đó quan trọng hơn là chuyển trình biên dịch sang Go.
+
+(Tất cả các lý do để chuyển trình biên dịch đều áp dụng cho runtime.)
+
+Bây giờ chỉ có một ngôn ngữ trong runtime; tích hợp dễ hơn, quản lý stack, v.v.
+
+
+Như thường lệ, sự đơn giản là xem xét hàng đầu.
+
+* Lịch sử
+
+Tại sao chúng ta có chuỗi công cụ riêng?
+ABI riêng?
+Định dạng tệp riêng?
+
+Lịch sử, quen thuộc và dễ tiến lên. Và tốc độ.
+
+Nhiều thay đổi lớn của Go sẽ khó hơn nhiều với GCC hoặc LLVM.
+
+.link https://news.ycombinator.com/item?id=8817990
+
+* Những thay đổi lớn
+
+Tất cả được thực hiện dễ hơn bằng cách sở hữu các công cụ và/hoặc chuyển sang Go:
+
+- kiến trúc lại linker
+- bộ gom rác mới
+- bản đồ stack
+- stack liên tiếp
+- write barrier
+
+Ba cái cuối gần như không thể trong C:
+
+- C không an toàn kiểu; không phải lúc nào cũng biết cái gì là con trỏ
+- aliasing của các vị trí stack gây ra bởi tối ưu hóa
+
+(`Gccgo` sẽ có segmented stack và thu gom (stack) không chính xác trong một thời gian nữa.)
+
+* Stack của goroutine
+
+- Đến 1.2: Stack được phân đoạn.
+- 1.3: Stack liên tiếp trừ khi thực thi code C (runtime).
+- 1.4: Stack được làm liên tiếp bằng cách hạn chế C vào system stack.
+- 1.5: Stack được làm liên tiếp bằng cách loại bỏ C.
+
+Đây là mỗi bước lớn, được thực hiện nhanh chóng (dẫn đầu bởi `khr@`).
+
+* Chuyển đổi runtime
+
+Chủ yếu được thực hiện thủ công với sự hỗ trợ của máy.
+
+Thách thức khi triển khai runtime bằng ngôn ngữ an toàn.
+Một số sử dụng `unsafe` để xử lý con trỏ như các bit thô trong GC, chẳng hạn.
+Nhưng ít hơn bạn nghĩ.
+
+Công cụ dịch (các phần tiếp theo) đã giúp cho một số bản dịch.
+
+* Chuyển đổi trình biên dịch
+
+Tại sao dịch nó, không viết từ đầu? Tính đúng đắn, kiểm thử.
+
+Các bước:
+
+- Viết một bộ dịch tùy chỉnh từ C sang Go.
+- Chạy bộ dịch, lặp lại cho đến khi thành công.
+- Đo thành công bằng đầu ra giống nhau từng bit.
+- Dọn dẹp code bằng tay và bằng máy.
+- Chuyển nó từ C-trong-Go thành Go idiomatik (vẫn đang xảy ra).
+
+* Bộ dịch
+
+Đầu ra đầu tiên là C được dịch từng dòng sang Go (không tốt!).
+Công cụ để làm điều này được viết bởi `rsc@` (đã nói tại GopherCon 2014).
+Được viết riêng cho công việc này, không phải bộ dịch C-sang-Go tổng quát.
+
+Các bước:
+
+- Phân tích cú pháp code C bằng bộ phân tích C đơn giản mới (`yacc`)
+- Loại bỏ hoặc viết lại các đặc điểm C như `*p++` là biểu thức
+- Duyệt qua cây phân tích C, in code C theo cú pháp Go
+- Biên dịch đầu ra
+- Chạy, so sánh code được tạo ra
+- Lặp lại
+
+Ngữ pháp `Yacc` được dịch bằng tay qua sam.
+
+* Cấu hình bộ dịch
+
+Được hỗ trợ bởi các quy tắc viết lại được viết tay, như:
+
+- trường này là bool
+- hàm này trả về bool
+
+Cũng có các viết lại giống diff cho những thứ như dùng thư viện chuẩn:
+
+	diff {
+	-	g.Rpo = obj.Calloc(g.Num*sizeof(g.Rpo[0]), 1).([]*Flow)
+	-	idom = obj.Calloc(g.Num*sizeof(idom[0]), 1).([]int32)
+	-	if g.Rpo == nil || idom == nil {
+	-		Fatal("out of memory")
+	-	}
+	+	g.Rpo = make([]*Flow, g.Num)
+	+	idom = make([]int32, g.Num)
+	}
+
+* Ví dụ khác
+
+Cái này do sự khác biệt ngữ nghĩa giữa các ngôn ngữ.
+
+	diff {
+	-	if nreg == 64 {
+	-		mask = ^0 // can't rely on C to shift by 64
+	-	} else {
+	-		mask = (1 << uint(nreg)) - 1
+	-	}
+	+	mask = (1 << uint(nreg)) - 1
+	}
+
+* Grind
+
+Khi đã trong Go, công cụ mới `grind` được triển khai (bởi `rsc@`):
+
+- phân tích Go, kiểm tra kiểu
+- ghi lại danh sách các chỉnh sửa cần thực hiện: "chèn văn bản này tại vị trí này"
+- ở cuối, áp dụng các chỉnh sửa cho nguồn (khó chỉnh sửa AST).
+
+Các thay đổi được hướng dẫn bởi profiling và phân tích khác:
+
+- loại bỏ code chết
+- loại bỏ goto
+- loại bỏ nhãn không dùng, hướng dẫn thừa, v.v.
+- di chuyển khai báo `var` đến gần lần dùng đầu tiên
+
+.link http://rsc.io/grind
+
+* Vấn đề hiệu suất
+
+Đầu ra từ bộ dịch là Go tồi, và chạy chậm hơn khoảng 10 lần.
+Hầu hết sự chậm chạp đó đã được phục hồi.
+
+Vấn đề từ C sang Go:
+
+- Các mẫu C có thể là Go tồi; ví dụ: vòng lặp `for` phức tạp
+- Biến stack của C không bao giờ thoát; trình biên dịch Go không chắc chắn như vậy
+- interface như `fmt.Stringer` vs. `varargs` của C
+- không có `union` trong Go, vì vậy dùng `struct` thay thế: phình to
+- khai báo biến ở sai chỗ
+
+Trình biên dịch C không giải phóng nhiều bộ nhớ, nhưng Go có GC.
+Thêm chi phí CPU và bộ nhớ.
+
+* Sửa hiệu suất
+
+Profile! (Chưa từng làm trước đây!)
+
+- di chuyển `var` gần lần dùng đầu tiên hơn
+- tách `var` thành nhiều cái
+- thay thế code trong trình biên dịch bằng code trong thư viện: ví dụ `math/big`
+- dùng interface hoặc các thủ thuật khác để kết hợp các trường `struct`
+- phân tích thoát tốt hơn (`drchase@`).
+- điều chỉnh thủ công code và bố cục dữ liệu
+
+Dùng các công cụ như `grind`, `gofmt` `-r` và `eg` cho phần lớn điều này.
+
+Loại bỏ đối số interface khỏi thư viện print gỡ lỗi đã đạt được 15% tổng thể!
+
+Còn nhiều việc phải làm.
+
+* Lợi ích kỹ thuật
+
+Các lợi ích khác của việc chuyển đổi:
+
+Thu gom rác có nghĩa là không còn lo lắng về việc tạo ra con trỏ dangling.
+
+Cơ hội để dọn dẹp các back end.
+
+Thống nhất kiến trúc `386` và `amd64` trong toàn chuỗi công cụ.
+
+Kiến trúc mới dễ thêm hơn.
+
+Thống nhất các công cụ: bây giờ một trình biên dịch, một assembler, một linker.
+
+* Trình biên dịch
+
+`GOOS=YYY` `GOARCH=XXX` `go` `tool` `compile`
+
+Một trình biên dịch; không còn `6g`, `8g` v.v.
+
+Khoảng 50K dòng code di động.
+Ngay cả bộ ghi đăng ký cũng di động bây giờ; kiến trúc được đặc trưng tốt.
+Không di động: Peepholing, chi tiết như các thanh ghi được ràng buộc với lệnh.
+Thường khoảng 10% LOC di động.
+
+* Assembler
+
+`GOOS=YYY` `GOARCH=XXX` `go` `tool` `asm`
+
+Assembler mới, tất cả bằng Go, được viết từ đầu bởi `r@`.
+Code Go sạch, idiomatik.
+
+Ít hơn 4000 dòng, <10% phụ thuộc vào máy.
+
+Gần như hoàn toàn tương thích với các assembler `yacc` và C trước đó.
+
+Điều này có thể như thế nào?
+
+- cú pháp chung có nguồn gốc từ các assembler Plan 9
+- logic back-end thống nhất (cũ là `liblink`, nay là `internal/obj`)
+
+* Linker
+
+`GOOS=YYY` `GOARCH=XXX` `go` `tool` `link`
+
+Chủ yếu được dịch thủ công và bằng máy từ code C.
+
+Thư viện mới, `internal/obj`, một phần của linker gốc, nắm bắt chi tiết về máy, viết file object.
+
+27000 dòng tổng cộng cho 4 kiến trúc, chủ yếu là bảng (cộng với một số xấu xí).
+
+- `arm`: 4000
+- `arm64`: 6000
+- `ppc64`: 5000
+- `x86`: 7500 (`386` và `amd64`)
+
+Lợi ích ví dụ: một thường trình in để in bất kỳ lệnh nào cho bất kỳ kiến trúc nào.
+
+* Bootstrap
+
+Không có trình biên dịch C, bootstrapping yêu cầu trình biên dịch Go.
+
+Do đó cần build hoặc tải xuống cài đặt Go đang hoạt động để build 1.5 từ nguồn.
+
+Chúng ta dùng Go 1.4+ làm cơ sở để build chuỗi công cụ 1.5+. (Mới hơn cũng được.)
+
+Chi tiết: [[/s/go15bootstrap]]
+
+* Tương lai
+
+Còn nhiều việc cần làm, nhưng 1.5 cơ bản đã xong.
+
+Công việc trong tương lai:
+
+Phân tích thoát tốt hơn.
+Back end trình biên dịch mới sử dụng SSA (dễ hơn nhiều trong Go so với C).
+Sẽ cho phép tối ưu hóa nhiều hơn.
+
+Tạo mô tả máy từ PDF (hoặc có thể là XML).
+Sẽ có định nghĩa lệnh được tạo hoàn toàn bằng máy:
+"Đọc PDF, viết ra cấu hình assembler".
+Đã được triển khai cho các bộ phân tách lệnh.
+
+* Kết luận
+
+Loại bỏ C là một bước tiến lớn cho dự án.
+Code sạch hơn, có thể kiểm thử, profiling, dễ làm việc hơn.
+
+Chuỗi công cụ thống nhất mới giảm kích thước code, tăng khả năng bảo trì.
+
+Chuỗi công cụ linh hoạt, tính di động vẫn là tối quan trọng.
+
+

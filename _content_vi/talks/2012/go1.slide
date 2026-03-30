@@ -1,0 +1,503 @@
+Con đường đến Go 1
+
+Rob Pike
+Google
+https://go.dev
+
+Andrew Gerrand
+Google
+http://andrewgerrand.com
+@go_nuts
+https://go.dev
+
+
+* Giới thiệu
+
+Go là ngôn ngữ lập trình đồng thời mã nguồn mở được phát triển tại Google.
+
+Kết hợp biên dịch native và kiểu tĩnh với cảm giác động nhẹ nhàng.
+
+Nhanh, thú vị và hiệu quả.
+
+
+* Go là gì?
+
+Các tính năng:
+
+- Tạo mã native (được biên dịch)
+- Kiểu tĩnh
+- Thành phần qua interface
+- An toàn bộ nhớ
+- Có bộ gom rác
+- Hỗ trợ lập trình đồng thời tích hợp sẵn
+- Thư viện chuẩn xuất sắc
+- Công cụ tuyệt vời
+
+
+* Lịch sử
+
+
+* Lịch sử
+
+Bắt đầu như dự án 20% của Google vào cuối năm 2007.
+
+Phát hành dưới dạng dự án mã nguồn mở vào tháng 11 năm 2009.
+
+Go 1 phát hành vào tháng 3 năm 2012.
+
+
+* Dự án Go
+
+Được lên kế hoạch từ đầu như một dự án mã nguồn mở.
+
+Phát hành công khai theo giấy phép BSD.
+
+Cho đến nay: 28 committer từ Google và các nơi khác.
+
+Hơn 200 người khác đã đóng góp cho dự án.
+
+9735 commit kể từ khi phát hành.
+
+
+* Quy trình phát triển
+
+Hệ thống quản lý phiên bản Mercurial với plugin để code review.
+
+Không có nhánh; lịch sử tuyến tính.
+
+Code review là trung tâm của dự án. Tất cả thay đổi được review trên danh sách golang-dev bằng Rietveld (codereview.appspot.com).
+
+Hệ thống build liên tục tùy chỉnh kiểm thử trên tất cả các nền tảng được hỗ trợ.
+
+Đóng góp được chấp nhận trên cơ sở "Thảo luận trước, lập trình sau".
+
+
+* Đóng góp theo thời gian
+
+Dự án phát triển nhanh:
+
+.image go1/changes.png
+
+Các bản port Windows, FreeBSD, OpenBSD, NetBSD và Plan 9 được cộng đồng thúc đẩy.
+
+
+* Quản lý dự án
+
+* Chu trình phát triển
+
+Các thay đổi được thực hiện liên tục.
+
+Thứ bị hỏng. Thứ được sửa.
+Một số ngày tốt hơn những ngày khác.
+
+Các builder liên tục giúp ích, nhưng không phát hiện tất cả vấn đề.
+
+Chúng tôi cần cung cấp một mức độ ổn định cho người dùng.
+
+
+* Snapshot hàng tuần
+
+Cố gắng giữ mọi người đồng bộ.
+
+- Gắn thẻ Mercurial vào một revision cụ thể, ổn định.
+- Thông báo đến danh sách thư người dùng với changelog chi tiết.
+
+Tốt cho người dùng tiên phong và developer cốt lõi.
+
+
+* Vấn đề với snapshot hàng tuần
+
+Người đóng góp làm việc ở tip; người dùng đồng bộ với snapshot hàng tuần.
+
+Gánh nặng cho người dùng:
+
+- phiền khi cập nhật hàng tuần,
+- đau đớn khi cập nhật ít thường xuyên hơn.
+
+Lệch phiên bản xảy ra vì người dùng ở các snapshot hàng tuần khác nhau.
+
+Lệch phiên bản phân mảnh cộng đồng và làm chậm việc áp dụng.
+
+
+* Quy trình phát hành chính thức
+
+Tháng 3 năm 2011: giới thiệu các bản phát hành mỗi 1-2 tháng.
+
+- Chọn snapshot ổn định nhất trong vài snapshot vừa rồi và gắn thẻ.
+- Thông báo với ghi chú phát hành "phải đọc" tóm tắt.
+
+Giữ cộng đồng đồng bộ hơn. Giảm biến động.
+
+Được người dùng ưa chuộng.
+
+
+* Vấn đề với các bản phát hành
+
+Dễ thực hiện một vài thay đổi nhỏ mỗi tuần...
+
+\...nhưng khó thực hiện nhiều thay đổi nhỏ mỗi tháng.
+
+Lệch phiên bản vẫn phổ biến: những người mạo hiểm và dev cốt lõi vẫn dùng snapshot hàng tuần (hoặc tip!).
+
+
+* Giới thiệu Gofix
+
+Công cụ để cập nhật cơ học mã nguồn nhằm thích nghi với các thay đổi về ngôn ngữ và thư viện.
+
+  gofix prog.go
+
+Được thông báo vào tháng 5 năm 2011.
+Gofix tự động hóa các cập nhật cho các thay đổi không tương thích ngược.
+Giảm nhẹ gánh nặng của việc duy trì cập nhật.
+
+Ghi chú phát hành bây giờ hầu hết nói "chạy gofix."
+
+Không phải script sed. Hoạt động trên AST.
+
+
+* Gofix
+
+Gofix cho phép các thay đổi toàn diện mà không lo làm hỏng cơ sở mã.
+
+Gofix trao cho chúng tôi tự do để thực hiện các thay đổi rộng rãi mà nếu không sẽ quá nản lòng.
+
+Thậm chí có thể cập nhật mã của bên thứ ba:
+
+"Hôm qua tôi đã gofix một số package của bên thứ ba mà không đọc mã của họ và không chờ tác giả cập nhật chúng." - Dmitry Chestnykh
+
+
+* Vấn đề phiên bản vẫn tồn tại
+
+Gofix không phải là thuốc chữa bách bệnh.
+
+Là gốc của đồ thị dependency, ngôn ngữ lập trình có thể bị ảnh hưởng nặng nề bởi lệch phiên bản.
+
+Vấn đề cơ bản vẫn còn:
+Mã bạn viết hôm nay có thể không biên dịch được ngày mai.
+
+Một số công ty không muốn đặt cược vào Go vì họ thấy nó không ổn định.
+
+
+* Nhu cầu về sự ổn định
+
+Gofix làm cho thay đổi rất dễ dàng, và cũng giúp dễ thử nghiệm.
+Nhưng nó không thể làm tất cả mọi thứ.
+
+Ưu tiên: Nếu thay đổi dễ dàng, thay đổi nào là quan trọng?
+
+Muốn thực hiện các thay đổi lớn cho ngôn ngữ và thư viện nhưng, ngay cả với gofix, một số thứ quá gây xáo trộn mà không có kế hoạch đúng đắn.
+
+Quyết định: thiết kế và triển khai phiên bản ổn định của Go, các thư viện và công cụ của nó.
+
+
+* Go 1
+
+* Go 1 là gì?
+
+Đặc tả ngôn ngữ và thư viện sẽ được hỗ trợ trong nhiều năm.
+
+Có sẵn dưới dạng gói nhị phân tải về được.
+
+Cơ hội để:
+
+- sửa các điểm khó chịu nhỏ trong ngôn ngữ,
+- sửa các điểm không nhất quán trong thư viện chuẩn,
+- tập trung vào sửa lỗi và dọn dẹp TODO,
+- thiết kế và xây dựng bộ công cụ build mạnh mẽ (loại bỏ make),
+- đưa hỗ trợ Windows lên ngang bằng.
+
+Đánh bóng và tinh chỉnh, không phải thiết kế lại.
+
+
+* Lên kế hoạch cho Go 1
+
+Viết tài liệu đề xuất chi tiết.
+
+Triển khai (nhưng chưa commit) nhiều thay đổi được đề xuất.
+
+Nhóm cốt lõi họp một tuần để thảo luận và tinh chỉnh tài liệu (tháng 10 năm 2011).
+
+Trình bày tài liệu cho cộng đồng để thảo luận.
+
+Phản hồi từ cộng đồng rất quan trọng trong việc tinh chỉnh đề xuất.
+
+
+* Chuẩn bị Go 1
+
+
+Tạo nhiều issue mới trên tracker.
+
+Phân loại các issue mới và cũ là "Go 1" hoặc "sau Go 1".
+
+Người đóng góp tự ứng cử để giải quyết các issue cụ thể.
+
+Ngừng phát triển tính năng mới; ưu tiên ổn định.
+
+
+* Triển khai
+
+Số dòng thay đổi hàng ngày trong những tháng trước khi phát hành Go 1:
+
+.image go1/go1lines.png
+
+
+* Gofix và Go 1
+
+Các chỉnh sửa lớn nhất trong Go 1 được thực hiện bởi gofix.
+
+Gofix giúp dễ dàng thử một thay đổi và tinh chỉnh nó theo từng bước.
+
+Một số thay đổi đáng kể đã được thử và bỏ.
+
+
+* Quy trình làm việc của Gofix
+
+Quy trình làm việc theo kịch bản cho phép chúng tôi tránh nhánh và hợp nhất phức tạp.
+
+Quy trình:
+
+  while !satisfied {
+    in tree 1:
+      refine gofix module in tree 1, build binary
+    in tree 2:
+      revert to tip (note: tip)
+      apply gofix binary from tree 2
+      build and test
+  }
+  commit tree 1
+  commit tree 2
+
+Ngay cả khi các thay đổi khác đang xảy ra, điều này không dẫn đến nhánh hay lệch.
+
+* Ví dụ thay đổi
+
+.image go1/errordiff1.png
+.image go1/errordiff2.png
+
+* Quy trình phát hành Go 1
+
+Các bản phát hành bị tạm dừng từ r60 (tháng 8 năm 2011).
+Snapshot hàng tuần tiếp tục như bình thường.
+
+Phát hành các release candidate trong những tuần trước khi ra mắt.
+
+Release candidate bao gồm các bản phân phối nhị phân cho các hệ điều hành được hỗ trợ (FreeBSD, Linux, Mac OS X và Windows).
+
+
+* Go 1 bao gồm những gì?
+
+* Go 1
+
+Đặc tả ngôn ngữ.
+
+Đặc tả thư viện.
+
+Cam kết tương thích lâu dài.
+
+Windows là công dân hạng nhất.
+
+Chuỗi công cụ mới xoay quanh công cụ `go`.
+
+"Bước ngoặt" trong cách dự án vận hành.
+
+
+* Thay đổi ngôn ngữ
+
+Kiểu `rune` mới để biểu diễn điểm mã Unicode.
+(Bước quan trọng để làm cho `int` là 32 hoặc 64 bit; hiện tại chỉ là 32.)
+
+Kiểu `error` tích hợp sẵn mới để thay thế `os.Error`.
+Điều này ảnh hưởng đến hầu hết mọi mã Go đang tồn tại.
+
+Phép bình đẳng được định nghĩa trên struct.
+
+Dọn dẹp một số thao tác khó xử.
+
+
+* Thay đổi API
+
+Package `time` được thiết kế lại với interface sạch sẽ, đơn giản.
+
+Chuẩn hóa `strconv`, thoát khỏi API kiểu C cũ.
+
+Tổ chức lại package rộng rãi. Đặt mọi thứ ở nơi phù hợp hơn.
+
+Hàng chục thay đổi nhỏ hơn.
+
+
+* Time
+
+Package time cũ dựa trên epoch Unix. Phạm vi giới hạn, tính năng kém,
+không an toàn về kiểu (chỉ là số nguyên nanosecond).
+
+Thiết kế lại đáng kể tạo ra các kiểu Time và Duration riêng biệt.
+Time có thể biểu diễn phạm vi thời gian rộng lớn với độ chính xác nanosecond.
+
+Duration chỉ định khoảng thời gian. Ví dụ:
+
+  time.Sleep(2)             // API cũ, không an toàn: Bao lâu?
+  time.Sleep(2*time.Second) // API mới: an toàn về kiểu, dễ đọc.
+
+  fmt.Println(time.Now().Add(1e6*time.Hour))
+
+Cũng có kiểu flag mới!
+
+  $ command -timeout 1m30s
+
+* Tổ chức lại
+
+Sắp xếp lại cây được xây dựng tự nhiên để nhóm các thứ liên quan với nhau.
+Ví dụ:
+
+  Cũ         Mới
+
+  "asn1"      "encoding/asn1"
+  "csv"       "encoding/csv"
+  "gob"       "encoding/gob"
+  "json"      "encoding/json"
+  "xml"       "encoding/xml"
+
+  "unicode"   "unicode"
+  "utf8"      "unicode/utf8"
+  "utf16"     "unicode/utf16"
+
+Tất cả được cập nhật bởi gofix, dĩ nhiên.
+
+* Hạ cấp các package và lệnh chưa trưởng thành
+
+Các phần của cây được coi là chưa sẵn sàng không nên là một phần của Go 1.
+
+Các package hoạt động nhưng chưa trưởng thành được chuyển sang sub-repository của kho lưu trữ Go chính. (Chúng vẫn có thể cài đặt được.)
+
+Các package và công cụ chưa hoàn thành và cũ đã bị bỏ.
+
+
+* Cách build
+
+Trước Go 1, các chương trình Go được build bằng make, nhưng Makefile phiền để viết và, với Go, thừa.
+
+Từ đầu, mục tiêu của Go là quản lý dependency tốt.
+
+Theo thiết kế, mã nguồn Go chứa tất cả thông tin cần thiết để build.
+
+Go 1 bao gồm "go tool" mới giúp loại bỏ nhu cầu dùng make.
+
+Với một cây Go (bao gồm dependency từ xa), có thể build và cài đặt trực tiếp:
+
+  $ go build file.go
+
+* Công cụ go
+
+Công cụ build, kiểm thử và cài đặt hoàn chỉnh cho các chương trình Go.
+
+Một số ví dụ thực tế:
+
+  $ go run hello.go       # Biên dịch và chạy. (Ha!).
+  $ go build package      # Build mọi thứ trong thư mục (và dependency).
+  $ go install            # Cài đặt mọi thứ trong thư mục (và dependency).
+  $ go test archive/zip   # Biên dịch và chạy unit test cho package.
+
+Công cụ go cũng bọc `gofmt`, `gofix`, v.v.:
+
+  $ go fmt                # Chạy gofmt trên package trong thư mục hiện tại.
+  $ go fix                # Chạy gofix trên package trong thư mục hiện tại.
+
+* Công cụ go và kho lưu trữ từ xa
+
+Công cụ go tự động hóa việc cài đặt các package từ xa.
+
+Package được đánh địa chỉ bằng chuỗi import.
+Chuỗi import chỉ là URL kho lưu trữ mã nguồn.
+Công cụ go tải và cài đặt tất cả dependency, theo đệ quy.
+
+  $ go get code.google.com/p/myrepo/mypackage
+
+Cài đặt package của tôi, cộng với bất kỳ dependency từ xa nào.
+Và để dùng package trong mã nguồn Go:
+
+	import "code.google.com/p/myrepo/mypackage"
+
+Công cụ thậm chí có thể chạy gofix khi cài đặt:
+
+  $ go get -fix code.google.com/p/myrepo/mypackage
+
+
+* Tài liệu
+
+Làm lại hoàn toàn:
+
+- cập nhật,
+- thống nhất,
+- thêm tài liệu mới,
+- thêm ví dụ mới (có thể thực thi),
+- thiết kế lại trang web.
+
+
+* Công cụ kiểm tra tương thích API
+
+Quét toàn bộ thư viện chuẩn và kiểm tra với danh sách chính (`go1.txt`).
+
+Giúp đảm bảo tương thích khi phát triển tiếp tục.
+
+Là một phần của quy trình build trong quá trình chuẩn bị cho Go 1 (và tiếp tục đến ngày nay).
+
+
+* Hôm nay và ngày mai
+
+* Chúng ta đang làm gì?
+
+Mục tiêu cho Go 1 là môi trường ổn định, hiệu quả.
+
+Bây giờ Go 1 đã ra mắt, chúng tôi đang chuyển trọng tâm sang sử dụng Go nhiều hơn là chỉ phát triển nó.
+
+Chỉ thông qua việc sử dụng Go rộng rãi mới có thể biết điều gì có thể cần thiết trong phiên bản tương lai, chẳng hạn Go 2.
+
+* Vẫn có phát triển tích cực
+
+Thiết kế đã được khóa nhưng công việc vẫn tiếp tục.
+
+Ổn định: sửa lỗi.
+
+Hiệu quả:
+
+- tạo mã,
+- bộ gom rác,
+- lập lịch,
+- các điểm nóng trong thư viện chuẩn.
+
+Tính di động: các bản port NetBSD, OpenBSD và Plan 9 đang tiến triển.
+
+Thư viện mới: các package phân tích HTML và Unicode collation, chẳng hạn.
+
+* Các bản phát hành sau Go 1
+
+Hai bản phát hành point nhỏ (`go1.0.1` và `go1.0.2`) đã được phát hành để sửa lỗi.
+
+Bản phát hành point lớn tiếp theo (`go1.1`) được lên kế hoạch cho cuối năm 2012.
+Nó sẽ bao gồm:
+
+- cải thiện tạo mã cho trình biên dịch `gc`,
+- cải thiện hiệu suất và độ chính xác của bộ gom rác,
+- (có thể) bộ lập lịch được cải thiện,
+- nhiều sửa lỗi.
+
+Go 2 có thể còn nhiều năm nữa.
+
+
+* Tìm hiểu thêm
+
+Trang web Go có rất nhiều tài liệu:
+
+.link / go.dev
+
+Học Go từ trình duyệt:
+
+.link /tour/ go.dev/tour
+
+Panel "Gặp gỡ nhóm Go" từ Google I/O 2012:
+
+.link /s/meet-the-go-team go.dev/s/meet-the-go-team
+
+Dự án Google Code:
+
+.link http://code.google.com/p/go
