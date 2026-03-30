@@ -310,8 +310,8 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/share-memory-by-communicating.md`
 - [x] `blog/slices-intro.md`
 - [x] `blog/slices.md`
-- [ ] `blog/slog.md`
-- [ ] `blog/smarttwitter.md`
+- [x] `blog/slog.md`
+- [x] `blog/smarttwitter.md`
 - [x] `blog/spotlight-on-external-go-libraries.md`
 - [x] `blog/stable-releases.md`
 - [x] `blog/stackoverflow.md`
@@ -353,7 +353,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/survey2023-h2.md`
 - [x] `blog/survey2023-q1-results.md`
 - [x] `blog/survey2023-q1.md`
-- [ ] `blog/survey2024-h1-results.md`
+- [x] `blog/survey2024-h1-results.md`
 - [x] `blog/survey2024-h1.md`
 - [ ] `blog/survey2024-h2-results.md`
 - [x] `blog/survey2024-h2.md`
