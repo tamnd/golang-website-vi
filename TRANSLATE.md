@@ -771,5 +771,5 @@ This checklist tracks files that likely require localization work. It excludes s
 ### wiki
 
 - [x] `wiki/Comments.md`
-- [ ] `wiki/default.tmpl`
+- [x] `wiki/default.tmpl`
 - [x] `wiki/index.md`
