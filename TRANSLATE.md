@@ -355,11 +355,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/survey2023-q1.md`
 - [x] `blog/survey2024-h1-results.md`
 - [x] `blog/survey2024-h1.md`
-- [ ] `blog/survey2024-h2-results.md`
+- [x] `blog/survey2024-h2-results.md`
 - [x] `blog/survey2024-h2.md`
 - [x] `blog/survey2025-announce.md`
-- [ ] `blog/survey2025.md`
-- [ ] `blog/swisstable.md`
+- [x] `blog/survey2025.md`
+- [x] `blog/swisstable.md`
 - [x] `blog/sydney-gtug.md`
 - [x] `blog/synctest.md`
 - [x] `blog/testing-b-loop.md`
