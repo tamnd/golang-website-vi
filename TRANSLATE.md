@@ -443,7 +443,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/effective_go.html`
 - [ ] `doc/faq.md`
 - [x] `doc/fuzz.md`
-- [ ] `doc/gc-guide.html`
+- [x] `doc/gc-guide.html`
 - [x] `doc/gccgo_contribute.html`
 - [x] `doc/gccgo_install.md`
 - [x] `doc/gdb.html`
