@@ -225,10 +225,10 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/gophergala.md`
 - [x] `blog/gopls-scalability.md`
 - [x] `blog/gopls-vscode-go.md`
-- [ ] `blog/gos-declaration-syntax.md`
+- [x] `blog/gos-declaration-syntax.md`
 - [ ] `blog/gotelemetry.md`
-- [ ] `blog/gothamgo.md`
-- [ ] `blog/gouk15.md`
+- [x] `blog/gothamgo.md`
+- [x] `blog/gouk15.md`
 - [ ] `blog/govulncheck.md`
 - [ ] `blog/greenteagc.md`
 - [ ] `blog/h2push.md`
