@@ -1,0 +1,137 @@
+Copyright 2016 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+
+Full talk text for https://go.dev/talks/2016/prototype-your-design.pdf.
+
+Prototype your design!
+Robert Griesemer
+dotGo2016, Paris
+
+[2]
+Bất kỳ môi trường phần mềm chuyên nghiệp nào cũng có một quy trình thiết kế nhất định; và mục tiêu luôn như nhau: Muốn đảm bảo thiết kế tốt trước khi bắt đầu triển khai. Lý do đơn giản: Càng phát hiện lỗi muộn thì chi phí càng cao.
+Các cách tiếp cận thường khá giống nhau, ít nhất về mặt tổng thể: Có một dạng tài liệu thiết kế nào đó, "đặc tả" của phần mềm cần xây dựng. Có phản hồi từ các chuyên gia và người phê duyệt thiết kế; và cũng có một số hình thức lặp lại thiết kế.
+Tuy nhiên, thường thì quy trình thiết kế là một bài tập "khô": Bản thân thiết kế không liên quan nhiều đến việc tạo ra phần mềm.
+Xét cho cùng, chúng ta là những chuyên gia, không còn là hacker nữa (ừ thì cũng một số vẫn vậy), và chúng ta không viết code mà không suy nghĩ về thiết kế trước. Và dự án càng lớn thì càng cần thiết kế nhiều hơn trước. Hay sao?
+
+[3]
+Nhưng dù tiếp cận theo cách nào, một câu hỏi quan trọng vẫn còn đó:
+Làm sao chúng ta biết thiết kế của mình là tốt?
+
+[4]
+Ở bất kỳ lĩnh vực nào khác, ngoài phần mềm, thiết kế và tạo mẫu gắn liền với nhau. Hầu như không có thiết kế nào—quần áo, đồ nội thất, đồ gia dụng, xe hơi, thậm chí kiến trúc—mà không được tạo mẫu trước khi đưa vào sản xuất.
+Hình ảnh này, lấy từ Trường Thiết kế của Đại học Stanford, minh họa quy trình thiết kế trong năm bước. Sau khi tìm hiểu và xác định vấn đề—tại Google chúng tôi gọi đây là "tập trung vào người dùng và mọi thứ sẽ theo sau"—thiết kế là một chuỗi lặp lại gồm tạo ý tưởng, tạo mẫu và thử nghiệm. Nhà thiết kế không nghĩ ra thiết kế tốt, mà xây dựng đến thiết kế đó. Nói cách khác, các nhà thiết kế là người hành động; chúng ta thậm chí có thể gọi họ là "hacker".
+
+[5]
+Vậy hãy chuyển hướng một chút và xem xét thiết kế ngôn ngữ. Cụ thể là thiết kế hỗ trợ Go cho các ứng dụng số học. Một số bạn có thể biết, có một đề xuất cụ thể đề nghị hỗ trợ slice đa chiều trong Go. Đề xuất hiện đang trong giai đoạn thiết kế.
+Cụ thể, slice đa chiều cho phép khai báo slice 2 chiều, ví dụ như ma trận. Sử dụng make, slice 2 chiều có thể được kích thước động lúc chạy, và có thể truy cập các phần tử theo chỉ mục. Điều này hiện không thể làm trong Go.
+Mặc dù chúng ta có mảng và slice, và mảng cho phép định nghĩa cấu trúc dữ liệu 2 chiều nằm liên tiếp trong bộ nhớ, nhưng chúng cũng có kích thước cố định tĩnh. Slice có kích thước động nhưng vốn dĩ là một chiều.
+
+[6]
+Các mục tiêu cấp cao của đề xuất khá đơn giản: Cải thiện khả năng đọc thông qua ký pháp đẹp như đánh chỉ mục đa chiều, và lý tưởng là hiệu suất tốt nhờ triển khai gốc.
+Nhưng vẫn còn nhiều câu hỏi mở. Tài liệu thiết kế hiện tại trả lời chúng, nhưng làm sao chúng ta biết đó là những câu trả lời đúng?
+
+[7]
+Tuy nhiên, chúng ta có thể đưa ra một số quan sát: Hóa ra chúng ta đã có thể triển khai nhiều khía cạnh của slice đa chiều trong Go. Ví dụ, chúng ta có thể định nghĩa các slice descriptor cho slice hoặc ma trận 2 chiều, 3 chiều, 4 chiều—đó chỉ là kiểu dữ liệu trừu tượng mà thôi.
+Hơn nữa, chúng ta có thể định nghĩa và triển khai các thao tác trên các kiểu dữ liệu đó, tức là định nghĩa các method trên chúng.
+Nghĩa là, đã có thể viết code số học và thử nghiệm thiết kế API rồi. Đây là điều mà cộng đồng gonum đã làm trong nhiều năm.
+
+[8]
+Thật không may, có một tính năng quan trọng còn thiếu, đó là ký pháp đẹp. Ví dụ, đơn giản là không thể viết biểu thức chỉ mục 2 chiều sử dụng toán tử chỉ mục trong Go hiện tại.
+Cách làm hiện tại là dựa vào các method truy cập như At và AtSet, để lấy và đặt phần tử của ma trận.
+Nhưng các accessor như vậy làm code số học trông cồng kềnh, thậm chí khó đọc.
+
+[9]
+Vậy làm thế nào để giải quyết vấn đề ký pháp này? Có một vài giải pháp:
+1) Có thể nói đây không phải vấn đề—và một số người sẽ chấp nhận điều này.
+2) Có thể thực sự thay đổi ngôn ngữ Go để thử nghiệm; nhưng điều đó có lẽ quá tốn kém.
+3) Hoặc, chúng ta có thể viết lại source: Bất cứ khi nào thấy a[i, j], chúng ta chuyển thành lời gọi method a.At(i, j). Về cơ bản là điều mà nhóm gonum đang làm hiện nay, ngoại trừ họ không bắt đầu với ký pháp đẹp.
+Lý tưởng là chúng ta muốn có một công cụ, một bộ viết lại source-to-source thực hiện điều này cho chúng ta.
+
+[10]
+Với bộ viết lại như vậy, đây sẽ là mẫu thử của chúng ta cho một triển khai thực sự, chúng ta có thể khám phá không gian thiết kế trước khi đưa ra bất kỳ quyết định khó khăn nào.
+
+[11]
+Vậy hãy thiết kế bộ viết lại của chúng ta. Vì chúng ta muốn viết lại biểu thức chỉ mục thành method, chúng ta sẽ cho phép hai tên method đặc biệt, được tạo thành từ một chuỗi các toán tử chỉ mục và gán. Tôi gọi chúng là indexed getter và indexed setter.
+Tôi cũng đã thêm toán tử nhị phân + vào danh sách này. Chúng ta không cần nó cho đề xuất của mình, nhưng dễ giải thích quá trình viết lại hơn khi dùng + về sau, đó là lý do tại sao nó ở đây.
+Chúng ta cũng sẽ cho phép nhiều hơn một chỉ mục trong biểu thức chỉ mục.
+Điều này tất nhiên không có ý nghĩa đối với các cấu trúc dữ liệu có thể chỉ mục cơ bản (mảng, slice, map) mà chúng ta có trong Go. Nhưng nó có ý nghĩa cho các thao tác chỉ mục mở rộng của chúng ta.
+Và cuối cùng, chúng ta cần gán ý nghĩa mới cho các biểu thức chỉ mục. Ý tưởng đơn giản: Bất cứ khi nào thấy biểu thức chỉ mục mà biểu thức được chỉ mục, ví dụ x, có getter hoặc setter tương ứng, thì biểu thức chỉ mục được hiểu là lời gọi method tương ứng.
+Phần cuối này rất quan trọng, đó là cốt lõi của bộ viết lại. Chúng ta sẽ xem xét nó chi tiết hơn.
+
+[12]
+Bây giờ chúng ta đã biết bộ viết lại cần làm gì, chúng ta cần nghĩ ra một triển khai phù hợp.
+Hãy nhớ mục tiêu: Vì Go hiện tại không hiểu ngôn ngữ mở rộng của chúng ta, chúng ta sẽ viết lại các chương trình mở rộng thành các chương trình mà Go hiện tại hiểu được.
+Hóa ra điều này khá đơn giản. Trước hết, chúng ta sẽ viết lại các tên method toán tử mới thành các định danh Go hợp lệ. Chúng ta chọn những tên hơi khác thường để tránh xung đột tên ngẫu nhiên. Nhưng tên thực tế không quan trọng.
+Tương tự, chúng ta sẽ viết lại biểu thức chỉ mục thành lời gọi method như được hiển thị.
+May mắn thay, thư viện chuẩn Go cung cấp tất cả các công cụ chúng ta cần: Chúng ta sử dụng parser để đọc source. Parser tạo ra cây cú pháp. Đó là cây mà chúng ta sẽ chỉnh sửa. Sau đó chúng ta sử dụng go/printer để tạo source mới từ cây đã chỉnh sửa.
+Vì chúng ta muốn chấp nhận tên method mới và nhiều hơn một chỉ mục, chúng ta phải chỉnh sửa parser một chút. Nhưng hóa ra điều đó khá tầm thường, khoảng 20 dòng code.
+
+[13]
+Hãy xem ví dụ đơn giản này. Nó dựa trên việc viết lại toán tử + để chúng ta có thể tập trung vào phần thiết yếu. Nhưng mọi thứ chúng ta làm ở đây cũng áp dụng cho các toán tử chỉ mục.
+Bên trái chúng ta thấy code mà chúng ta muốn viết trong ngôn ngữ mở rộng. Có một method + được định nghĩa trên Point. Sau đó chúng ta có thể sử dụng phép cộng nhị phân để cộng hai điểm, với hiệu ứng là method + được gọi.
+Bên phải hiển thị source được viết lại. Đây là Go thông thường sẽ biên dịch và chạy được.
+
+[14]
+Vì chúng ta cần hiểu cấu trúc của source để thực hiện việc viết lại, và cây cú pháp phản ánh cấu trúc đó chính xác, chúng ta viết lại cây cú pháp chứ không phải source. Một lần nữa, để đơn giản chúng ta xem xét phép cộng.
+Việc viết lại tên method khá tầm thường và không hiển thị ở đây: chỉ là thay đổi một chuỗi.
+Việc viết lại các phép cộng nhị phân phức tạp hơn một chút: Chúng ta không thể chỉ viết lại mọi phép cộng nhị phân +. Chúng ta chỉ có thể làm vậy nếu kiểu của toán hạng trái triển khai method +. Hoặc, sau khi viết lại tên method, nếu nó triển khai method ADD__.
+
+[15]
+May mắn thay, thư viện chuẩn Go lại giúp chúng ta lần nữa. Chúng ta có thể đơn giản gọi go/type trên cây cú pháp để tính toán các kiểu cho tất cả toán hạng.
+Ở bước thứ 2 chúng ta có thể viết lại tất cả các phép cộng nhị phân mà toán hạng trái triển khai method ADD__.
+Một lần nữa, cách tiếp cận tương tự cũng áp dụng cho các toán tử chỉ mục.
+
+[16]
+Hãy xem điều này hoạt động như thế nào: Ở đây chúng ta có cây cú pháp cho x + y + z sau khi parse. Chúng ta chưa có kiểu nào ở thời điểm này.
+
+[17]
+Bây giờ chúng ta chạy trình kiểm tra kiểu. Như mong đợi, nó xác định kiểu cho các toán hạng x, y và z. Nhưng chúng ta cũng có một số kiểu bị thiếu.
+Tất nhiên điều này là vì trình kiểm tra kiểu không biết về + cho x và y. Xét cho cùng, đây vẫn là trình kiểm tra kiểu Go. Chúng ta có thể thay đổi nó, nhưng thực sự không muốn đụng vào—nó là một thứ phức tạp.
+Thay vào đó chúng ta đơn giản giả định các lỗi là do chúng ta chưa viết lại x + y.
+
+[18]
+Vậy hãy thực hiện viết lại ở những nơi chúng ta có thể. Trong ví dụ của chúng ta, chúng ta sẽ kết thúc với lời gọi method thay vì phép cộng đầu tiên, và cây cú pháp đã sửa đổi hiển thị bên phải.
+
+[19]
+Bây giờ chúng ta quay lại lần nữa cho vòng kiểm tra kiểu thứ hai. Lúc này chúng ta thành công hơn và chỉ còn thiếu một kiểu.
+
+[20]
+Một lần nữa, chúng ta giả định kiểu bị thiếu là do thiếu một lần viết lại, vậy hãy xác định cần viết lại gì...
+
+[21]
+… và viết lại thêm một lần nữa. Điều này để lại cho chúng ta cây cuối cùng với tất cả các phép cộng được thay thế bằng lời gọi method.
+
+[22]
+Làm thế nào để biết chúng ta đã xong? Chúng ta kiểm tra kiểu lần nữa. Lần này không còn lỗi nữa, vậy là chúng ta có một chương trình Go hợp lệ sẽ biên dịch được—có thể không chạy, nhưng biên dịch được. Chúng ta thực sự đã xong!
+
+[23]
+Với một triển khai mẫu cụ thể trong tay, chúng ta thực sự có thể sử dụng nó để đánh giá thiết kế: Chúng ta có thể thử nghiệm và xem cảm giác như thế nào. Và nếu không thích thì có thể chỉnh sửa và từ đó tinh chỉnh thiết kế.
+
+[24]
+Ví dụ, sử dụng bộ viết lại của chúng ta, giờ đây chúng ta có thể định nghĩa kiểu Matrix, thực chất là biểu diễn một slice 2 chiều, cùng với các accessor chỉ mục đẹp.
+
+[25]
+Với kiểu Matrix này, chúng ta có thể triển khai nhân ma trận. Tôi đang hiển thị phần cốt lõi của phép nhân ở đây: Bên trái, chúng ta có code mà chúng ta muốn viết, mà Go hiện tại không hiểu, và bên phải là phiên bản đã viết lại là code Go hợp lệ.
+
+[26]
+Cuối cùng, tôi muốn đề cập ngắn gọn một điểm quan trọng mà tôi chưa nói đến: Trong quá trình triển khai mẫu thử, chắc chắn sẽ gặp những điều bất ngờ. Nói cách khác, sẽ nảy sinh những câu hỏi mà chúng ta thậm chí không biết mình cần hỏi.
+Nếu không có mẫu thử, những câu hỏi tương tự sẽ xuất hiện muộn hơn nhiều, khi có thể đã quá muộn.
+
+[27]
+Trong ví dụ của chúng ta, có một điều bất ngờ, ít nhất là với tôi: Tôi thấy rằng các toán tử chỉ mục rất hiệu quả—và thực ra rất rẻ, thực chất là syntactic sugar!—trong việc giải quyết vấn đề ký pháp cụ thể, đến mức người ta có thể tự hỏi liệu đó có phải là tất cả những gì cần thiết không.
+Nhưng đó là điều để suy nghĩ vào lần khác…
+
+[28]
+Tôi muốn kết thúc với một vài quan sát:
+Trước hết, hóa ra, tất nhiên không có gì ngạc nhiên, rằng Go là ngôn ngữ tạo mẫu tuyệt vời. Đây thực sự là lý do tại sao mọi người nói rằng Go đã mang lại niềm vui trở lại cho lập trình.
+Thứ hai, tạo mẫu thực sự là cách để đạt được thiết kế tốt: Thay vì suy nghĩ về nó, chúng ta có thể xây dựng theo hướng đó.
+Và cuối cùng: Nếu chúng ta có thể tạo mẫu ngay cả các thay đổi ngôn ngữ thì chúng ta có thể tạo mẫu bất cứ điều gì.
+
+[29]
+Frederick Brooks đã nói hay nhất trong tác phẩm kinh điển năm 1975 của ông:
+Hãy lên kế hoạch vứt bỏ một cái—mẫu thử—; bạn sẽ vứt bỏ (một cái), dù sao đi nữa.
+
+[30]
+Cảm ơn.
+Đối với tất cả những ai muốn tìm hiểu sâu hơn về mẫu thử của tôi: Tất cả đều trên GitHub, và nó nhỏ gọn. Khoảng 200 dòng code, trải rộng trên hàng chục commit khá dễ đọc. Chúc vui vẻ!
