@@ -661,7 +661,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `talks/2013/distsys.slide`
 - [x] `talks/2013/go-sreops.slide`
 - [x] `talks/2013/go1.1.slide`
-- [ ] `talks/2013/go4python.slide`
+- [x] `talks/2013/go4python.slide`
 - [ ] `talks/2013/highperf.slide`
 - [x] `talks/2013/highperf/cachingembed.html`
 - [x] `talks/2013/highperf/mart/1/app.yaml` (skipped: App Engine config)
