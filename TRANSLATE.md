@@ -565,11 +565,11 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### (root)
 
-- [ ] `menus.yaml`
+- [x] `menus.yaml`
 - [ ] `pkg.tmpl`
 - [ ] `pkgroot.tmpl`
 - [ ] `play.tmpl`
-- [ ] `project.html`
+- [x] `project.html`
 - [ ] `rebuild.html`
 
 ### ref
@@ -580,7 +580,7 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### (root)
 
-- [ ] `resources.yaml`
+- [x] `resources.yaml`
 - [ ] `robots.txt`
 - [ ] `site.tmpl`
 
@@ -746,7 +746,7 @@ This checklist tracks files that likely require localization work. It excludes s
 
 ### (root)
 
-- [ ] `testimonials.yaml`
+- [x] `testimonials.yaml`
 - [ ] `texthtml.tmpl`
 - [x] `tos.md`
 
