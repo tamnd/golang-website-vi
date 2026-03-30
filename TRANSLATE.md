@@ -486,16 +486,16 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/install/gccgo.html`
 - [ ] `doc/install/source.html`
 - [ ] `doc/manage-install.html`
-- [ ] `doc/modules/developing.md`
-- [ ] `doc/modules/gomod-ref.md`
-- [ ] `doc/modules/layout.md`
-- [ ] `doc/modules/major-version.md`
-- [ ] `doc/modules/managing-dependencies.md`
-- [ ] `doc/modules/managing-source.md`
-- [ ] `doc/modules/pruning.md`
-- [ ] `doc/modules/publishing.md`
-- [ ] `doc/modules/release-workflow.md`
-- [ ] `doc/modules/version-numbers.md`
+- [x] `doc/modules/developing.md`
+- [x] `doc/modules/gomod-ref.md`
+- [x] `doc/modules/layout.md`
+- [x] `doc/modules/major-version.md`
+- [x] `doc/modules/managing-dependencies.md`
+- [x] `doc/modules/managing-source.md`
+- [x] `doc/modules/pruning.md`
+- [x] `doc/modules/publishing.md`
+- [x] `doc/modules/release-workflow.md`
+- [x] `doc/modules/version-numbers.md`
 - [ ] `doc/next.md`
 - [ ] `doc/pgo.md`
 - [ ] `doc/play/index-dev.txt`
