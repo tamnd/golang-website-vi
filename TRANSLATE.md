@@ -550,7 +550,7 @@ This checklist tracks files that likely require localization work. It excludes s
 ### (root)
 
 - [ ] `help.md`
-- [ ] `index.md`
+- [x] `index.md`
 
 ### learn
 
@@ -575,7 +575,7 @@ This checklist tracks files that likely require localization work. It excludes s
 ### ref
 
 - [ ] `ref/default.tmpl`
-- [ ] `ref/index.md`
+- [x] `ref/index.md`
 - [ ] `ref/mod.md`
 
 ### (root)
