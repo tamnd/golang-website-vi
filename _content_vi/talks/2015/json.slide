@@ -1,0 +1,318 @@
+JSON, interfaces, và go generate
+
+Francesc Campoy
+Developer, Advocate, and Gopher
+@francesc
+campoy@golang.org
+
+* Nhiệm vụ của bạn
+
+Nhiệm vụ của bạn, nếu bạn chọn chấp nhận, là giải mã thông điệp này:
+
+.code json/unmarshaler0map.go /^{/,/^}/
+
+thành:
+
+.code json/unmarshaler0.go /type Person/,/^}/
+
+* Nhiệm vụ của bạn (tiếp theo)
+
+Trong đó `ShirtSize` là một enum _(1)_:
+
+.code json/unmarshaler0.go /type ShirtSize byte/,/^\)/
+
+_(1)_: Go không có enum.
+Trong bài nói này tôi sẽ gọi các hằng số kiểu số nguyên là enum.
+
+* Sử dụng map
+
+* Sử dụng map
+
+_Ưu điểm_: rất đơn giản
+
+_Nhược điểm_: quá đơn giản? chúng ta phải viết thêm code
+
+.code json/unmarshaler0map.go /Person.*Parse/,/p.Name/
+
+* Phân tích ngày tháng
+
+Định dạng thời gian dựa trên một ngày "ma thuật":
+
+    Mon Jan 2 15:04:05 -0700 MST 2006
+
+Một ví dụ:
+
+.play json/dates.go /func main/,
+
+* Tại sao lại là ngày đó?
+
+Hãy sắp xếp lại:
+
+    Mon Jan 2 15:04:05 -0700 MST 2006
+
+thành:
+
+    01/02 03:04:05 PM 2006 -07:00 MST
+
+tức là:
+
+* 1 2 3 4 5 6 7!
+
+.image json/img/mindblown.gif 500 _
+
+* Phân tích ngày sinh:
+
+Vì đầu vào của chúng ta là:
+
+.code json/unmarshaler0map.go /^{/,/^}/
+
+Phân tích ngày sinh:
+
+.code json/unmarshaler0map.go /time.Parse/,/p.Born/
+
+* Phân tích kích cỡ áo
+
+Có nhiều cách viết, đây là một cách khá tệ:
+
+.code json/unmarshaler0map.go /ParseShirtSize/,/^}/
+
+Dùng câu lệnh `switch`, nhưng dùng map sẽ gọn hơn.
+
+* Phân tích kích cỡ áo
+
+Hàm phân tích hoàn chỉnh của chúng ta:
+
+.code json/unmarshaler0map.go /Person.*Parse/,/^}/
+
+* Điều này có hoạt động không?
+
+.play json/unmarshaler0map.go /func main/,/^}/
+
+_Lưu ý_: `ShirtSize` là một `fmt.Stringer`
+
+* Giải mã JSON vào struct
+
+* Giải mã JSON vào struct
+
+Dùng tag để điều chỉnh tên trường:
+
+.code json/unmarshaler0bad.go /type Person/,/^}/
+
+Nhưng điều này không phù hợp:
+
+.play json/unmarshaler0bad.go /func main/,
+
+* Hãy dùng kiểu struct phụ trợ
+
+Dùng các trường chuỗi và thực hiện giải mã thủ công sau đó.
+
+.code json/unmarshaler0.go /var aux struct/,/}/
+
+_Lưu ý_: tag trường cho `Name` là không cần thiết; bộ giải mã JSON thực hiện so khớp không phân biệt chữ hoa thường nếu không tìm thấy dạng chính xác.
+
+* Hãy dùng kiểu struct phụ trợ (tiếp theo)
+
+Phần còn lại của hàm `Parse` không thay đổi nhiều:
+
+.code json/unmarshaler0.go /Person.*Parse/,/^}/
+
+* Chúng ta có thể làm tốt hơn không?
+
+* Giải pháp hiện tại
+
+Lặp lại nếu các kiểu khác có các trường với:
+
+- trường ngày tháng cùng định dạng,
+- hoặc kích cỡ áo.
+
+Hãy làm cho các kiểu thông minh hơn để `json.Decoder` thực hiện toàn bộ công việc một cách trong suốt.
+
+*Mục tiêu*: `json.Decoder` sẽ thực hiện toàn bộ công việc cho tôi!
+
+* Gặp gỡ Marshaler và Unmarshaler
+
+Các kiểu thỏa mãn `json.Marshaler` xác định cách mã hóa thành json.
+
+    type Marshaler interface {
+        MarshalJSON() ([]byte, error)
+    }
+
+Và `json.Unmarshaler` cho phần giải mã.
+
+    type Unmarshaler interface {
+        UnmarshalJSON([]byte) error
+    }
+
+* UnmarshalJSON cho mọi thứ!
+
+* Hãy làm Person trở thành json.Unmarshaler
+
+Thay thế:
+
+.code json/unmarshaler0.go /Person.*Parse/
+
+bằng:
+
+.code json/unmarshaler1.go /Person.*UnmarshalJSON/,/rest of function/
+
+* Hãy làm Person trở thành json.Unmarshaler (tiếp theo)
+
+Và hàm `main` của chúng ta trở thành:
+
+.play json/unmarshaler1.go /func main/,/^}/
+
+* UnmarshalJSON cho enum
+
+Thay thế `ParseShirtSize`:
+
+.code json/unmarshaler1.go /ParseShirtSize/
+
+bằng `UnmarshalJSON`:
+
+.code json/unmarshaler2.go /ShirtSize.*UnmarshalJSON/,/^}/
+
+* UnmarshalJSON cho enum (tiếp theo)
+
+Bây giờ dùng `ShirtSize` trong struct phụ trợ:
+
+.play json/unmarshaler2.go /Person.*UnmarshalJSON/,/rest of function/
+
+Dùng thủ thuật tương tự để phân tích ngày sinh.
+
+* Giải mã ngày tháng với định dạng khác nhau
+
+Tạo kiểu mới `Date`:
+
+.code json/unmarshaler3.go /type Date/
+
+Và làm cho nó là `json.Unmarshaler`:
+
+.code json/unmarshaler3.go /Date.*UnmarshalJSON/,/^}/
+
+* Giải mã ngày tháng với định dạng khác nhau (tiếp theo)
+
+Bây giờ dùng `Date` trong struct phụ trợ:
+
+.play json/unmarshaler3.go /Person.*UnmarshalJSON/,/^}/
+
+Code này có thể ngắn hơn không?
+
+* Có thể!
+
+Bằng cách làm cho trường `Born` trong `Person` có kiểu `Date`.
+
+`Person.UnmarshalJSON` khi đó tương đương với hành vi mặc định!
+
+Nó có thể được loại bỏ một cách an toàn.
+
+.play json/unmarshaler4.go /func main/,/^}/
+
+* Điều này có thực sự tốt hơn không?
+
+- Độ dài code: 86 dòng so với 80 dòng
+
+- Khả năng tái sử dụng của các kiểu
+
+- Dễ bảo trì hơn
+
+- Sử dụng thư viện chuẩn
+
+* Những ý tưởng khác
+
+* Chữ số La Mã
+
+* Chữ số La Mã
+
+Bởi vì tại sao không?
+
+.code json/roman_numerals.go /type romanNumeral/
+
+Và vì chữ số La Mã trông lịch lãm hơn
+
+.code json/roman_numerals.go /type Movie/,/^}/
+
+* Chữ số La Mã (tiếp theo)
+
+.play json/roman_numerals.go /func main/,/^}/
+
+* Dữ liệu bí mật
+
+* Dữ liệu bí mật
+
+Một số dữ liệu không bao giờ được mã hóa dưới dạng văn bản thuần.
+
+.code json/secret.go /type Person/,/type secret/
+
+Sử dụng mật mã học để đảm bảo điều này an toàn:
+
+.code json/secret.go /secret.*MarshalJSON/,/^}/
+
+_Lưu ý_: Giải pháp này chỉ là thử nghiệm; đừng dùng cho hệ thống thực.
+
+* Dữ liệu bí mật (tiếp theo)
+
+Và dùng cùng khóa để giải mã khi nó quay trở lại:
+
+.code json/secret.go /secret.*UnmarshalJSON/,/^}/
+
+* Dữ liệu bí mật (tiếp theo)
+
+Hãy thử:
+
+.play json/secret.go /func main/,/^}/
+
+* Nhưng hầu hết các enum JSON đều nhàm chán
+
+* go generate đến để giải cứu!
+
+`go`generate`:
+
+- được giới thiệu trong Go 1.4
+- một công cụ cho tác giả gói
+- một bước bổ sung trước `go`build`
+
+Bạn sẽ thấy nó như các comment trong code như:
+
+    //go:generate go tool yacc -o gopher.go -p parser gopher.y
+
+Thêm thông tin trong [[/blog/generate][bài đăng blog]].
+
+* công cụ tạo code: stringer
+
+`stringer` tạo các phương thức `String` cho các kiểu enum.
+
+    package painkiller
+
+    //go:generate stringer -type=Pill
+
+    type Pill int
+
+    const (
+        Placebo Pill = iota
+        Aspirin
+        Ibuprofen
+        Paracetamol
+    )
+
+Gọi `go`generate`:
+
+    $ go generate $GOPATH/src/path_to_painkiller
+
+sẽ tạo một file mới chứa định nghĩa `String` cho `Pill`.
+
+* jsonenums
+
+Khoảng 200 dòng code.
+
+Phân tích và phân tích cú pháp một gói sử dụng:
+
+- `go/{ast/build/format/parser/token}`
+- `golang.org/x/tools/go/exact`, `golang.org/x/tools/go/types`
+
+Và tạo code sử dụng:
+
+- `text/template`
+
+Và nó có trên github: [[https://github.com/campoy/jsonenums][github.com/campoy/jsonenums]]
+
+* Demo

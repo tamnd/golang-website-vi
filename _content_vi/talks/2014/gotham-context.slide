@@ -1,0 +1,335 @@
+Hủy bỏ, Context và Truyền tham số
+GothamGo 2014
+
+Sameer Ajmani
+sameer@golang.org
+
+* Video
+
+Bài nói chuyện này được trình bày tại GothamGo ở thành phố New York, tháng 11 năm 2014.
+
+.link http://vimeo.com/115309491 Xem bài nói chuyện trên Vimeo
+
+* Giới thiệu
+
+Trong các server Go, mỗi yêu cầu đến được xử lý trong goroutine riêng của nó.
+
+Mã handler cần truy cập các giá trị đặc trưng của yêu cầu:
+
+- thông tin xác thực bảo mật
+- thời hạn yêu cầu
+- ưu tiên thao tác
+
+Khi yêu cầu hoàn tất hoặc hết thời gian chờ, công việc của nó nên bị hủy bỏ.
+
+* Hủy bỏ
+
+Từ bỏ công việc khi người gọi không còn cần kết quả nữa.
+
+- người dùng điều hướng đi, đóng kết nối
+- thao tác vượt quá thời hạn của nó
+- khi dùng hedged request, hủy bỏ các request chậm
+
+Hủy bỏ hiệu quả các công việc không cần thiết tiết kiệm tài nguyên.
+
+* Hủy bỏ là gợi ý
+
+Hủy bỏ không dừng thực thi hay kích hoạt panic.
+
+Hủy bỏ thông báo cho mã rằng công việc của nó không còn cần thiết nữa.
+
+Mã kiểm tra hủy bỏ và quyết định làm gì:
+tắt, dọn dẹp, trả về lỗi.
+
+* Hủy bỏ có tính bắc cầu
+
+.image gotham-context/transitive.svg
+
+* Hủy bỏ ảnh hưởng đến tất cả API trên đường dẫn yêu cầu
+
+Các giao thức mạng hỗ trợ hủy bỏ.
+
+- HTTP: đóng kết nối
+- RPC: gửi thông điệp điều khiển
+
+Các API phía trên mạng cũng cần hủy bỏ.
+
+- Client database
+- Client hệ thống tệp mạng
+- Client dịch vụ đám mây
+
+Và tất cả các lớp phía trên, cho đến giao diện người dùng.
+
+*Mục tiêu:* cung cấp một API hủy bỏ thống nhất hoạt động qua các ranh giới gói.
+
+* API hủy bỏ
+
+Nhiều API Go đã hỗ trợ hủy bỏ và thời hạn.
+
+API Go là đồng bộ, nên hủy bỏ đến từ goroutine khác.
+
+Phương thức trên đối tượng kết nối hoặc client:
+
+  // goroutine #1
+  result, err := conn.Do(req)
+
+  // goroutine #2
+  conn.Cancel(req)
+
+Phương thức trên đối tượng yêu cầu:
+
+  // goroutine #1
+  result, err := conn.Do(req)
+
+  // goroutine #2
+  req.Cancel()
+
+* API hủy bỏ (tiếp theo)
+
+Phương thức trên đối tượng kết quả đang chờ:
+
+  // goroutine #1
+  pending := conn.Start(req)
+  ...
+  result, err := pending.Result()
+
+  // goroutine #2
+  pending.Cancel()
+
+
+API hủy bỏ khác nhau trong mỗi gói là một cơn đau đầu.
+
+Chúng ta cần một cái độc lập với gói hay transport:
+
+  // goroutine #1
+  result, err := conn.Do(x, req)
+
+  // goroutine #2
+  x.Cancel()
+
+* Context
+
+Một `Context` mang tín hiệu hủy bỏ và các giá trị đặc trưng của yêu cầu đến tất cả hàm đang chạy thay mặt cùng một tác vụ. An toàn để truy cập đồng thời.
+
+.code gotham-context/interface.go /type Context/,/^}/
+
+*Thành ngữ:* truyền `ctx` là đối số đầu tiên của hàm.
+
+  import "golang.org/x/net/context"
+
+  // ReadFile reads file name and returns its contents.
+  // If ctx.Done is closed, ReadFile returns ctx.Err immediately.
+  func ReadFile(ctx context.Context, name string) ([]byte, error)
+
+Ví dụ và thảo luận tại [[/blog/context][blog.golang.org/context]].
+
+* Context có tính phân cấp
+
+`Context` không có phương thức `Cancel`; lấy `Context` có thể hủy bỏ bằng `WithCancel`:
+
+.code gotham-context/interface.go /WithCancel /,/func WithCancel/
+
+Truyền `Context` cho hàm không truyền khả năng hủy bỏ `Context` đó.
+
+  // goroutine #1
+  ctx, cancel := context.WithCancel(parent)
+  ...
+  data, err := ReadFile(ctx, name)
+
+  // goroutine #2
+  cancel()
+
+Context tạo thành một cây, bất kỳ cây con nào cũng có thể bị hủy bỏ.
+
+* Tại sao Done trả về channel?
+
+Đóng channel hoạt động tốt như tín hiệu broadcast.
+
+_Sau_khi_giá_trị_cuối_cùng_đã_được_nhận_từ_channel_c_đã_đóng,_bất_kỳ_lệnh_nhận_từ_c_nào_sẽ_thành_công_mà_không_bị_chặn,_trả_về_giá_trị_zero_cho_phần_tử_channel._
+
+Bất kỳ số goroutine nào cũng có thể `select` trên `<-ctx.Done()`.
+
+Ví dụ và thảo luận tại [[/blog/pipelines][blog.golang.org/pipelines]].
+
+Dùng `close` cần chú ý.
+
+- đóng channel nil gây panic
+- đóng channel đã đóng gây panic
+
+`Done` trả về channel chỉ nhận mà chỉ có thể hủy bỏ bằng hàm `cancel` được trả về bởi `WithCancel`. Nó đảm bảo channel được đóng đúng một lần.
+
+* Giá trị Context
+
+Context mang các giá trị đặc trưng của yêu cầu qua ranh giới API.
+
+- thời hạn
+- tín hiệu hủy bỏ
+- thông tin xác thực bảo mật
+- ID theo dõi phân tán
+- ưu tiên thao tác
+- nhãn QoS mạng
+
+Client RPC mã hóa giá trị `Context` lên dây.
+
+Server RPC giải mã chúng thành `Context` mới cho hàm handler.
+
+* Tìm kiếm nhân bản
+
+Ví dụ từ [[/talks/2012/concurrency.slide][Go Concurrency Patterns]].
+
+.code gotham-context/first.go /START1/,/STOP1/
+
+Các tìm kiếm còn lại có thể tiếp tục chạy sau khi First trả về.
+
+* Tìm kiếm có thể hủy bỏ
+
+.code gotham-context/first-context.go /START1/,/STOP1/
+
+* Truyền Context
+
+*Mục tiêu:* truyền tham số `Context` từ mỗi RPC đến tại server qua call stack đến mỗi RPC đi.
+
+.code gotham-context/before.go /START/,/END/
+
+* Truyền Context (sau)
+
+.code gotham-context/after.go /START/,/END/
+
+* Vấn đề: Mã hiện tại và tương lai
+
+Google có hàng triệu dòng mã Go.
+
+Chúng tôi đã cải tiến các API RPC và hệ thống tệp phân tán nội bộ để nhận Context.
+
+Còn nhiều việc phải làm, ngày càng nhiều hơn.
+
+* Tại sao không dùng (thứ gì đó như) thread local storage?
+
+C++ và Java truyền trạng thái yêu cầu trong thread-local storage.
+
+Không yêu cầu thay đổi API, nhưng...
+yêu cầu thư viện thread và callback tùy chỉnh.
+
+Hầu hết hoạt động, ngoại trừ khi không. Lỗi khó gỡ.
+
+Hậu quả nghiêm trọng nếu lỗi truyền thông tin xác thực ảnh hưởng đến quyền riêng tư người dùng.
+
+"Goroutine-local storage" không tồn tại, và ngay cả khi có,
+việc xử lý yêu cầu có thể chảy giữa các goroutine qua channel.
+
+Chúng ta sẽ không hy sinh sự rõ ràng vì sự tiện lợi.
+
+* Trong Go, truyền Context tường minh
+
+Dễ thấy khi Context đi qua giữa các hàm, goroutine và tiến trình.
+
+Đầu tư trước để làm cho hệ thống dễ bảo trì hơn:
+
+- cập nhật các hàm liên quan để nhận `Context`
+- cập nhật lời gọi hàm để cung cấp `Context`
+- cập nhật phương thức interface và cài đặt
+
+Các công cụ tuyệt vời của Go có thể giúp ích.
+
+* Tái cấu trúc tự động
+
+*Trạng thái ban đầu:*
+
+Truyền `context.TODO()` cho các RPC đi.
+
+`context.TODO()` là sentinel cho các công cụ phân tích tĩnh. Dùng nó bất cứ đâu cần `Context` nhưng không có sẵn.
+
+*Lặp lại:*
+
+Với mỗi hàm `F(x)` có thân chứa `context.TODO()`,
+
+- thêm tham số `Context` vào `F`
+- cập nhật người gọi để dùng `F(context.TODO(),`x)`
+- nếu người gọi có sẵn `Context`, truyền nó cho `F` thay thế
+
+Lặp lại cho đến khi `context.TODO()` biến mất.
+
+* Tìm các hàm liên quan
+
+Công cụ [[https://pkg.go.dev/golang.org/x/tools/cmd/callgraph][golang.org/x/tools/cmd/callgraph]] xây dựng call graph của chương trình Go.
+
+Nó dùng phân tích con trỏ toàn chương trình để tìm các lời gọi động (qua interface hoặc giá trị hàm).
+
+*Để truyền context:*
+
+Tìm tất cả hàm trên đường gọi từ _nhà cung cấp_ `Context` (RPC đến) đến _người tiêu thụ_ `Context` (`context.TODO`).
+
+* Cập nhật lời gọi hàm
+
+Để thay đổi tất cả `F(x)` thành `F(context.TODO(),`x)`:
+
+- định nghĩa `FContext(ctx,`x)`
+- `F(x)` -> `FContext(context.TODO(),`x)`
+- thay đổi `F(x)` thành `F(ctx,`x)`
+- `FContext(context.TODO(),`x)` -> `F(context.TODO(),`x)`
+- xóa `FContext(ctx,`x)`
+
+* gofmt -r
+
+Hoạt động tốt cho các thay thế đơn giản:
+
+  gofmt -r 'pkg.F(a) -> pkg.FContext(context.TODO(), a)'
+
+Nhưng điều này quá không chính xác cho các phương thức. Có thể có nhiều phương thức tên M:
+
+  gofmt -r 'x.M(y) -> x.MContext(context.TODO(), y)'
+
+Chúng ta muốn giới hạn phép biến đổi cho các chữ ký phương thức cụ thể.
+
+* Công cụ eg
+
+Công cụ [[https://pkg.go.dev/golang.org/x/tools/cmd/eg][golang.org/x/tools/cmd/eg]] thực hiện tái cấu trúc chính xác dựa trên ví dụ.
+
+Biểu thức `before` chỉ định pattern và biểu thức `after` là thay thế của nó.
+
+Để thay thế `x.M(y)` bằng `x.MContext(context.TODO(),`y)`:
+
+.code gotham-context/eg.go
+
+* Xử lý interface
+
+Chúng ta cần cập nhật các lời gọi động đến `x.M(y)`.
+
+Nếu `M` được gọi qua interface `I`, thì `I.M` cũng cần thay đổi. Công cụ eg có thể cập nhật các call site với kiểu receiver `I`.
+
+Khi chúng ta thay đổi `I`, chúng ta cần cập nhật tất cả cài đặt của nó.
+
+Tìm các kiểu có thể gán cho `I` bằng [[https://pkg.go.dev/golang.org/x/tools/go/types][golang.org/x/tools/go/types]].
+
+Còn nhiều việc phải làm ở đây.
+
+* Còn thư viện chuẩn thì sao?
+
+Đảm bảo tương thích Go 1.0 có nghĩa là chúng ta sẽ không phá vỡ mã hiện tại.
+
+Các interface như `io.Reader` và `io.Writer` được dùng rộng rãi.
+
+Đối với các tệp của Google, dùng cách tiếp cận currying:
+
+  f, err := file.Open(ctx, "/gfs/cell/path")
+  ...
+  fio := f.IO(ctx)  // returns an io.ReadWriteCloser that passes ctx
+  data, err := ioutil.ReadAll(fio)
+
+Đối với các gói công khai có phiên bản, thêm tham số `Context` trong phiên bản API mới và cung cấp các template `eg` để chèn `context.TODO()`.
+
+Còn nhiều việc phải làm ở đây.
+
+* Kết luận
+
+Hủy bỏ cần một API thống nhất qua ranh giới gói.
+
+Cải tiến mã cũ khó, nhưng Go thân thiện với công cụ.
+
+Mã mới nên dùng `Context`.
+
+Liên kết:
+
+- [[https://pkg.go.dev/golang.org/x/net/context][golang.org/x/net/context]] - gói
+- [[/blog/context][blog.golang.org/context]] - bài viết blog
+- [[https://pkg.go.dev/golang.org/x/tools/cmd/eg][golang.org/x/tools/cmd/eg]] - công cụ eg
