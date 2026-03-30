@@ -605,11 +605,11 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `solutions/dropbox.md`
 - [x] `solutions/facebook.md`
 - [x] `solutions/firebase.md`
-- [ ] `solutions/google/chrome.md`
-- [ ] `solutions/google/coredata.md`
-- [ ] `solutions/google/firebase.md`
+- [x] `solutions/google/chrome.md`
+- [x] `solutions/google/coredata.md`
+- [x] `solutions/google/firebase.md`
 - [x] `solutions/google/index.md`
-- [ ] `solutions/google/sitereliability.md`
+- [x] `solutions/google/sitereliability.md`
 - [x] `solutions/grail.md`
 - [x] `solutions/index.md`
 - [x] `solutions/mercadolibre.md`
