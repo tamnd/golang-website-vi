@@ -306,7 +306,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/range-functions.md`
 - [ ] `blog/real-go-projects-smarttwitter-and-webgo.md`
 - [ ] `blog/rebuild.md`
-- [ ] `blog/routing-enhancements.md`
+- [x] `blog/routing-enhancements.md`
 - [ ] `blog/share-memory-by-communicating.md`
 - [ ] `blog/slices-intro.md`
 - [ ] `blog/slices.md`
@@ -372,7 +372,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/tls-cipher-suites.md`
 - [ ] `blog/tob-crypto-audit.md`
 - [ ] `blog/toolchain.md`
-- [ ] `blog/tour.md`
+- [x] `blog/tour.md`
 - [ ] `blog/toward-go2.md`
 - [ ] `blog/turkey-doodle.md`
 - [ ] `blog/tutorials-go1.18.md`
@@ -382,7 +382,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/type-construction-and-cycle-detection.md`
 - [ ] `blog/type-inference.md`
 - [ ] `blog/unique.md`
-- [ ] `blog/upcoming-google-io-go-events.md`
+- [x] `blog/upcoming-google-io-go-events.md`
 - [ ] `blog/using-go-modules.md`
 - [ ] `blog/v2-go-modules.md`
 - [ ] `blog/versioning-proposal.md`
@@ -390,7 +390,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `blog/vuln.md`
 - [ ] `blog/wasi.md`
 - [ ] `blog/wasmexport.md`
-- [ ] `blog/waza-talk.md`
+- [x] `blog/waza-talk.md`
 - [ ] `blog/when-generics.md`
 - [ ] `blog/why-generics.md`
 - [ ] `blog/wire.md`
