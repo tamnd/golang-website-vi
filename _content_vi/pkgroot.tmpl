@@ -1,0 +1,111 @@
+<!--
+	Copyright 2018 The Go Authors. All rights reserved.
+	Use of this source code is governed by a BSD-style
+	license that can be found in the LICENSE file.
+-->
+<!--
+	Note: Static (i.e., not template-generated) href and id
+	attributes start with "pkg-" to make it impossible for
+	them to conflict with generated attributes (some of which
+	correspond to Go identifiers).
+-->
+{{define "layout"}}
+
+<article class="Pkg Article">
+
+<h1>{{.title}}</h1>
+
+{{$pkg := .pkg}}
+
+{{with $pkg.Dirs}}
+	{{/* DirList entries are numbers and strings - no need for FSet */}}
+	{{if $pkg.PDoc}}
+		<h2 id="pkg-subdirectories">Thư mục con</h2>
+	{{end}}
+		<div id="manual-nav">
+			<dl>
+				<dt><a href="#stdlib">Thư viện chuẩn</a></dt>
+				<dt><a href="#other">Package khác</a></dt>
+				<dd><a href="#subrepo">Package con</a></dd>
+				<dd><a href="#community">Cộng đồng</a></dd>
+			</dl>
+		</div>
+
+		<div id="stdlib" class="toggleVisible">
+			<div class="collapsed">
+				<h2 class="toggleButton" title="Nhấn để hiển thị phần Thư viện chuẩn">Thư viện chuẩn ▸</h2>
+			</div>
+			<div class="expanded">
+				<h2 class="toggleButton" title="Nhấn để ẩn phần Thư viện chuẩn">Thư viện chuẩn ▾</h2>
+				<img alt="" class="gopher" src="/doc/gopher/pkg.png"/>
+				<div class="pkg-dir">
+					<table>
+						<tr>
+							<th class="pkg-name">Tên</th>
+							<th class="pkg-synopsis">Mô tả ngắn</th>
+						</tr>
+
+						{{range .}}
+							<tr>
+							{{if $pkg.DirFlat}}
+								{{if .HasPkg}}
+										<td class="pkg-name">
+											<a href="{{.Path}}/{{$pkg.ModeQuery}}">{{.Path}}</a>
+										</td>
+								{{end}}
+							{{else}}
+									<td class="pkg-name" style="padding-left: {{mul (sub .Depth 1) 20}}px;">
+										<a href="{{.Path}}/{{$pkg.ModeQuery}}">{{.Name}}</a>
+									</td>
+							{{end}}
+							<td class="pkg-synopsis">
+								{{.Synopsis}}
+							</td>
+							</tr>
+						{{end}}
+					</table>
+				</div> <!-- .pkg-dir -->
+			</div> <!-- .expanded -->
+		</div> <!-- #stdlib .toggleVisible -->
+
+	<h2 id="other">Package khác</h2>
+	<h3 id="subrepo">Package con</h3>
+	<p>
+	Các package này là một phần của dự án Go nhưng nằm ngoài cây mã nguồn Go chính.
+	Chúng được phát triển với <a href="/doc/go1compat">yêu cầu tương thích</a> linh hoạt hơn so với lõi Go.
+	Cài đặt bằng lệnh "<a href="/cmd/go/#hdr-Download_and_install_packages_and_dependencies">go get</a>".
+	</p>
+	<ul>
+		<li><a href="https://pkg.go.dev/golang.org/x/benchmarks">benchmarks</a> — các benchmark đo lường hiệu suất Go trong quá trình phát triển.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/blog">blog</a> — mã nguồn của <a href="https://blog.golang.org">blog.golang.org</a>.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/build">build</a> — mã nguồn của <a href="https://build.golang.org">build.golang.org</a>.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/crypto">crypto</a> — các package mật mã học bổ sung.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/debug">debug</a> — một trình gỡ lỗi thử nghiệm dành cho Go.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/image">image</a> — các package xử lý ảnh bổ sung.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/mobile">mobile</a> — hỗ trợ thử nghiệm Go trên nền tảng di động.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/net">net</a> — các package mạng bổ sung.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/perf">perf</a> — các package và công cụ đo lường, lưu trữ và phân tích hiệu suất.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/pkgsite">pkgsite</a> — mã nguồn của trang web pkg.go.dev.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/review">review</a> — công cụ làm việc với code review trên Gerrit.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/sync">sync</a> — các nguyên thủy đồng thời bổ sung.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/sys">sys</a> — các package để thực hiện lời gọi hệ thống.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/text">text</a> — các package xử lý văn bản.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/time">time</a> — các package thời gian bổ sung.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/tools">tools</a> — godoc, goimports, gorename và các công cụ khác.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/tour">tour</a> — mã nguồn của <a href="https://tour.golang.org">tour.golang.org</a>.</li>
+		<li><a href="https://pkg.go.dev/golang.org/x/exp">exp</a> — các package thử nghiệm và đã lỗi thời (sử dụng thận trọng, có thể thay đổi mà không báo trước).</li>
+	</ul>
+
+	<h3 id="community">Cộng đồng</h3>
+	<p>
+	Các dịch vụ sau có thể giúp bạn tìm kiếm các package mã nguồn mở do cộng đồng cung cấp.
+	</p>
+	<ul>
+		<li><a href="https://pkg.go.dev">Pkg.go.dev</a> - trang tìm kiếm package Go.</li>
+		<li><a href="/wiki/Projects">Dự án trên Go Wiki</a> - danh sách tuyển chọn các dự án Go.</li>
+	</ul>
+{{end}}
+
+</article>
+
+{{end}}

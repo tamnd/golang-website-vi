@@ -1,0 +1,553 @@
+<!--{
+	"Title": "Thiết lập và sử dụng gccgo",
+	"Breadcrumb": true
+}-->
+
+<p>
+Tài liệu này giải thích cách sử dụng gccgo, một trình biên dịch cho
+ngôn ngữ Go. Trình biên dịch gccgo là một frontend mới
+cho GCC, trình biên dịch GNU được sử dụng rộng rãi. Mặc dù
+bản thân frontend được cấp phép theo kiểu BSD, gccgo thường
+được sử dụng như một phần của GCC và do đó được bao phủ bởi
+<a href="https://www.gnu.org/licenses/gpl.html">Giấy phép Công cộng GNU</a>
+(giấy phép bao gồm gccgo như một phần của GCC; nó không
+bao gồm mã được tạo bởi gccgo).
+</p>
+
+<p>
+Lưu ý rằng gccgo không phải là trình biên dịch <code>gc</code>; xem
+hướng dẫn <a href="/doc/install">Cài đặt Go</a> cho trình biên dịch đó.
+</p>
+
+<h2 id="Releases">Các bản phát hành</h2>
+
+<p>
+Cách đơn giản nhất để cài đặt gccgo là cài đặt một bản phát hành nhị phân GCC
+được biên dịch có hỗ trợ Go. Các bản phát hành nhị phân GCC có trên
+<a href="https://gcc.gnu.org/install/binaries.html">nhiều trang web khác nhau</a>
+và thường được đưa vào trong các bản phân phối GNU/Linux.
+Chúng tôi kỳ vọng rằng hầu hết những người biên dịch các tệp nhị phân này
+sẽ bao gồm hỗ trợ Go.
+</p>
+
+<p>
+Bản phát hành GCC 4.7.1 và tất cả các bản phát hành 4.7 sau đó đều bao gồm một
+trình biên dịch và thư viện <a href="/doc/go1.html">Go 1</a> hoàn chỉnh.
+</p>
+
+<p>
+Do thời điểm phát hành, GCC 4.8.0 và 4.8.1 gần với nhưng không
+giống hệt Go 1.1. Bản phát hành GCC 4.8.2 bao gồm triển khai Go
+1.1.2 hoàn chỉnh.
+</p>
+
+<p>
+Các bản phát hành GCC 4.9 bao gồm triển khai Go 1.2 hoàn chỉnh.
+</p>
+
+<p>
+Các bản phát hành GCC 5 bao gồm triển khai đầy đủ các thư viện người dùng Go 1.4.
+Thời gian chạy Go 1.4 chưa được tích hợp hoàn toàn, nhưng điều đó
+không ảnh hưởng đến các chương trình Go.
+</p>
+
+<p>
+Các bản phát hành GCC 6 bao gồm triển khai đầy đủ các thư viện người dùng Go 1.6.1.
+Thời gian chạy Go 1.6 chưa được tích hợp hoàn toàn, nhưng điều đó
+không ảnh hưởng đến các chương trình Go.
+</p>
+
+<p>
+Các bản phát hành GCC 7 bao gồm triển khai đầy đủ các thư viện người dùng Go 1.8.1.
+Như các bản phát hành trước, thời gian chạy Go 1.8 chưa được
+tích hợp hoàn toàn, nhưng điều đó không ảnh hưởng đến các chương trình Go.
+</p>
+
+<p>
+Các bản phát hành GCC 8 bao gồm triển khai đầy đủ bản phát hành Go 1.10.1.
+Thời gian chạy Go 1.10 đã được tích hợp hoàn toàn vào các nguồn phát triển GCC,
+và bộ gom rác đồng thời được hỗ trợ đầy đủ.
+</p>
+
+<p>
+Các bản phát hành GCC 9 bao gồm triển khai đầy đủ bản phát hành Go 1.12.2.
+</p>
+
+<p>
+Các bản phát hành GCC 10 bao gồm triển khai đầy đủ bản phát hành Go 1.14.6.
+</p>
+
+<p>
+Các bản phát hành GCC 11 bao gồm triển khai đầy đủ bản phát hành Go 1.16.3.
+</p>
+
+<p>
+Các bản phát hành GCC 12 và 13 bao gồm triển khai đầy đủ thư viện chuẩn Go
+1.18. Tuy nhiên, GCC chưa hỗ trợ generics.
+</p>
+
+<h2 id="Source_code">Mã nguồn</h2>
+
+<p>
+Nếu bạn không thể sử dụng bản phát hành hoặc muốn tự biên dịch gccgo,
+mã nguồn gccgo có thể truy cập qua Git. Trang web GCC có
+<a href="https://gcc.gnu.org/git.html">hướng dẫn lấy mã nguồn GCC</a>.
+Mã nguồn gccgo đã được bao gồm. Để thuận tiện, một phiên bản ổn định
+của hỗ trợ Go có sẵn trong nhánh
+<code>devel/gccgo</code> của kho lưu trữ mã GCC chính:
+<code>git://gcc.gnu.org/git/gcc.git</code>.
+Nhánh này được cập nhật định kỳ với các nguồn trình biên dịch Go ổn định.
+</p>
+
+<p>
+Lưu ý rằng mặc dù <code>gcc.gnu.org</code> là cách thuận tiện nhất
+để lấy mã nguồn frontend Go, đó không phải là nơi lưu trữ nguồn chính.
+Nếu bạn muốn đóng góp thay đổi cho frontend trình biên dịch Go,
+xem <a href="/doc/gccgo_contribute.html">Đóng góp cho
+gccgo</a>.
+</p>
+
+
+<h2 id="Building">Biên dịch</h2>
+
+<p>
+Biên dịch gccgo giống như biên dịch GCC
+với một hoặc hai tùy chọn bổ sung. Xem
+<a href="https://gcc.gnu.org/install/">hướng dẫn trên trang web gcc</a>.
+Khi bạn chạy <code>configure</code>, thêm
+tùy chọn <code>--enable-languages=c,c++,go</code> (cùng với các ngôn ngữ khác
+mà bạn muốn biên dịch). Nếu bạn đang nhắm đến x86 32-bit,
+bạn sẽ muốn biên dịch gccgo để mặc định hỗ trợ các lệnh compare and exchange có khóa;
+thực hiện bằng cách dùng thêm tùy chọn <code>configure</code> <code>--with-arch=i586</code>
+(hoặc kiến trúc mới hơn, tùy thuộc vào nơi bạn cần chương trình chạy).
+Nếu bạn đang nhắm đến x86 64-bit, nhưng đôi khi muốn sử dụng
+tùy chọn <code>-m32</code>, hãy dùng tùy chọn <code>configure</code>
+<code>--with-arch-32=i586</code>.
+</p>
+
+<h3 id="Gold">Gold</h3>
+
+<p>
+<b>Lưu ý:</b> Trình liên kết gold đã bị deprecated từ GNU Binutils 2.44 (tháng 2 năm 2025)
+và có thể bị xóa trong các bản phát hành tương lai. Hãy cân nhắc sử dụng
+<a href="https://lld.llvm.org/">lld</a> (trình liên kết của LLVM) như một thay thế,
+cũng hỗ trợ split stacks trên x86_64.
+</p>
+
+<p>
+Trên các hệ thống x86 GNU/Linux, trình biên dịch gccgo có khả năng
+sử dụng stack nhỏ không liên tục cho các goroutine. Điều này cho phép chương trình
+chạy nhiều goroutine hơn, vì mỗi goroutine có thể sử dụng một stack tương đối
+nhỏ. Thực hiện điều này yêu cầu sử dụng trình liên kết hỗ trợ split stacks.
+Trình liên kết gold phiên bản 2.22 trở lên hỗ trợ tính năng này,
+cũng như lld.
+</p>
+
+<p>
+Nếu bạn vẫn cần dùng gold, bạn có thể cài đặt GNU binutils 2.22 trở lên
+(lưu ý: từ binutils 2.44, gold nằm trong một tarball binutils-with-gold riêng),
+hoặc bạn có thể tự biên dịch gold.
+</p>
+
+<p>
+Để tự biên dịch gold, biên dịch GNU binutils,
+sử dụng <code>--enable-gold=default</code> khi bạn chạy
+script <code>configure</code>. Trước khi biên dịch, bạn phải cài đặt
+các gói flex và bison. Một trình tự điển hình sẽ trông như thế này
+(bạn có thể thay <code>/opt/gold</code> bằng bất kỳ thư mục nào
+mà bạn có quyền ghi):
+</p>
+
+<pre>
+git clone git://sourceware.org/git/binutils-gdb.git
+mkdir binutils-objdir
+cd binutils-objdir
+../binutils-gdb/configure --enable-gold=default --prefix=/opt/gold
+make
+make install
+</pre>
+
+<p>
+Dù bạn cài đặt gold theo cách nào, khi cấu hình gccgo, hãy sử dụng
+tùy chọn <code>--with-ld=<var>GOLD_BINARY</var></code>.
+Tương tự, với lld dùng <code>--with-ld=/path/to/ld.lld</code>.
+</p>
+
+<h3 id="Prerequisites">Các điều kiện tiên quyết</h3>
+
+<p>
+Một số điều kiện tiên quyết là cần thiết để biên dịch GCC, như
+được mô tả trên
+<a href="https://gcc.gnu.org/install/prerequisites.html">trang web gcc</a>.
+Quan trọng là phải cài đặt tất cả các điều kiện tiên quyết trước khi
+chạy script <code>configure</code> của gcc.
+Các thư viện điều kiện tiên quyết có thể được tải xuống thuận tiện bằng cách dùng
+script <code>contrib/download_prerequisites</code> trong các nguồn GCC.
+
+<h3 id="Build_commands">Các lệnh biên dịch</h3>
+
+<p>
+Sau khi tất cả các điều kiện tiên quyết được cài đặt, một trình tự biên dịch và
+cài đặt điển hình sẽ trông như thế này (chỉ sử dụng
+tùy chọn <code>--with-ld</code> nếu bạn đang dùng trình liên kết gold như
+mô tả ở trên):
+</p>
+
+<pre>
+git clone --branch devel/gccgo git://gcc.gnu.org/git/gcc.git gccgo
+mkdir objdir
+cd objdir
+../gccgo/configure --prefix=/opt/gccgo --enable-languages=c,c++,go --with-ld=/opt/gold/bin/ld
+make
+make install
+</pre>
+
+<h2 id="Using_gccgo">Sử dụng gccgo</h2>
+
+<p>
+Trình biên dịch gccgo hoạt động như các frontend gcc khác. Từ GCC 5, bản cài đặt gccgo
+cũng bao gồm một phiên bản lệnh <code>go</code>,
+có thể được sử dụng để biên dịch các chương trình Go như mô tả tại
+<a href="/cmd/go">https://go.dev/cmd/go</a>.
+</p>
+
+<p>
+Để biên dịch một tệp mà không sử dụng lệnh <code>go</code>:
+</p>
+
+<pre>
+gccgo -c file.go
+</pre>
+
+<p>
+Thao tác đó tạo ra <code>file.o</code>. Để liên kết các tệp lại để tạo thành
+tệp thực thi:
+</p>
+
+<pre>
+gccgo -o file file.o
+</pre>
+
+<p>
+Để chạy tệp kết quả, bạn cần cho chương trình biết nơi tìm
+các gói Go đã biên dịch. Có một vài cách để làm điều này:
+</p>
+
+<ul>
+<li>
+<p>
+Đặt biến môi trường <code>LD_LIBRARY_PATH</code>:
+</p>
+
+<pre>
+LD_LIBRARY_PATH=${prefix}/lib/gcc/MACHINE/VERSION
+[or]
+LD_LIBRARY_PATH=${prefix}/lib64/gcc/MACHINE/VERSION
+export LD_LIBRARY_PATH
+</pre>
+
+<p>
+Ở đây <code>${prefix}</code> là tùy chọn <code>--prefix</code> được dùng
+khi biên dịch gccgo. Đối với bản cài đặt nhị phân, giá trị này thường là <code>/usr</code>.
+Dùng <code>lib</code>
+hay <code>lib64</code> phụ thuộc vào mục tiêu.
+Thông thường <code>lib64</code> là đúng cho các hệ thống x86_64,
+và <code>lib</code> là đúng cho các hệ thống khác. Mục đích là
+đặt tên cho thư mục chứa <code>libgo.so</code>.
+</p>
+
+</li>
+
+<li>
+<p>
+Truyền tùy chọn <code>-Wl,-R</code> khi bạn liên kết (thay lib bằng
+lib64 nếu phù hợp với hệ thống của bạn):
+</p>
+
+<pre>
+go build -gccgoflags -Wl,-R,${prefix}/lib/gcc/MACHINE/VERSION
+[or]
+gccgo -o file file.o -Wl,-R,${prefix}/lib/gcc/MACHINE/VERSION
+</pre>
+</li>
+
+<li>
+<p>
+Sử dụng tùy chọn <code>-static-libgo</code> để liên kết tĩnh với
+các gói đã biên dịch.
+</p>
+</li>
+
+<li>
+<p>
+Sử dụng tùy chọn <code>-static</code> để thực hiện liên kết hoàn toàn tĩnh (mặc định
+cho trình biên dịch <code>gc</code>).
+</p>
+</li>
+</ul>
+
+<h2 id="Options">Các tùy chọn</h2>
+
+<p>
+Trình biên dịch gccgo hỗ trợ tất cả các tùy chọn GCC
+không phụ thuộc vào ngôn ngữ, đáng chú ý là các tùy chọn <code>-O</code>
+và <code>-g</code>.
+</p>
+
+<p>
+Tùy chọn <code>-fgo-pkgpath=PKGPATH</code> có thể được sử dụng để đặt
+một tiền tố duy nhất cho gói đang được biên dịch.
+Tùy chọn này được lệnh go tự động sử dụng, nhưng bạn có thể muốn
+dùng nó nếu bạn gọi gccgo trực tiếp.
+Tùy chọn này dành cho các chương trình lớn
+chứa nhiều gói, để cho phép nhiều gói sử dụng cùng một định danh làm tên gói.
+<code>PKGPATH</code> có thể là bất kỳ chuỗi nào; một lựa chọn tốt cho
+chuỗi là đường dẫn được dùng để import gói.
+</p>
+
+<p>
+Các tùy chọn <code>-I</code> và <code>-L</code>, đồng nghĩa với nhau
+trong trình biên dịch, có thể được sử dụng để đặt đường dẫn tìm kiếm khi tìm
+các import.
+Các tùy chọn này không cần thiết nếu bạn biên dịch bằng lệnh go.
+</p>
+
+<h2 id="Imports">Imports</h2>
+
+<p>
+Khi bạn biên dịch một tệp xuất ra thứ gì đó, thông tin xuất
+sẽ được lưu trữ trực tiếp trong tệp đối tượng.
+Nếu bạn biên dịch bằng gccgo trực tiếp, thay vì bằng lệnh go,
+thì khi bạn import một gói, bạn phải cho gccgo biết cách tìm
+tệp đó.
+</p>
+
+<p>
+Khi bạn import gói <var>FILE</var> bằng gccgo,
+nó sẽ tìm dữ liệu import trong các tệp sau, và sử dụng
+tệp đầu tiên tìm thấy.
+
+<ul>
+<li><code><var>FILE</var>.gox</code>
+<li><code>lib<var>FILE</var>.so</code>
+<li><code>lib<var>FILE</var>.a</code>
+<li><code><var>FILE</var>.o</code>
+</ul>
+
+<p>
+<code><var>FILE</var>.gox</code>, khi được sử dụng, thường sẽ chỉ chứa
+dữ liệu xuất. Điều này có thể được tạo từ
+<code><var>FILE</var>.o</code> thông qua
+</p>
+
+<pre>
+objcopy -j .go_export FILE.o FILE.gox
+</pre>
+
+<p>
+Trình biên dịch gccgo sẽ tìm trong thư mục hiện tại
+các tệp import. Trong các tình huống phức tạp hơn, bạn
+có thể truyền tùy chọn <code>-I</code> hoặc <code>-L</code> cho
+gccgo. Cả hai tùy chọn đều lấy các thư mục để tìm kiếm. Tùy chọn
+<code>-L</code> cũng được truyền cho trình liên kết.
+</p>
+
+<p>
+Trình biên dịch gccgo hiện tại (2015-06-15) không ghi lại
+tên tệp của các gói được import trong tệp đối tượng. Bạn phải
+sắp xếp để dữ liệu được import liên kết vào chương trình.
+Điều này không cần thiết khi biên dịch bằng lệnh go.
+</p>
+
+<pre>
+gccgo -c mypackage.go              # Xuất mypackage
+gccgo -c main.go                   # Import mypackage
+gccgo -o main main.o mypackage.o   # Liên kết rõ ràng với mypackage.o
+</pre>
+
+<h2 id="Debugging">Gỡ lỗi</h2>
+
+<p>
+Nếu bạn dùng tùy chọn <code>-g</code> khi biên dịch, bạn có thể chạy
+<code>gdb</code> trên tệp thực thi của mình. Trình gỡ lỗi chỉ có hiểu biết hạn chế
+về Go. Bạn có thể đặt breakpoint, thực hiện từng bước,
+v.v. Bạn có thể in biến, nhưng chúng sẽ được in như thể chúng
+có kiểu C/C++. Đối với các kiểu số, điều này không quan trọng. Chuỗi Go
+và interface sẽ hiển thị dưới dạng cấu trúc hai phần tử. Các map
+và channel Go luôn được biểu diễn dưới dạng con trỏ C đến các cấu trúc thời gian chạy.
+</p>
+
+<h2 id="C_Interoperability">Khả năng tương tác với C</h2>
+
+<p>
+Khi sử dụng gccgo, có khả năng tương tác hạn chế với C,
+hoặc với mã C++ được biên dịch bằng <code>extern "C"</code>.
+</p>
+
+<h3 id="Types">Các kiểu</h3>
+
+<p>
+Các kiểu cơ bản ánh xạ trực tiếp: <code>int32</code> trong Go là
+<code>int32_t</code> trong C, <code>int64</code> là
+<code>int64_t</code>, v.v.
+Kiểu <code>int</code> trong Go là một số nguyên có cùng kích thước với
+con trỏ, và do đó tương ứng với kiểu C <code>intptr_t</code>.
+Go <code>byte</code> tương đương với C <code>unsigned char</code>.
+Con trỏ trong Go là con trỏ trong C.
+Một <code>struct</code> trong Go giống như <code>struct</code> trong C với
+các trường và kiểu giống nhau.
+</p>
+
+<p>
+Kiểu <code>string</code> trong Go hiện được định nghĩa là một cấu trúc hai phần tử
+(điều này <b style="color: red;">có thể thay đổi</b>):
+</p>
+
+<pre>
+struct __go_string {
+  const unsigned char *__data;
+  intptr_t __length;
+};
+</pre>
+
+<p>
+Bạn không thể truyền mảng giữa C và Go. Tuy nhiên, con trỏ đến
+mảng trong Go tương đương với con trỏ C đến
+kiểu phần tử tương ứng.
+Ví dụ, Go <code>*[10]int</code> tương đương với C <code>int*</code>,
+giả sử rằng con trỏ C trỏ đến 10 phần tử.
+</p>
+
+<p>
+Một slice trong Go là một cấu trúc. Định nghĩa hiện tại là
+(điều này <b style="color: red;">có thể thay đổi</b>):
+</p>
+
+<pre>
+struct __go_slice {
+  void *__values;
+  intptr_t __count;
+  intptr_t __capacity;
+};
+</pre>
+
+<p>
+Kiểu của một hàm Go là con trỏ đến một struct (điều này
+<b style="color: red;">có thể thay đổi</b>). Trường đầu tiên trong
+struct trỏ đến mã của hàm, tương đương với
+con trỏ đến hàm C có các kiểu tham số tương đương, với
+một tham số trailing bổ sung. Tham số trailing là
+closure, và đối số để truyền là con trỏ đến struct hàm Go.
+
+Khi một hàm Go trả về nhiều hơn một giá trị, hàm C trả về
+một struct. Ví dụ, các hàm này xấp xỉ tương đương:
+</p>
+
+<pre>
+func GoFunction(int) (int, float64)
+struct { int i; float64 f; } CFunction(int, void*)
+</pre>
+
+<p>
+Các kiểu <code>interface</code>, <code>channel</code> và <code>map</code>
+của Go không có kiểu C tương ứng (<code>interface</code> là
+một struct hai phần tử và <code>channel</code> cùng <code>map</code> là
+con trỏ đến struct trong C, nhưng các struct cố ý không được ghi lại). Kiểu
+<code>enum</code> của C tương ứng với một kiểu nguyên nào đó, nhưng kiểu chính xác
+khó đoán trong trường hợp tổng quát; hãy sử dụng ép kiểu. Kiểu <code>union</code>
+của C không có kiểu Go tương ứng. Kiểu <code>struct</code> của C chứa
+các trường bit không có kiểu Go tương ứng. Kiểu <code>class</code> của C++ không
+có kiểu Go tương ứng.
+</p>
+
+<p>
+Cấp phát bộ nhớ hoàn toàn khác nhau giữa C và Go, vì Go sử dụng
+bộ gom rác. Các hướng dẫn cụ thể trong lĩnh vực này chưa được xác định,
+nhưng có thể sẽ được phép truyền con trỏ đến bộ nhớ được cấp phát
+từ C sang Go. Trách nhiệm cuối cùng giải phóng con trỏ
+sẽ vẫn thuộc về phía C, và tất nhiên nếu phía C giải phóng con trỏ
+trong khi phía Go vẫn còn một bản sao thì chương trình sẽ lỗi. Khi truyền
+con trỏ từ Go sang C, hàm Go phải giữ lại một bản sao hiển thị của nó trong
+một biến Go nào đó. Nếu không, bộ gom rác Go có thể xóa
+con trỏ trong khi hàm C vẫn đang sử dụng nó.
+</p>
+
+<h3 id="Function_names">Tên hàm</h3>
+
+<p>
+Mã Go có thể gọi các hàm C trực tiếp bằng cách sử dụng một phần mở rộng Go được triển khai
+trong gccgo: khai báo hàm có thể được đặt trước bởi
+<code>//extern NAME</code>. Ví dụ, đây là cách hàm C
+<code>open</code> có thể được khai báo trong Go:
+</p>
+
+<pre>
+//extern open
+func c_open(name *byte, mode int, perm int) int
+</pre>
+
+<p>
+Hàm C đương nhiên mong đợi một chuỗi kết thúc bằng NUL, trong
+Go tương đương với con trỏ đến mảng (không phải slice!) của
+<code>byte</code> với byte zero kết thúc. Vì vậy một lệnh gọi mẫu
+từ Go trông như thế này (sau khi import gói <code>syscall</code>):
+</p>
+
+<pre>
+var name = [4]byte{'f', 'o', 'o', 0};
+i := c_open(&amp;name[0], syscall.O_RDONLY, 0);
+</pre>
+
+<p>
+(đây chỉ là ví dụ minh họa; để mở tệp trong Go, hãy sử dụng hàm
+<code>os.Open</code> của Go thay thế).
+</p>
+
+<p>
+Lưu ý rằng nếu hàm C có thể bị block, chẳng hạn như trong lệnh gọi
+<code>read</code>, việc gọi hàm C có thể làm block chương trình Go.
+Trừ khi bạn hiểu rõ những gì mình đang làm, tất cả các lệnh gọi
+giữa C và Go nên được triển khai thông qua cgo hoặc SWIG, như đối với
+trình biên dịch <code>gc</code>.
+</p>
+
+<p>
+Tên của các hàm Go được truy cập từ C có thể thay đổi. Hiện tại,
+tên của một hàm Go không có receiver là
+<code>prefix.package.Functionname</code>. Tiền tố được đặt bởi
+tùy chọn <code>-fgo-prefix</code> được dùng khi gói được biên dịch;
+nếu tùy chọn không được dùng, mặc định là <code>go</code>.
+Để gọi hàm từ C, bạn phải đặt tên bằng cách sử dụng
+phần mở rộng GCC.
+</p>
+
+<pre>
+extern int go_function(int) __asm__ ("myprefix.mypackage.Function");
+</pre>
+
+<h3 id="Automatic_generation_of_Go_declarations_from_C_source_code">
+Tự động tạo khai báo Go từ mã nguồn C</h3>
+
+<p>
+Phiên bản Go của GCC hỗ trợ tự động tạo
+khai báo Go từ mã C. Tính năng này khá cồng kềnh và hầu hết
+người dùng nên sử dụng chương trình <a href="/cmd/cgo">cgo</a> với
+tùy chọn <code>-gccgo</code> thay thế.
+</p>
+
+<p>
+Biên dịch mã C của bạn như bình thường, và thêm tùy chọn
+<code>-fdump-go-spec=<var>FILENAME</var></code>. Điều này sẽ tạo
+tệp <code><var>FILENAME</var></code> như một hiệu ứng phụ của quá trình
+biên dịch. Tệp này sẽ chứa khai báo Go cho các kiểu,
+biến và hàm được khai báo trong mã C. Các kiểu C không thể
+biểu diễn trong Go sẽ được ghi dưới dạng chú thích trong mã Go. Tệp
+được tạo sẽ không có khai báo <code>package</code>, nhưng
+có thể được biên dịch trực tiếp bởi gccgo.
+</p>
+
+<p>
+Quy trình này chứa đầy những lưu ý và hạn chế chưa được nêu rõ, và chúng tôi không
+đảm bảo rằng nó sẽ không thay đổi trong tương lai. Nó hữu ích hơn như một
+điểm xuất phát cho mã Go thực sự hơn là một quy trình thông thường.
+</p>

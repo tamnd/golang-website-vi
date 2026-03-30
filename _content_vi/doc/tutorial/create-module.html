@@ -1,0 +1,261 @@
+<!--{
+    "Title": "Hướng dẫn: Tạo một module Go",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Đây là phần đầu tiên của một hướng dẫn giới thiệu một số tính năng cơ bản
+  của ngôn ngữ Go. Nếu bạn mới bắt đầu với Go, hãy xem
+  <a href="/doc/tutorial/getting-started.html">Hướng dẫn: Bắt đầu với Go</a>, nơi giới thiệu
+  lệnh <code>go</code>, Go modules và mã Go đơn giản.
+</p>
+
+<p>
+  Trong hướng dẫn này, bạn sẽ tạo hai module. Module đầu tiên là một thư viện
+  dùng để được import bởi các thư viện hoặc ứng dụng khác. Module thứ hai là
+  một ứng dụng gọi module đầu tiên.
+</p>
+
+<p>
+  Hướng dẫn này bao gồm bảy chủ đề ngắn, mỗi chủ đề minh họa một
+  khía cạnh khác nhau của ngôn ngữ.
+</p>
+
+<ol>
+  <li>
+    Tạo một module -- Viết một module nhỏ với các hàm bạn có thể gọi từ
+    một module khác.
+  </li>
+  <li>
+    <a href="/doc/tutorial/call-module-code.html">Gọi mã của bạn từ một module khác</a> --
+    Import và sử dụng module mới của bạn.
+  </li>
+  <li>
+    <a href="/doc/tutorial/handle-errors.html">Trả về và xử lý lỗi</a> -- Thêm xử lý
+    lỗi đơn giản.
+  </li>
+  <li>
+    <a href="/doc/tutorial/random-greeting.html">Trả về lời chào ngẫu nhiên</a> -- Xử lý dữ liệu
+    trong slice (mảng có kích thước động của Go).
+  </li>
+  <li>
+    <a href="/doc/tutorial/greetings-multiple-people.html"
+      >Trả lời lời chào cho nhiều người</a
+    >
+    -- Lưu trữ các cặp key/value trong map.
+  </li>
+  <li>
+    <a href="/doc/tutorial/add-a-test.html">Thêm một bài kiểm thử</a> -- Sử dụng tính năng kiểm thử đơn vị
+    tích hợp của Go để kiểm thử mã của bạn.
+  </li>
+  <li>
+    <a href="/doc/tutorial/compile-install.html">Biên dịch và cài đặt ứng dụng</a> --
+    Biên dịch và cài đặt mã của bạn cục bộ.
+  </li>
+</ol>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Để xem các hướng dẫn khác, xem
+  <a href="/doc/tutorial/index.html">Hướng dẫn</a>.
+</aside>
+
+<h2 id="prerequisites">Điều kiện tiên quyết</h2>
+
+<ul>
+  <li>
+    <strong>Một số kinh nghiệm lập trình.</strong> Mã ở đây khá
+    đơn giản, nhưng sẽ hữu ích nếu bạn biết về hàm, vòng lặp và mảng.
+  </li>
+  <li>
+    <strong>Công cụ soạn thảo mã.</strong> Bất kỳ trình soạn thảo văn bản nào bạn có đều
+    dùng được. Hầu hết các trình soạn thảo đều hỗ trợ tốt Go. Phổ biến nhất là
+    VSCode (miễn phí), GoLand (trả phí) và Vim (miễn phí).
+  </li>
+  <li>
+    <strong>Thiết bị đầu cuối lệnh.</strong> Go hoạt động tốt trên bất kỳ terminal nào của
+    Linux và Mac, cũng như trên PowerShell hoặc cmd trong Windows.
+  </li>
+</ul>
+
+<h2 id="start">Bắt đầu một module mà người khác có thể sử dụng</h2>
+
+<p>
+  Bắt đầu bằng cách tạo một module Go. Trong một
+  module, bạn tập hợp một hoặc nhiều gói liên quan cho một tập hợp hàm
+  rời rạc và hữu ích. Ví dụ, bạn có thể tạo một module với các gói chứa
+  hàm để phân tích tài chính, để những người viết ứng dụng tài chính
+  có thể sử dụng công việc của bạn. Để biết thêm về phát triển module, xem
+  <a href="/doc/modules/developing">Phát triển và publish module</a>.
+</p>
+
+<p>
+  Mã Go được nhóm thành các gói, và các gói được nhóm thành các module. Module của bạn
+  chỉ định các dependency cần thiết để chạy mã, bao gồm phiên bản Go
+  và tập hợp các module khác mà nó yêu cầu.
+</p>
+
+<p>
+  Khi bạn thêm hoặc cải thiện chức năng trong module, bạn publish các phiên bản mới
+  của module. Các nhà phát triển viết mã gọi các hàm trong module của bạn có thể
+  import các gói đã cập nhật của module và kiểm thử với phiên bản mới trước khi
+  đưa vào môi trường production.
+</p>
+
+<ol>
+  <li>
+    Mở dấu nhắc lệnh và <code>cd</code> vào thư mục home của bạn.
+
+    <p>
+      Trên Linux hoặc Mac:
+    </p>
+
+    <pre>
+cd
+</pre
+    >
+
+    <p>
+      Trên Windows:
+    </p>
+
+    <pre>
+cd %HOMEPATH%
+</pre
+    >
+  </li>
+
+  <li>
+    Tạo thư mục <code>greetings</code> cho mã nguồn module Go của bạn.
+
+    <p>
+      Ví dụ, từ thư mục home của bạn, dùng các lệnh sau:
+    </p>
+
+    <pre>
+mkdir greetings
+cd greetings
+</pre
+    >
+  </li>
+
+  <li>
+    Khởi tạo module của bạn bằng
+    <a
+      href="/ref/mod#go-mod-init"
+      >lệnh <code>go mod init</code></a
+    >.
+
+    <p>
+      Chạy lệnh <code>go mod init</code>, truyền vào đường dẫn module --
+      ở đây, dùng <code>example.com/greetings</code>. Nếu bạn publish một module,
+      đây <em>phải</em> là đường dẫn mà từ đó module của bạn có thể được tải xuống bởi
+      các công cụ Go. Đó sẽ là kho lưu trữ mã của bạn.
+    </p>
+
+    <p>
+        Để biết thêm về đặt tên module với đường dẫn module, xem
+        <a href="/doc/modules/managing-dependencies#naming_module">Quản lý
+        dependency</a>.
+    </p>
+
+    <pre>
+$ go mod init example.com/greetings
+go: creating new go.mod: module example.com/greetings
+</pre
+    >
+
+    <p>
+      Lệnh <code>go mod init</code> tạo một tệp go.mod để theo dõi các
+      dependency của mã. Hiện tại, tệp chỉ bao gồm tên module của bạn
+      và phiên bản Go mà mã của bạn hỗ trợ. Nhưng khi bạn thêm các dependency,
+      tệp go.mod sẽ liệt kê các phiên bản mà mã của bạn phụ thuộc. Điều này giúp
+      các bản dựng có thể tái tạo được và cho bạn quyền kiểm soát trực tiếp về
+      các phiên bản module nào được sử dụng.
+    </p>
+  </li>
+
+  <li>
+    Trong trình soạn thảo văn bản, tạo một tệp để viết mã và đặt tên là
+    greetings.go.
+  </li>
+
+  <li>
+    Dán đoạn mã sau vào tệp greetings.go của bạn và lưu tệp.
+
+    <pre>
+package greetings
+
+import "fmt"
+
+// Hello returns a greeting for the named person.
+func Hello(name string) string {
+    // Return a greeting that embeds the name in a message.
+    message := fmt.Sprintf("Hi, %v. Welcome!", name)
+    return message
+}
+</pre
+    >
+
+    <p>
+      Đây là mã đầu tiên của module bạn. Nó trả về lời chào cho bất kỳ
+      người gọi nào yêu cầu. Bạn sẽ viết mã gọi hàm này trong
+      bước tiếp theo.
+    </p>
+
+    <p>
+      Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Khai báo gói <code>greetings</code> để tập hợp các hàm liên quan.
+      </li>
+      <li>
+        Triển khai hàm <code>Hello</code> để trả về lời chào.
+        <p>
+          Hàm này nhận tham số <code>name</code> có kiểu là
+          <code>string</code>. Hàm cũng trả về một <code>string</code>.
+          Trong Go, một hàm có tên bắt đầu bằng chữ hoa có thể được
+          gọi bởi một hàm không cùng gói. Điều này được gọi trong Go là
+          tên được xuất. Để biết thêm về tên được xuất, xem
+          <a href="/tour/basics/3">Tên được xuất</a> trong
+          Tour Go.
+        </p>
+        <img src="images/function-syntax.png" width="300px" />
+      </li>
+
+      <li>
+        Khai báo biến <code>message</code> để lưu lời chào của bạn.
+        <p>
+          Trong Go, toán tử <code>:=</code> là cách viết tắt để khai báo và
+          khởi tạo một biến trong một dòng (Go dùng giá trị bên phải để
+          xác định kiểu của biến). Nếu viết đầy đủ, bạn có thể viết như sau:
+        </p>
+        <pre>
+var message string
+message = fmt.Sprintf("Hi, %v. Welcome!", name)
+</pre
+        >
+      </li>
+
+      <li>
+        Dùng <a href="https://pkg.go.dev/fmt/#Sprintf">
+        hàm <code>Sprintf</code></a> của gói <code>fmt</code> để tạo thông điệp lời chào. Đối số
+        đầu tiên là chuỗi định dạng, và <code>Sprintf</code> thay thế
+        giá trị của tham số <code>name</code> vào ký hiệu định dạng <code>%v</code>.
+        Việc chèn giá trị của tham số <code>name</code> hoàn thiện văn bản lời chào.
+      </li>
+      <li>Trả về văn bản lời chào đã định dạng cho người gọi.</li>
+    </ul>
+  </li>
+</ol>
+
+<p>
+  Trong bước tiếp theo, bạn sẽ gọi hàm này từ một module khác.
+</p>
+
+<p class="Navigation">
+  <a class="Navigation-next" href="/doc/tutorial/call-module-code.html"
+    >Gọi mã của bạn từ một module khác &gt;</a
+  >
+</p>

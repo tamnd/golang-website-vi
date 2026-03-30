@@ -1,0 +1,323 @@
+Các vấn đề nghiên cứu khi triển khai Go
+
+Russ Cox
+Google
+
+https://go.dev/
+
+* Về bài nói chuyện
+
+Tôi đã trình bày bài này tại văn phòng Cambridge, Massachusetts của Google tại một sự kiện dành cho các sinh viên tiến sĩ trong khu vực. Mục đích của sự kiện và bài nói chuyện là để giới thiệu một số nghiên cứu đang diễn ra tại Google. Bài nói chuyện trình bày một số câu hỏi nghiên cứu được thúc đẩy bởi Go. Chúng tôi đã trả lời một số câu hỏi tốt, nhưng những câu hỏi khác vẫn còn mở.
+
+* Về Go
+
+Go là ngôn ngữ lập trình mã nguồn mở giúp dễ dàng xây dựng phần mềm đơn giản, đáng tin cậy và hiệu quả.
+
+Thiết kế bắt đầu vào cuối năm 2007.
+
+- Robert Griesemer, Rob Pike, Ken Thompson
+- Russ Cox, Ian Lance Taylor
+
+Trở thành mã nguồn mở vào tháng 11 năm 2009.
+
+Được phát triển hoàn toàn công khai; cộng đồng rất năng động.
+Ngôn ngữ ổn định kể từ Go 1, đầu năm 2012.
+Vẫn tiếp tục phát triển.
+
+* Động lực cho Go
+
+.image ../2012/splash/datacenter.jpg
+
+* Động lực cho Go
+
+Bắt đầu như một câu trả lời cho các vấn đề phần mềm tại Google:
+
+- bộ xử lý đa nhân
+- các hệ thống mạng
+- cụm tính toán khổng lồ
+- quy mô: 10⁷ dòng code
+- quy mô: 10³ lập trình viên
+- quy mô: 10⁶⁺ máy (điểm thiết kế)
+
+Đã triển khai: một phần của YouTube, dl.google.com, Blogger, Google Code, Google Fiber, ...
+
+* Go
+
+Một ngôn ngữ đơn giản nhưng mạnh mẽ và thú vị.
+
+- bắt đầu từ C, loại bỏ các phần phức tạp
+- thêm interface, concurrency
+- cũng có: garbage collection, closure, reflection, string, ...
+
+Để biết thêm về thiết kế:
+
+- [[http://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html][Ít hơn là nhiều hơn theo cấp số nhân]]
+- [[/talks/2012/splash.article][Go tại Google: Thiết kế ngôn ngữ phục vụ kỹ thuật phần mềm]]
+
+* Nghiên cứu và Go
+
+Go được thiết kế để xây dựng các hệ thống sản xuất tại Google.
+
+- Mục tiêu: làm cho công việc đó dễ hơn, nhanh hơn, tốt hơn.
+- Không phải mục tiêu: đột phá trong nghiên cứu ngôn ngữ lập trình
+
+Nhiều câu hỏi nghiên cứu về cách triển khai Go tốt.
+
+- Concurrency
+- Đa hình (Polymorphism)
+- Garbage collection
+- Dịch chương trình
+
+* Concurrency
+
+* Concurrency
+
+Go cung cấp hai khái niệm quan trọng:
+
+Goroutine là một luồng điều khiển trong chương trình, với các biến cục bộ và stack riêng. Rẻ, dễ tạo.
+
+Channel truyền các thông điệp có kiểu giữa các goroutine.
+
+* Concurrency
+
+.play ../2013/distsys/hello.go
+
+* Concurrency: CSP
+
+Channel được lấy từ Communicating Sequential Processes của Hoare.
+
+- Độc lập với phần còn lại của ngôn ngữ
+- Có thể giữ mô hình tính toán quen thuộc
+- Tập trung vào _kết_hợp_ code thông thường
+
+Go _cho_phép_ lập trình đồng thời đơn giản, an toàn.
+Nó không _ngăn cấm_ lập trình kém.
+
+Lưu ý: không hoàn toàn an toàn về bộ nhớ; chia sẻ là hợp lệ.
+Truyền con trỏ qua channel là cách làm chuẩn.
+
+Thực tế cho thấy điều này khả thi.
+
+* Concurrency
+
+Phân giải địa chỉ mạng tuần tự, với danh sách công việc:
+
+.play ../2013/distsys/addr1.go /lookup/+1,/^}/-1
+
+* Concurrency
+
+Phân giải địa chỉ mạng song song, với danh sách công việc:
+
+.play ../2013/distsys/addr2.go /lookup/+1,/^}/-1
+
+* Triển khai Concurrency
+
+Thách thức: Làm cho giao tiếp qua channel có thể mở rộng
+
+- bắt đầu với một khóa channel toàn cục
+- khóa theo từng channel, khóa theo thứ tự địa chỉ cho các thao tác đa channel
+
+Câu hỏi nghiên cứu: channel không khóa (lock-free)?
+
+* Đa hình
+
+* Interface
+
+Một interface định nghĩa một tập các phương thức.
+
+	package io
+
+	type Writer interface {
+		Write(data []byte) (n int, err error)
+	}
+
+* Interface
+
+Một kiểu triển khai interface bằng cách triển khai các phương thức.
+
+	package bytes
+
+	type Buffer struct {
+		...
+	}
+
+	func (b *Buffer) Write(data []byte) (n int, err error) {
+		...
+	}
+
+* Interface
+
+Một triển khai của interface có thể được gán cho một biến của kiểu interface đó.
+
+	package fmt
+
+	func Fprintf(w io.Writer, format string, args ...interface{})
+
+* Interface
+
+.play ../2013/distsys/writebuffer.go /^func.main/+1,/^}/-1
+
+* Ưu điểm của Interface
+
+- không phụ thuộc giữa interface và triển khai
+- dễ test
+- tránh thiết kế thừa, phân cấp kế thừa cứng nhắc dựa trên OO
+
+Nguồn gốc của mọi tính tổng quát trong ngôn ngữ Go.
+
+* Triển khai Interface
+
+Làm thế nào để điều phối phương thức hiệu quả?
+
+	b := new(bytes.Buffer)
+	var w io.Writer
+	w = b
+	fmt.Fprintf(w, "hello, %s\n", "world")
+		... w.Write(text) // điều gì xảy ra ở đây?
+
+Tại lời gọi w.Write, runtime tìm phương thức để gọi như thế nào?
+
+* Triển khai Interface
+
+Làm thế nào để điều phối phương thức hiệu quả?
+
+	b := new(bytes.Buffer)
+	var w io.Writer
+	w = b                 // làm việc ở đây!
+	fmt.Fprintf(w, "hello, %s\n", "world")
+		... w.Write(text) // lời gọi hàm gián tiếp đơn giản
+
+Interface giữ hai từ: "itable" và giá trị thực tế (hoặc con trỏ đến giá trị).
+
+Itable chứa thông tin kiểu cùng với danh sách con trỏ hàm cho các phương thức trong interface.
+
+	w.itable.fn[1](w.data, text)
+
+Các điểm chuyển đổi thường dễ cache.
+
+* Interface cho Thuật toán
+
+	package sort
+
+	type Interface interface {
+		Len() int           // trả về số phần tử, len(x)
+		Less(i, j int) bool // báo cáo liệu x[i] < x[j]
+		Swap(i, j int)      // x[i], x[j] = x[j], x[i]
+	}
+
+	func Sort(data Interface)
+
+Yêu cầu một số code mẫu cho mỗi lần dùng:
+
+	type bySubject []Thread
+
+	func (x bySubject) Less(i, j int) bool { return x[i].Subject < x[j].Subject }
+	func (x bySubject) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+	func (x bySubject) Len() int           { return len(x) }
+
+	sort.Sort(bySubject(threads))
+
+* Đa hình: Chúng ta có thể làm tốt hơn không?
+
+	func Sort(data []T, less func(x, y *T) bool)
+
+	sort.Sort(threads, func(x, y *Thread) bool {
+		return x.Subject < y.Subject
+	})
+
+Câu hỏi nghiên cứu: ngữ nghĩa hợp lý là gì?
+Câu hỏi nghiên cứu: triển khai hợp lý là gì?
+
+- C nói đừng bận tâm.
+- C++ tạo nhiều bản sao của cùng một hàm.
+- Java đóng gói mọi thứ ngầm định: một hàm, nhưng mô hình dữ liệu đắt tiền.
+- Java loại bỏ thông tin kiểu tại runtime.
+
+Bạn muốn lập trình viên chậm, trình biên dịch chậm và file nhị phân cồng kềnh, hay thực thi chậm?
+
+* Garbage Collection
+
+* Garbage Collection
+
+Garbage collection đơn giản hóa các API.
+
+- Trong C và C++, quá nhiều thiết kế API (và quá nhiều nỗ lực lập trình!) là về quản lý bộ nhớ.
+
+Cơ bản cho concurrency: quá khó để theo dõi quyền sở hữu nếu không có GC.
+
+Cơ bản cho interface: các chi tiết quản lý bộ nhớ không làm phân chia các API tương tự.
+
+Tất nhiên, thêm chi phí, độ trễ, sự phức tạp trong hệ thống runtime.
+
+* Tránh Garbage Collection
+
+Quan sát: garbage collection là một dịch vụ, và như bất kỳ dịch vụ nào, nó có thể bị quá tải.
+
+Go cho phép bạn giới hạn cấp phát bằng cách kiểm soát bố cục bộ nhớ.
+
+	type Point struct {
+		X, Y int
+	}
+
+	type Rectangle struct {
+		Min, Max Point
+	}
+
+* Triển khai Garbage Collection
+
+Quyết định ngôn ngữ: con trỏ nội bộ được phép, cũng như con trỏ ngoài
+
+- Không thể tái sử dụng thuật toán GC của Java trực tiếp.
+- Nhưng cho _lập_trình_viên_ nhiều quyền kiểm soát hơn về cấp phát.
+
+Bộ cấp phát: các đối tượng được cấp phát trong các trang với các đối tượng khác cùng kích thước.
+
+GC hiện tại: dừng thế giới, đánh dấu song song, khởi động thế giới, quét nền.
+
+Câu hỏi nghiên cứu: làm thế nào để bộ thu gom có độ trễ thấp hơn, có thể là dần dần?
+
+* Dịch chương trình
+
+* Dịch chương trình
+
+Chương trình Go có thể được phân tích cú pháp mà không cần ngữ cảnh (không giống C và C++).
+Go đi kèm với trình định dạng chương trình chuẩn.
+
+Làm cho các chỉnh sửa tự động không thể phân biệt với chỉnh sửa thủ công.
+
+	$ cat x.go
+	package main
+
+	var b bytes.Buffer
+
+	$ gofmt -r 'bytes.Buffer -> bytes.Writer' x.go
+	package main
+
+	var b bytes.Writer
+
+	$
+
+Các chỉnh sửa phức tạp hơn: "go fix" để điều chỉnh API.
+
+* Dịch chương trình
+
+Câu hỏi nghiên cứu: Còn việc dịch các chương trình khác sang Go thì sao?
+
+Đang khám phá việc chuyển đổi các chương trình C sang Go hiện nay.
+
+- Quyết định kiểu trả về (ví dụ: int hay bool).
+- Quyết định biến nào là con trỏ và biến nào là mảng.
+- Quyết định hàm nào thực sự là phương thức.
+- Quyết định ranh giới package tự nhiên.
+
+Còn các ngôn ngữ khác thì sao?
+
+* Nghiên cứu và Go
+
+Nhiều câu hỏi nghiên cứu về cách triển khai Go tốt.
+
+- Concurrency
+- Đa hình
+- Garbage collection
+- Dịch chương trình
+

@@ -1,0 +1,201 @@
+<!--{
+	"Title": "Go 1 và Tương lai của các Chương trình Go",
+	"Breadcrumb": true
+}-->
+
+<h2 id="introduction">Giới thiệu</h2>
+<p>
+Bản phát hành Go phiên bản 1, gọi tắt là Go 1, là một cột mốc quan trọng
+trong quá trình phát triển của ngôn ngữ. Go 1 là một nền tảng ổn định cho
+sự phát triển của các chương trình và dự án được viết bằng Go.
+</p>
+
+<p>
+Go 1 xác định hai thứ: đầu tiên, đặc tả của ngôn ngữ;
+và thứ hai, đặc tả của một tập hợp API cốt lõi, tức là các "gói chuẩn"
+của thư viện Go. Bản phát hành Go 1 bao gồm việc triển khai chúng
+dưới dạng hai bộ trình biên dịch (gc và gccgo),
+và chính các thư viện cốt lõi.
+</p>
+
+<p>
+Mục đích là các chương trình được viết theo đặc tả Go 1 sẽ
+tiếp tục biên dịch và chạy đúng, không thay đổi, trong suốt thời gian tồn tại
+của đặc tả đó. Tại một thời điểm nào đó không xác định, đặc tả Go 2
+có thể xuất hiện, nhưng cho đến lúc đó, các chương trình Go hoạt động ngày nay sẽ
+tiếp tục hoạt động ngay cả khi các bản phát hành "point" tương lai của Go 1 xuất hiện (Go
+1.1, Go 1.2, v.v.).
+</p>
+
+<p>
+Tính tương thích là ở cấp độ mã nguồn. Tương thích nhị phân cho
+các gói đã biên dịch không được đảm bảo giữa các bản phát hành. Sau một bản phát hành point,
+mã nguồn Go sẽ cần được biên dịch lại để liên kết với
+bản phát hành mới.
+</p>
+
+<p>
+Các API có thể phát triển, bổ sung các gói và tính năng mới, nhưng không theo
+cách phá vỡ mã Go 1 hiện có.
+</p>
+
+<h2 id="expectations">Kỳ vọng</h2>
+
+<p>
+Mặc dù chúng tôi kỳ vọng rằng đại đa số chương trình sẽ duy trì
+tính tương thích này theo thời gian, nhưng không thể đảm bảo rằng
+không có thay đổi nào trong tương lai sẽ phá vỡ bất kỳ chương trình nào. Tài liệu này là một nỗ lực
+để đặt ra kỳ vọng về tính tương thích của phần mềm Go 1 trong
+tương lai. Có một số cách mà một chương trình biên dịch
+và chạy được ngày hôm nay có thể không làm được như vậy sau một bản phát hành point trong tương lai. Chúng
+đều khó xảy ra nhưng đáng được ghi chú.
+</p>
+
+<ul>
+<li>
+Bảo mật. Một vấn đề bảo mật trong đặc tả hoặc triển khai
+có thể được phát hiện, giải quyết nó đòi hỏi phải phá vỡ tính tương thích.
+Chúng tôi bảo lưu quyền giải quyết các vấn đề bảo mật như vậy.
+</li>
+
+<li>
+Hành vi không được chỉ định. Đặc tả Go cố gắng rõ ràng
+về hầu hết các thuộc tính của ngôn ngữ, nhưng có một số khía cạnh
+không được định nghĩa. Các chương trình phụ thuộc vào hành vi không được chỉ định như vậy
+có thể bị phá vỡ trong các bản phát hành tương lai.
+</li>
+
+<li>
+Lỗi đặc tả. Nếu cần giải quyết một
+sự không nhất quán hoặc không đầy đủ trong đặc tả, việc giải quyết
+vấn đề có thể ảnh hưởng đến ý nghĩa hoặc tính hợp lệ của các chương trình hiện có.
+Chúng tôi bảo lưu quyền giải quyết các vấn đề như vậy, bao gồm cập nhật các
+triển khai. Ngoại trừ các vấn đề bảo mật, sẽ không có thay đổi không tương thích
+nào đối với đặc tả.
+</li>
+
+<li>
+Bug. Nếu một trình biên dịch hoặc thư viện có bug vi phạm
+đặc tả, một chương trình phụ thuộc vào hành vi có bug có thể
+bị phá vỡ nếu bug được sửa. Chúng tôi bảo lưu quyền sửa các bug như vậy.
+</li>
+
+<li>
+Struct literal. Để thêm tính năng trong các bản phát hành point sau này,
+có thể cần thêm các trường vào struct được xuất ra trong
+API. Mã sử dụng struct literal không có khóa (chẳng hạn như pkg.T{3,
+"x"}) để tạo giá trị của các kiểu này sẽ không biên dịch được sau
+thay đổi như vậy. Tuy nhiên, mã sử dụng literal có khóa (pkg.T{A:
+3, B: "x"}) sẽ tiếp tục biên dịch sau thay đổi như vậy. Chúng tôi sẽ
+cập nhật các cấu trúc dữ liệu như vậy theo cách cho phép struct literal có khóa
+tiếp tục tương thích, mặc dù literal không có khóa có thể không
+biên dịch được. (Cũng có các trường hợp phức tạp hơn liên quan đến
+cấu trúc dữ liệu lồng nhau hoặc interface, nhưng chúng có cùng cách giải quyết.)
+Do đó chúng tôi khuyến nghị rằng composite literal có kiểu được định nghĩa
+trong một gói riêng biệt nên sử dụng ký hiệu có khóa.
+</li>
+
+<li>
+Phương thức. Cũng như các trường struct, có thể cần thêm các phương thức
+vào các kiểu không phải interface.
+Trong một số hoàn cảnh, chẳng hạn như khi kiểu được nhúng trong
+một struct cùng với kiểu khác,
+việc thêm phương thức mới có thể phá vỡ
+struct bằng cách tạo xung đột với một phương thức hiện có của kiểu được nhúng khác.
+Chúng tôi không thể bảo vệ chống lại trường hợp hiếm gặp này và không đảm bảo tính tương thích
+nếu nó xảy ra.
+</li>
+
+<li>
+Dot import. Nếu một chương trình import một gói chuẩn
+sử dụng <code>import . "path"</code>, các tên bổ sung được định nghĩa trong
+gói được import trong các bản phát hành tương lai có thể xung đột với các tên khác
+được định nghĩa trong chương trình. Chúng tôi không khuyến nghị sử dụng <code>import .</code>
+bên ngoài các test, và việc sử dụng nó có thể khiến một chương trình không
+biên dịch được trong các bản phát hành tương lai.
+</li>
+
+<li>
+Sử dụng gói <code>unsafe</code>. Các gói import
+<a href="/pkg/unsafe/"><code>unsafe</code></a>
+có thể phụ thuộc vào các thuộc tính nội bộ của triển khai Go.
+Chúng tôi bảo lưu quyền thay đổi triển khai
+có thể phá vỡ các chương trình như vậy.
+</li>
+
+</ul>
+
+<p>
+Tất nhiên, đối với tất cả các khả năng này, nếu chúng xảy ra, chúng tôi
+sẽ cố gắng bất cứ khi nào có thể cập nhật đặc tả,
+trình biên dịch hoặc thư viện mà không ảnh hưởng đến mã hiện có.
+</p>
+
+<p>
+Những cân nhắc tương tự áp dụng cho các bản phát hành point liên tiếp. Ví dụ,
+mã chạy trên Go 1.2 phải tương thích với Go
+1.2.1, Go 1.3, Go 1.4, v.v., mặc dù không nhất thiết với Go 1.1
+vì nó có thể sử dụng các tính năng chỉ được thêm vào trong Go 1.2.
+</p>
+
+<p>
+Các tính năng được thêm vào giữa các bản phát hành, có sẵn trong kho lưu trữ mã nguồn
+nhưng không phải là một phần của các bản phát hành nhị phân được đánh số, đang trong quá trình
+phát triển tích cực. Không có cam kết tương thích nào được đưa ra cho phần mềm sử dụng
+các tính năng như vậy cho đến khi chúng được phát hành.
+</p>
+
+<p>
+Cuối cùng, mặc dù đây không phải là vấn đề chính xác, nhưng có thể
+rằng hiệu suất của một chương trình có thể bị ảnh hưởng bởi
+các thay đổi trong triển khai của trình biên dịch hoặc thư viện mà
+nó phụ thuộc vào.
+Không có gì đảm bảo về hiệu suất của một
+chương trình nhất định giữa các bản phát hành.
+</p>
+
+<p>
+Mặc dù những kỳ vọng này áp dụng cho Go 1 bản thân, chúng tôi hy vọng
+những cân nhắc tương tự sẽ được thực hiện đối với việc phát triển phần mềm
+được phát triển bên ngoài dựa trên Go 1.
+</p>
+
+<h2 id="subrepos">Sub-repository</h2>
+
+<p>
+Mã trong các sub-repository của cây go chính, chẳng hạn như
+<a href="https://golang.org/x/net">golang.org/x/net</a>,
+có thể được phát triển theo
+các yêu cầu tương thích ít chặt chẽ hơn. Tuy nhiên, các sub-repository
+sẽ được gắn tag phù hợp để xác định các phiên bản tương thích
+với các bản phát hành point Go 1.
+</p>
+
+<h2 id="operating_systems">Hệ điều hành</h2>
+
+<p>
+Không thể đảm bảo tính tương thích dài hạn với các giao diện hệ điều hành,
+những thứ được thay đổi bởi các bên ngoài.
+Do đó gói <a href="/pkg/syscall/"><code>syscall</code></a>
+nằm ngoài phạm vi của các đảm bảo được đưa ra ở đây.
+Kể từ Go phiên bản 1.4, gói <code>syscall</code> bị đóng băng.
+Bất kỳ sự phát triển nào của giao diện system call phải được hỗ trợ ở nơi khác,
+chẳng hạn như trong
+<a href="https://golang.org/x/sys">go.sys</a> subrepository.
+Để biết chi tiết và bối cảnh, xem
+<a href="/s/go1.4-syscall">tài liệu này</a>.
+</p>
+
+<h2 id="tools">Công cụ</h2>
+
+<p>
+Cuối cùng, bộ công cụ Go (trình biên dịch, linker, công cụ xây dựng, và
+các thứ khác) đang trong quá trình phát triển tích cực và có thể thay đổi hành vi. Điều này
+có nghĩa là, ví dụ, các script phụ thuộc vào vị trí và
+các thuộc tính của công cụ có thể bị phá vỡ bởi một bản phát hành point.
+</p>
+
+<p>
+Ngoài những lưu ý này, chúng tôi tin rằng Go 1 sẽ là nền tảng vững chắc
+cho sự phát triển của Go và hệ sinh thái của nó.
+</p>

@@ -1,0 +1,293 @@
+Trạng thái của Go
+Go đang ở đâu vào tháng 6 năm 2014
+
+Andrew Gerrand
+
+* Hôm qua
+
+
+* Phản ứng ban đầu
+
+Nhìn lại những tháng đầu tiên.
+
+
+* Những phàn nàn
+
+Những phàn nàn bắt đầu ngay lập tức…
+
+.image state-of-go/msg-wrong.png _ 600
+
+.image state-of-go/msg-lacks.png _ 600
+
+
+* Những phàn nàn quen thuộc
+
+.image state-of-go/msg-generics.png _ 600
+
+.image state-of-go/msg-type.png _ 600
+
+.image state-of-go/msg-exceptions1b.png _ 600
+
+
+* Những phàn nàn quen thuộc
+
+.image state-of-go/indent.png 500 _
+
+Chủ đề HN đầu tiên về Go chủ yếu là tranh luận về dấu ngoặc nhọn và thụt lề.
+
+
+* Những khoảnh khắc lịch sử
+
+Thay đổi ngôn ngữ công khai đầu tiên (10 tháng 12 năm 2009):
+
+.image state-of-go/msg-semi.png _ 400
+
+
+* Gopher
+
+.image state-of-go/msg-logo1.png _ 800
+
+.image state-of-go/sadgopher.png _ 250
+
+
+* Gopher
+
+.image state-of-go/msg-logo2.png _ 800
+
+
+* Gopher
+
+.image state-of-go/msg-logo3.jpg _ 700
+
+
+* Một quan sát sắc sảo
+
+.image state-of-go/msg-exceptions2.png _ 800
+
+
+* Dấu hiệu hy vọng
+
+.image state-of-go/msg-nogenerics.png _ 600
+
+
+* Hôm nay
+
+
+* Tăng trưởng
+
+.image state-of-go/redmonk.png _ 600
+
+.image state-of-go/oloh.png
+
+
+* Nhóm người dùng
+
+Hiện nay có 48 nhóm người dùng tích cực tại 15 quốc gia trên 5 châu lục.
+
+
+* GopherCon
+
+.image state-of-go/gophercon.png
+
+Do cộng đồng điều hành. 3 ngày. 700 người tham dự. 24 buổi nói chuyện. 1 bảng thảo luận. 4 giờ lightning talk!
+
+
+* Gopher
+
+.image state-of-go/gophers.jpg
+
+* Gopher
+
+.image state-of-go/bus.jpg
+
+* Gopher
+
+.image state-of-go/tattoo.jpg
+
+
+* Go 1.3
+
+Được phát hành vào thứ Tư tuần trước, ngày 18 tháng 6 năm 2014.
+
+Điểm nổi bật:
+
+- Hỗ trợ Native Client (amd64, 386)
+- Hỗ trợ DragonFly BSD, Plan 9 và Solaris
+- Cải thiện hiệu suất (GC, stack liền mạch, race detector, regexp)
+- Build gia tăng nhanh hơn (cải tổ linker)
+- GC chính xác của stack
+- Phân tích tĩnh trong godoc
+
+
+* Ngày mai
+
+
+* Các hội nghị sắp tới
+
+.image state-of-go/dotgo.png
+
+.image state-of-go/india.png
+
+
+* Go 1.4
+
+Dự kiến ngày 1 tháng 12 năm 2014.
+
+Có thể có gì trong đó? (Danh sách đầu cơ sau đây.)
+
+
+* Tính năng ngôn ngữ mới
+
+Không có.
+
+
+* Đường dẫn import canonical
+
+Một phương tiện để kho lưu trữ chỉ định đường dẫn import canonical của nó.
+
+Mục tiêu: ngăn người dùng checkout repo từ đường dẫn sai.
+
+Ứng dụng:
+
+- Đường dẫn import vanity ổn định.
+
+	"camlistore.org" -> "camlistore.googlesource.com/camlistore"
+
+- Làm cho mô hình fork của GitHub ít đau đớn hơn.
+
+(Đề xuất sắp tới.)
+
+
+* Package nội bộ
+
+Đề xuất hiện tại:
+
+"Việc import một đường dẫn chứa phần tử "internal" bị cấm nếu mã import nằm ngoài cây gốc tại thư mục cha của thư mục "internal"."
+
+- Mã trong `/a/b/c/internal/d/e/f` chỉ có thể được import bởi mã trong cây thư mục gốc tại `/a/b/c`.
+- `$GOROOT/src/pkg/internal/xxx` chỉ có thể được import bởi mã khác trong thư viện chuẩn (`$GOROOT/src/`).
+
+Và sau đó:
+
+- `$GOPATH/src/mypkg/internal/foo` chỉ có thể được import bởi mã trong `$GOPATH/src/mypkg`.
+
+.link /s/go14internal go.dev/s/go14internal
+
+
+* src/pkg → src
+
+Di chuyển thư viện chuẩn từ `$GOROOT/src/pkg` sang `$GOROOT/src`.
+
+Về cơ bản làm cho `$GOROOT` hoạt động giống như `$GOPATH`.
+
+(Không phải là vấn đề lớn với hầu hết mọi người, nhưng là việc dọn dẹp tốt cho phần cốt lõi.)
+
+.link /s/go14nopkg go.dev/s/go14nopkg
+
+
+* Giới hạn truy cập hệ thống file
+
+Giới hạn truy cập vào hệ thống file ở cấp độ package `os`.
+
+Mục tiêu:
+
+- Khởi chạy một triệu goroutine thực hiện các thao tác hệ thống file.
+- Đừng khởi chạy một triệu luồng hệ điều hành để chặn trên các syscall.
+
+Làm cho nó hoạt động tốt như với mạng.
+
+(Đề xuất sắp tới.)
+
+
+* "go generate"
+
+Một tiện ích để tạo mã nguồn Go. Ví dụ sử dụng:
+
+- yacc: tạo file .go từ file ngữ pháp yacc (.y)
+- protobufs: tạo file .pb.go từ file định nghĩa protocol buffer (.proto)
+- HTML: nhúng file .html vào mã nguồn Go
+- Nhiều ý tưởng khác...
+
+Cơ chế đề xuất:
+
+Thêm chỉ thị generator trong file mã nguồn Go:
+
+	//go:generate yacc -o gopher.go gopher.y
+
+Sử dụng công cụ Go để thực thi các chỉ thị:
+
+	% go generate [packagepath]
+
+(Đề xuất sắp tới.)
+
+
+* Thêm công việc tool chain
+
+- Hỗ trợ `cmd/go` cho `gccgo`
+- Hỗ trợ `cmd/go` cho các file dữ liệu nhúng
+- Cải thiện race detector
+
+Quá trình chuyển đổi từ C sang Go tiếp tục:
+
+- Linker được viết lại bằng Go (`cmd/link`)
+- Assembler được viết lại bằng Go (`cmd/asm`)
+- Có thể: `cmd/gc` được dịch sang Go
+
+
+* GC và malloc tốt hơn
+
+- Bộ cấp phát hiện tại dựa trên TCMalloc (được thiết kế cho C/C++). Nó có thể được thiết kế lại để phù hợp hơn với Go.
+- Biểu diễn nhẹ hơn và đặt cùng chỗ metadata GC.
+- Các chiến lược khác nhau để giảm thời gian dừng GC (quét đồng thời, v.v.).
+
+Ước tính sơ bộ: tăng tốc tổng thể 10-20%, giảm thời gian dừng GC 20-50%, giảm RSS 5-10%.
+
+Chi tiết:
+
+.link /s/go14mallocgc go.dev/s/go14mallocgc
+
+* Thay đổi runtime khác
+
+Cải tiến đồng thời:
+
+- Con đường nhanh không khóa cho việc nhận không chặn từ channel rỗng.
+- Viết lại select để chỉ giữ một khóa channel tại một thời điểm.
+
+C sang Go:
+
+- Runtime G-stack được chuyển đổi sang Go.
+
+
+* Thay đổi package
+
+- Tính năng cấu trúc dễ hơn trong `text/template`
+- Đưa `reflect.Value` về lại 3 từ
+- Sửa tầm nhìn trường nhúng (`reflect`)
+- Phiên bản an toàn của `encoding/gob`
+- Hỗ trợ Unicode 7
+
+
+* Cổng
+
+- Native Client `arm`
+- PowerPC 64
+- ARM64
+
+
+* Hỗ trợ Go cho Android
+
+Hỗ trợ Go cho NDK. (Như C/C++ ngày nay, nhưng tốt hơn!)
+
+Mục tiêu: đủ hỗ trợ để viết game.
+
+Dựa trên công việc của Elias Naur và những người khác trong cộng đồng.
+
+.link /s/go14android go.dev/s/go14android
+
+
+* Thêm nữa
+
+.link /s/go14todo go.dev/s/go14todo
+
+
+* Câu hỏi?

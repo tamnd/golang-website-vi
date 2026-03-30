@@ -1,0 +1,243 @@
+Những gì mới trong Go 1.1
+
+Andrew Gerrand
+Gopher
+http://andrewgerrand.com
+@enneff
+https://go.dev
+
+* Go 1.1
+
+Chưa hoàn thành. Thứ Hai có thể xong?
+
+* Thay đổi ngôn ngữ
+
+* Phép chia số nguyên cho không
+
+Phép chia số nguyên cho hằng số không bây giờ là lỗi biên dịch:
+
+.play go1.1/intdiv.go /func f/,/}/
+
+* Unicode
+
+Byte order mark bây giờ được phép là ký tự đầu tiên của file nguồn Go.
+
+Việc lạm dụng "surrogate halves" bây giờ bị compiler, thư viện và runtime phát hiện.
+
+Nếu bạn không biết điều này nghĩa là gì, thì có lẽ nó không quan trọng với bạn.
+
+* Giá trị phương thức
+
+Đôi khi bạn muốn biến một phương thức thành một hàm thuần túy (gắn nó với receiver). Điều này thường được gọi là "currying".
+
+Để thực hiện điều này trong Go 1.0, bạn phải dùng closure:
+
+.play go1.1/methodvals-old.go /var/,/hello/
+
+Go 1.1 bây giờ triển khai giá trị phương thức, vì vậy bạn có thể đạt được điều tương tự bằng cách đơn giản lấy phương thức như một giá trị:
+
+.play go1.1/methodvals.go /var/,/hello/
+
+* Yêu cầu return (1/2)
+
+Trước Go 1.1, một hàm trả về giá trị cần có `return` rõ ràng hoặc gọi `panic` ở cuối hàm.
+
+.code go1.1/return-old.go /func slurp/,/^}/
+
+.code go1.1/return-old.go /func min/,/^}/
+
+* Yêu cầu return (2/2)
+
+Trong Go 1.1, quy tắc về các câu lệnh "return" cuối cùng linh hoạt hơn.
+
+.code go1.1/return.go /func slurp/,/^}/
+
+.code go1.1/return.go /func min/,/^}/
+
+* Triển khai và công cụ
+
+* Kích thước của int trên kiến trúc 64-bit
+
+Trong Go 1.0, `int` và `uint` rộng 32 bit trên tất cả các hệ thống.
+
+Với Go 1.1, cả hai triển khai `gc` và `gccgo` bây giờ làm cho `int` và `uint` 64 bit trên các nền tảng 64-bit như AMD64/x86-64.
+
+Trong số những thứ khác, điều này cho phép cấp phát các slice với hơn 2 tỷ phần tử trên các nền tảng 64-bit.
+
+* Kích thước heap trên kiến trúc 64-bit
+
+Trên các kiến trúc 64-bit, kích thước heap tối đa đã được mở rộng đáng kể, từ vài gigabyte đến vài chục gigabyte. (Các chi tiết cụ thể phụ thuộc vào hệ thống và có thể thay đổi.)
+
+Trên các kiến trúc 32-bit, kích thước heap không thay đổi.
+
+* Bộ phát hiện race
+
+Một bổ sung lớn cho các công cụ là bộ phát hiện race, một cách để tìm lỗi trong các chương trình đồng thời. Để bật nó, hãy đặt cờ `-race` khi build hoặc kiểm thử chương trình của bạn.
+
+.play go1.1/race.go
+
+Hiện tại, nó chỉ khả dụng trên các hệ thống Linux 64-bit, OS X và Windows.
+
+* Lệnh go
+
+Lệnh go bây giờ cung cấp thông báo lỗi tốt hơn:
+
+	$ go build foo/quxx
+	can't load package: package foo/quxx: cannot find package "foo/quxx" in any of:
+		/home/you/go/src/pkg/foo/quxx (from $GOROOT)
+		/home/you/src/foo/quxx (from $GOPATH)
+
+Để giúp người dùng hiểu rõ hơn về workspace và `GOPATH`, lệnh `go`get` sẽ thất bại nếu `GOPATH` không được đặt:
+
+	$ GOPATH= go get code.google.com/p/foo/quxx
+	package code.google.com/p/foo/quxx: cannot download, $GOPATH not set.
+	For more details see: go help gopath
+
+Lệnh `go`get` cũng sẽ thất bại nếu `GOPATH` và `GOROOT` có cùng giá trị:
+
+	$ GOPATH=$GOROOT go get code.google.com/p/foo/quxx
+	warning: GOPATH set to GOROOT (/home/you/go) has no effect
+	package code.google.com/p/foo/quxx: cannot download, $GOPATH must not be set to $GOROOT.
+	For more details see: go help gopath
+
+* Lệnh go test (1/2)
+
+Lệnh `go`test` không còn xóa binary khi chạy với profiling được bật, để dễ dàng phân tích profile hơn. Sau khi chạy
+
+	$ go test -cpuprofile cpuprof.out mypackage
+
+file `mypackage.test` sẽ được giữ lại để phân tích.
+
+* Lệnh go test (2/2)
+
+Lệnh `go`test` bây giờ có thể tạo thông tin profiling báo cáo nơi goroutine bị chặn, được bật với tùy chọn `-blockprofile`. Thông tin được trình bày như một [[go1.1/blockprofile.svg][blocking profile]].
+
+.image go1.1/blockprofile.png
+
+* Ràng buộc build
+
+Tag "go1.1" đã được thêm vào danh sách các ràng buộc build mặc định.
+
+Để build một file chỉ với Go 1.1 và trở lên, thêm ràng buộc build này:
+
+	// +build go1.1
+
+Để build một file chỉ với Go 1.0.x, sử dụng ràng buộc ngược lại:
+
+	// +build !go1.1
+
+Điều này cho phép các gói tận dụng các tính năng mới trong Go 1.1 trong khi vẫn tương thích với các phiên bản Go cũ hơn.
+
+* Các nền tảng bổ sung
+
+Chuỗi công cụ Go 1.1 thêm hỗ trợ thử nghiệm cho các nền tảng `freebsd/arm`, `netbsd/386`, `netbsd/amd64`, `netbsd/arm`, `openbsd/386` và `openbsd/amd64`.
+
+Cần bộ xử lý ARMv6 hoặc mới hơn cho `freebsd/arm` hoặc `netbsd/arm`.
+
+Go 1.1 thêm hỗ trợ thử nghiệm cho `cgo` trên `linux/arm`.
+
+* Thư viện chuẩn
+
+* bufio.Scanner (1/2)
+
+Cách cũ:
+
+.code go1.1/scanner.go /STARTold/,/STOP/
+
+Cách mới:
+
+.play go1.1/scanner.go /STARTnew/,/STOP/
+
+* bufio.Scanner (2/2)
+
+Các hàm split tùy chỉnh:
+
+	type SplitFunc func(data []byte, atEOF bool) (advance int, token []byte, err error)
+
+Ví dụ, đếm từ:
+
+.play go1.1/scanner2.go /START/,/STOP/
+
+* reflect (1/2)
+
+Các hàm mới `ChanOf`, `MapOf` và `SliceOf` xây dựng các kiểu mới từ các kiểu hiện có, ví dụ để xây dựng kiểu `chan`T` chỉ với `T`.
+
+.play go1.1/chanof.go /func/,$
+
+* reflect (2/2)
+
+Hàm mới `MakeFunc` tạo một hàm wrapper để dễ dàng gọi một hàm với các `Values` hiện có.
+
+.play go1.1/makefunc.go /func/,$
+
+* time (1/4)
+
+Trên FreeBSD, Linux, NetBSD, OS X và OpenBSD, các phiên bản trước của gói `time` trả về thời gian với độ chính xác microsecond. Go 1.1 bây giờ cung cấp độ chính xác nanosecond trên các hệ thống này.
+
+* time (2/4)
+
+Phương thức mới trên `time.Time`, `YearDay`, cung cấp số ngày trong năm được đánh chỉ số từ 1.
+
+.play go1.1/yearday.go /YearDay/
+
+* time (3/4)
+
+Kiểu `Timer` có một phương thức mới `Reset` sửa đổi timer để hết hạn sau một khoảng thời gian được chỉ định. Điều này giúp tránh việc cấp phát `Timer` lặp đi lặp lại không cần thiết.
+
+.play go1.1/timer.go /func main/,$
+
+* time (4/4)
+
+Hàm mới `ParseInLocation` phân tích thời gian trong bối cảnh của múi giờ, bỏ qua thông tin múi giờ trong chuỗi được phân tích.
+
+#.play go1.1/ParseInLocation.go
+
+Hàm này giải quyết nguồn gốc phổ biến của nhầm lẫn trong API time.
+
+* bytes và strings
+
+Các hàm `TrimPrefix` và `TrimSuffix` đã được thêm vào các gói `bytes` và `strings`.
+
+Code dưới Go 1.0 như thế này:
+
+	s := "Please pass the salt"
+	if p := "Please "; strings.HasPrefix(s, p) {
+		s = s[len(p):]
+	}
+
+Bây giờ có thể được viết lại như:
+
+	s := "Please pass the salt"
+	s = strings.TrimPrefix(s, "Please ")
+
+* Exp và old subtrees được chuyển
+
+Các cây con nguồn exp và old, không được bao gồm trong các bản phân phối nhị phân, đã được chuyển sang kho `go.exp` mới tại `golang.org/x/exp`.
+
+Để truy cập gói `ssa`, ví dụ, hãy chạy
+
+	$ go get golang.org/x/exp/ssa
+
+và sau đó trong Go source,
+
+	import "golang.org/x/exp/ssa"
+
+Gói cũ `exp/norm` cũng đã được chuyển, nhưng sang một kho mới `go.text`, nơi các API Unicode và các gói liên quan đến văn bản khác sẽ được phát triển.
+
+* Hiệu suất
+
+* Hiệu suất
+
+Code được biên dịch với bộ công cụ gc của Go 1.1 sẽ tốt hơn đáng chú ý cho hầu hết các chương trình Go.
+
+Các cải tiến so với Go 1.0 dường như khoảng 30%-40%, đôi khi nhiều hơn nhiều, nhưng đôi khi ít hơn hoặc thậm chí không có.
+
+Các thay đổi chính bao gồm:
+
+- Tạo code tốt hơn bởi các compiler gc,
+- Inline hóa các hàm nhỏ bởi các compiler gc,
+- Triển khai map mới sử dụng ít bộ nhớ và thời gian CPU hơn,
+- Triển khai garbage collector song song và chính xác hơn,
+- Một bộ lập lịch mới,
+- Kết hợp chặt chẽ hơn của các thư viện runtime và mạng, dẫn đến ít chuyển đổi ngữ cảnh hơn trên các hoạt động mạng.
+

@@ -1,0 +1,435 @@
+dl.google.com: Được xây dựng bằng Go
+10:00 26 Jul 2013
+Tags: download, oscon, port, c++, google, groupcache, caching
+
+Brad Fitzpatrick
+Gopher, Google
+@bradfitz
+bradfitz@golang.org
+http://bradfitz.com/
+https://go.dev/
+https://github.com/golang/groupcache/
+
+* Tổng quan / tl;dw:
+
+- dl.google.com phục vụ các tải xuống của Google
+- Được viết bằng C++
+- Bây giờ bằng Go
+- Bây giờ tốt hơn nhiều
+- Sử dụng thư viện chuẩn của Go một cách phong phú và thành thạo
+- ... tất cả đều là mã nguồn mở
+- kết hợp interface rất thú vị
+- _groupcache_, nay là Mã nguồn mở, xử lý bộ nhớ đệm nhận biết nhóm và điền bộ nhớ đệm
+
+* quá dài...
+
+* tôi
+
+- Brad Fitzpatrick
+- bradfitz.com
+- @bradfitz
+- trước đây: LiveJournal, memcached, OpenID, đồ Perl...
+- ngày nay: Go, Go, Camlistore, Go, bất cứ thứ gì & mọi thứ được viết bằng Go ...
+
+* Tôi yêu Go
+
+- đây không phải là bài nói về Go, xin lỗi.
+- nhưng hãy xem thử.
+- đơn giản, mạnh mẽ, nhanh, giải phóng, sảng khoái
+- kết hợp tuyệt vời giữa cấp thấp và cấp cao
+- nhẹ nhàng trên trang
+- nhị phân tĩnh, dễ triển khai
+- không hoàn hảo, nhưng là ngôn ngữ yêu thích nhất của tôi cho đến nay
+
+* dl.google.com
+
+* dl.google.com
+
+- Máy chủ tải xuống HTTP
+- phục vụ Chrome, Android SDK, Earth và nhiều hơn nữa
+- Một số rất lớn, một số rất nhỏ (ví dụ: WebGL white/blacklist JSON)
+- phía sau bộ nhớ đệm cạnh; vẫn có lưu lượng cao
+- nhiều trung tâm dữ liệu, nhiều băng thông
+
+* Tại sao chuyển đổi?
+
+* lý do 0
+
+$ apt-get update
+
+.image oscon-dl/slow.png
+
+- đáng xấu hổ
+- Google không thể phục vụ tệp 1.238 byte?
+- Đang treo?
+- 207 B/s?!
+
+* Vâng, đáng xấu hổ, trong nhiều năm...
+
+.image oscon-dl/crbug.png
+
+* ... điều đó dẫn đến:
+
+- phàn nàn trên corp G+. Tôi: "Chúng ta tệ quá. Cái này tệ quá."
+- SRE chính sở hữu nó: "Đúng vậy, nó tệ. Và không được bảo trì."
+- "Tôi sẽ viết lại nó cho bạn!"
+- "Haha."
+- "Không, nghiêm túc. Đó gần như là công việc của chúng tôi. Nhưng tôi được làm bằng Go."
+- (Chương trình cho mượn-một-Gopher của nhóm Go...)
+
+* Khó đến mức nào?
+
+* dl.google.com: vài thủ thuật
+
+mỗi "payload" (~URL) được mô tả bởi một protobuf:
+
+- đường dẫn/mẫu cho URL(s) của nó
+- ngày tiết lộ go-live
+- ACL (địa lý, mạng, người dùng, loại người dùng, ...)
+- tệp zip động
+- tiêu đề HTTP tùy chỉnh
+- bộ nhớ đệm tùy chỉnh
+
+* dl.google.com: cách nó vận hành trước đây
+
+.image oscon-dl/before.png
+
+* Ngoài lề: Tại sao mã tốt trở nên xấu
+
+* Tại sao mã tốt trở nên xấu
+
+- Tiền đề: người ta không tệ
+- Tiền đề: mã từng rất đẹp
+- mã có xu hướng phức tạp hóa (ngày càng tệ hơn)
+- môi trường thay đổi
+- quy mô thay đổi
+
+* độ phức tạp của mã
+
+- không có sự chăm sóc thường xuyên, mã nảy sinh vấn đề theo thời gian
+- các sửa lỗi và bổ sung cục bộ thì dễ và nhanh, nhưng toàn cục thì tệ
+- các tính năng, hack và cách giải quyết được thêm vào không có tài liệu hay kiểm thử
+- người bảo trì đến rồi đi,
+- ... hoặc chỉ đi.
+
+* môi trường thay đổi
+
+- Cơ sở hạ tầng của Google (phần cứng & phần mềm), như của bất kỳ ai, luôn thay đổi
+- thuộc tính của mạng, lưu trữ
+- các giả định thiết kế không còn phù hợp
+- quy mô thay đổi (thiết kế cho tăng trưởng 10 lần, tư duy lại ở 100 lần)
+- các dịch vụ nội bộ mới (beta hoặc chưa tồn tại khi đó, đáng tin cậy bây giờ)
+- bánh xe tự chế từng hiện đại có thể trông cổ xưa bây giờ
+
+* vậy tại sao nó lại tệ?
+
+.image oscon-dl/slow.png
+
+- làm trì hoãn vòng lặp sự kiện đơn luồng của nó, chặn khi không nên
+- tối đa hóa ở một CPU, nhưng thậm chí không thể sử dụng một phần nhỏ của một CPU đơn.
+
+* nhưng tại sao?
+
+- mã quá phức tạp
+- những người bảo trì tương lai đã dần vi phạm các quy tắc bất thành văn
+- hoặc cố ý vi phạm chúng, cho rằng không thể quá tệ?
+- C++ đơn luồng dựa trên sự kiện callback spaghetti
+- khó biết khi nào/đâu mã đang chạy, hoặc "chặn" có nghĩa là gì
+
+* Mã cũ
+
+- phục vụ từ đĩa cục bộ
+- vòng lặp sự kiện đơn luồng
+- sử dụng sendfile(2) "vì hiệu năng"
+- cố gắng khéo léo và lấy cắp fd từ "SelectServer" đôi khi để gọi sendfile thủ công
+- trong khi cũng cố gắng thực hiện HTTP chunking,
+- ... và HTTP range request,
+- ... và tệp zip động,
+- nhiều đường dẫn mã copy/paste trùng lặp
+- nhiều cái sai/không hoàn chỉnh theo những cách khác nhau
+
+* Giải pháp giảm thiểu?
+
+- thêm phức tạp!
+- thêm luồng đặc biệt
+- ... không thực sự xác định luồng nào làm gì,
+- ... hoặc quy tắc sở hữu hay khóa là gì,
+- không ngạc nhiên: crash ngẫu nhiên
+
+* Tóm tắt mã 5 tuổi vào năm 2012
+
+- tài liệu, kiểm thử không đầy đủ
+- vòng lặp sự kiện bị trì hoãn
+- luồng đặc biệt...
+- ... vòng lặp sự kiện bị trì hoãn
+- ... tranh chấp
+- ... crash
+- mã copy/paste
+- ... mã không đầy đủ
+- hai tiến trình trong container
+- ... ngôn ngữ khác nhau
+
+* Thay đổi môi trường
+
+- Hãy nhớ: khi khởi động, chúng ta phải sao chép tất cả payload ra đĩa cục bộ
+- vào năm 2007, sử dụng đĩa cục bộ không bị hạn chế
+- vào năm 2007, tổng(kích thước payload) nhỏ hơn nhiều
+- vào năm 2012, container nhận được tỷ lệ nhỏ của thời gian spindle đĩa cục bộ
+- ... tại sao bạn không sử dụng hệ thống tệp cluster như mọi người khác?
+- ... hệ thống tệp cluster sở hữu thời gian đĩa trên máy của bạn, không phải bạn.
+- vào năm 2007, nó khởi động nhanh chóng.
+- vào năm 2012, nó khởi động trong 12-24 giờ (!!!)
+- ... hy vọng chúng ta không crash! (ôi, ơi)
+
+* Sao chép N byte từ A sang B trong môi trường vòng lặp sự kiện (node.js, C++ này, v.v.)
+
+- *A* có thể đọc không?
+- Đọc tối đa _n_ byte từ A.
+- Chúng ta nhận được gì? _rn_
+- _n_ -= _rn_
+- Lưu chúng.
+- Lưu ý chúng ta muốn viết vào *B* ngay bây giờ.
+- *B* có thể viết không?
+- Cố viết _rn_ byte vào *B*. Nhận được _wn_.
+- buffered -= _wn_
+- while (blah blah blah) { ... blah blah blah ... }
+
+* Thấy điều đó tệ chưa? Thử kết hợp với trạng thái / logic khác, rồi viết bằng C++.
+
+*
+
+.image oscon-dl/cpp-write.png
+
+*
+
+.image oscon-dl/cpp-writeerr.png
+
+*
+
+.image oscon-dl/cpp-toggle.png
+
+* Hoặc bằng JavaScript...
+
+- [[https://github.com/nodejitsu/node-http-proxy/blob/master/lib/node-http-proxy/http-proxy.js]]
+- Hoặc Python gevent, Twisted, ...
+- Hoặc Perl AnyEvent, v.v.
+- Mã không thể đọc được, không liên tục.
+
+* Sao chép N byte từ A sang B trong Go:
+
+.code oscon-dl/copy.go /START OMIT/,/END OMIT/
+
+- dst là _io.Writer_ (kiểu interface)
+- src là _io.Reader_ (kiểu interface)
+- đồng bộ (chặn)
+- Go runtime xử lý việc làm cho chặn hiệu quả
+- goroutine, epoll, bộ lập lịch không gian người dùng, ...
+- dễ lý luận hơn
+- ít API hơn, dễ hơn, tương thích hơn
+- đồng thời là tính năng _ngôn_ngữ_ (không phải _thư_viện_)
+
+* Bắt đầu từ đâu?
+
+- từng bước nhỏ, không thay đổi mọi thứ cùng một lúc
+- chỉ chuyển đổi `payload_server`, không phải `payload_fetcher`
+- đọc nhiều tài liệu thiết kế cũ
+- đọc nhiều mã C++
+- chuyển tất cả cờ dòng lệnh
+- phục vụ từ đĩa cục bộ
+- cố chạy các kiểm thử tích hợp
+- while (fail) { debug, port, thề, ...}
+
+* Các giai đoạn đáng chú ý
+
+- vượt qua kiểm thử tích hợp
+- chạy trong trung tâm dữ liệu có tải nhẹ
+- chế độ kiểm tra
+- ... phản chiếu lưu lượng đến máy chủ cũ & mới; so sánh phản hồi.
+- loại bỏ tất cả phụ thuộc SWIG vào thư viện C++
+- ... sử dụng dịch vụ tra cứu IP-đến-địa lý, không phải tệp tĩnh + thư viện
+
+* Các giai đoạn đáng chú ý
+
+- lấy blob trực tiếp từ blobstore, dự phòng về đĩa cục bộ khi có lỗi,
+- phụ thuộc hoàn toàn vào blobstore, nhưng `payload_fetcher` vẫn chạy
+- vô hiệu hóa `payload_fetcher` hoàn toàn; thời gian khởi động nhanh.
+
+* Sử dụng Thư viện Chuẩn của Go
+
+* Sử dụng Thư viện Chuẩn của Go
+
+- dl.google.com chủ yếu chỉ sử dụng thư viện chuẩn
+
+* Thư viện Chuẩn của Go
+
+- net/http
+- io
+- [[/pkg/net/http/#ServeContent][http.ServeContent]]
+
+* Hello World
+
+.play oscon-dl/server-hello.go
+
+* Máy chủ tệp
+
+.play oscon-dl/server-fs.go
+
+* http.ServeContent
+
+.image oscon-dl/servecontent.png
+
+* io.Reader, io.Seeker
+
+.image oscon-dl/readseeker.png
+.image oscon-dl/reader.png
+.image oscon-dl/seeker.png
+
+* http.ServeContent
+
+$ curl -H "Range: bytes=5-" http://localhost:8080
+
+.play oscon-dl/server-content.go
+
+* groupcache
+
+* groupcache
+
+- thay thế / thay thế memcached
+- [[https://github.com/golang/groupcache]]
+- _thư_viện_ vừa là client & server
+- kết nối với các peer của nó
+- điền bộ nhớ đệm có phối hợp (không có thundering herds khi cache miss)
+- sao chép các mục nóng
+
+* Sử dụng groupcache
+
+Khai báo bạn là ai và peer của bạn là ai.
+
+.code oscon-dl/groupcache.go /STARTINIT/,/ENDINIT/
+
+Interface peer này có thể cắm vào. (ví dụ: bên trong Google nó tự động.)
+
+* Sử dụng groupcache
+
+Khai báo một nhóm. (nhóm khóa, chia sẻ giữa nhóm peer)
+
+.code oscon-dl/groupcache.go /STARTGROUP/,/ENDGROUP/
+
+- tên nhóm "thumbnail" phải là duy nhất toàn cục
+- tối đa 64 MB bộ nhớ mỗi nút
+- Sink là interface với SetString, SetBytes, SetProto
+
+* Sử dụng groupcache
+
+Yêu cầu khóa
+
+.code oscon-dl/groupcache.go /STARTUSE/,/ENDUSE/
+
+- có thể đến từ bộ nhớ đệm cục bộ
+- có thể đến từ bộ nhớ đệm của peer
+- có thể được tính cục bộ
+- có thể được tính từ xa
+- trong tất cả các luồng trên tất cả các máy, chỉ một thumbnail được tạo, sau đó được phân phối trong tiến trình và qua mạng đến tất cả người chờ
+
+* dl.google.com và groupcache
+
+- Khóa là "<blobref>-<chunk_offset>"
+- Chunk là 2MB
+- Chunk được cache từ bộ nhớ cục bộ (cho các mục tự sở hữu và nóng),
+- Chunk được cache từ xa, hoặc
+- Chunk được lấy từ hệ thống lưu trữ của Google
+
+* Kết hợp interface dl.google.com
+
+.code oscon-dl/sizereaderat.go /START_1/,/END_1/
+
+* io.SectionReader
+
+.image oscon-dl/sectionreader.png
+
+* ReaderAt căn chỉnh theo chunk
+
+.code oscon-dl/chunkaligned.go /START_DOC/,/END_DOC/
+
+- Caller có thể thực hiện các lời gọi ReadAt với bất kỳ kích thước và bất kỳ offset nào
+- `r` chỉ thấy các lời gọi ReadAt trên ranh giới offset 2MB, kích thước 2MB (trừ chunk cuối)
+
+* Kết hợp tất cả lại
+
+- http.ServeContent muốn một ReadSeeker
+- io.SectionReader(ReaderAt + kích thước) -> ReadSeeker
+- Payload máy chủ tải xuống là kiểu "content" với Size và ReadAt, được triển khai bằng các lời gọi đến groupcache.
+- Được bọc trong một ReaderAt căn chỉnh theo chunk
+- ... nối các phần với MultiReaderAt
+
+.play oscon-dl/server-compose.go /START/,/END/
+
+* Những thứ chúng ta nhận miễn phí từ net/http
+
+- Last-Modified
+- ETag
+- Range request (với sự cẩn thận của nó)
+- HTTP/1.1 chunking, v.v.
+- ... máy chủ cũ đã cố tự làm tất cả điều này
+- ... không chính xác
+- ... không hoàn chỉnh
+- ... trong hàng chục bản sao khác nhau
+
+* Đơn giản hóa tổng thể
+
+- đã xóa C++ payload_server & Python payload_fetcher
+- 39 tệp (14.032 dòng) đã bị xóa
+- một nhị phân bây giờ (chỉ Go `payload_server`, không có `payload_fetcher`)
+- khởi động ngay lập tức, không có thời gian khởi động lớn
+- máy chủ bây giờ chỉ là "logic nghiệp vụ", không phải logic HTTP
+
+* Từ cái này...
+
+.image oscon-dl/before.png
+
+* ... sang cái này.
+
+.image oscon-dl/after.png
+
+* Và từ trang và trang của cái này...
+
+.image oscon-dl/cpp-writeerr.png
+
+* ... sang cái này
+
+.image oscon-dl/after-code.png
+
+* Vậy nó so sánh với C++ như thế nào?
+
+- chưa đến một nửa mã
+- có thể kiểm thử hơn, có kiểm thử
+- cùng mức sử dụng CPU cho cùng băng thông
+- ... nhưng có thể làm nhiều băng thông hơn
+- ... và nhiều hơn một CPU
+- ít bộ nhớ hơn (!)
+- không có đĩa
+- khởi động ngay lập tức (không phải 24 giờ)
+- không crash
+- xử lý được các đợt tải xuống nóng
+
+* Chúng ta có thể chỉ viết lại bằng C++ mới không?
+
+- Được thôi.
+- Nhưng tại sao?
+
+* Tôi có thể chỉ sửa các lỗi trong phiên bản C++ không?
+
+- Được thôi, nếu tôi tìm được chúng.
+- Sau đó phải sở hữu nó ("Bạn đụng vào nó gần nhất...")
+- Và tôi đã bảo trì một thư viện máy chủ HTTP. Không muốn bảo trì một cái xấu nữa.
+- Nó dễ bảo trì hơn nhiều. (và hơn 3 người khác bây giờ làm)
+
+* Bao nhiêu dl.google.com là mã nguồn đóng?
+
+- Rất ít.
+- ... chính sách ACL
+- ... RPC đến các dịch vụ lưu trữ của Google.
+- Hầu hết là mã nguồn mở:
+- ... code.google.com/p/google-api-go-client/storage/v1beta1
+- ... net/http và phần còn lại của thư viện chuẩn Go
+- ... `groupcache`, nay là mã nguồn mở ([[https://github.com/golang/groupcache][github.com/golang/groupcache]])

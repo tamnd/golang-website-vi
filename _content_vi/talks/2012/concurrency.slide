@@ -1,0 +1,465 @@
+Các mẫu lập trình đồng thời trong Go
+
+Rob Pike
+Google
+https://go.dev
+
+* Video
+
+Buổi nói chuyện này được trình bày tại Google I/O vào tháng 6 năm 2012.
+
+.link http://www.youtube.com/watch?v=f6kdp27TYZs Xem buổi nói chuyện trên YouTube
+
+* Giới thiệu
+
+* Các tính năng đồng thời trong Go
+
+Mọi người dường như bị thu hút bởi các tính năng đồng thời của Go khi ngôn ngữ được công bố lần đầu.
+
+Câu hỏi:
+
+- Tại sao hỗ trợ lập trình đồng thời?
+- Lập trình đồng thời là gì?
+- Ý tưởng đến từ đâu?
+- Nó có ích gì?
+- Tôi dùng nó như thế nào?
+
+* Tại sao?
+
+Nhìn xung quanh bạn. Bạn thấy gì?
+
+Bạn có thấy một thế giới thực hiện từng bước, làm một việc tại một thời điểm không?
+
+Hay bạn thấy một thế giới phức tạp của các phần tương tác, hoạt động độc lập?
+
+Đó là lý do. Xử lý tuần tự không mô hình hóa được hành vi của thế giới.
+
+* Lập trình đồng thời là gì?
+
+Lập trình đồng thời là sự kết hợp của các tính toán thực thi độc lập.
+
+Lập trình đồng thời là cách cấu trúc phần mềm, đặc biệt là cách viết mã sạch tương tác tốt với thế giới thực.
+
+Nó không phải là song song.
+
+* Lập trình đồng thời không phải là song song
+
+Lập trình đồng thời không phải là song song, dù nó kích hoạt song song.
+
+Nếu bạn chỉ có một bộ xử lý, chương trình của bạn vẫn có thể đồng thời nhưng không thể song song.
+
+Mặt khác, một chương trình đồng thời được viết tốt có thể chạy hiệu quả song song trên bộ xử lý đa nhân. Thuộc tính đó có thể quan trọng...
+
+Để biết thêm về sự khác biệt đó, xem liên kết bên dưới. Quá nhiều để thảo luận ở đây.
+
+.link /s/concurrency-is-not-parallelism go.dev/s/concurrency-is-not-parallelism
+
+* Một mô hình cho xây dựng phần mềm
+
+Dễ hiểu.
+
+Dễ dùng.
+
+Dễ lý luận.
+
+Bạn không cần phải là chuyên gia!
+
+(Tốt hơn nhiều so với việc giải quyết chi tiết của song song (thread, semaphore, khóa, rào cản, v.v.))
+
+* Lịch sử
+
+Với nhiều người, các tính năng đồng thời của Go có vẻ mới.
+
+Nhưng chúng bắt nguồn từ lịch sử lâu đời, trở về CSP của Hoare năm 1978 và thậm chí các lệnh có điều kiện của Dijkstra (1975).
+
+Các ngôn ngữ có tính năng tương tự:
+
+- Occam (May, 1983)
+- Erlang (Armstrong, 1986)
+- Newsqueak (Pike, 1988)
+- Concurrent ML (Reppy, 1993)
+- Alef (Winterbottom, 1995)
+- Limbo (Dorward, Pike, Winterbottom, 1996).
+
+* Điểm khác biệt
+
+Go là ngôn ngữ mới nhất trên nhánh Newsqueak-Alef-Limbo, được phân biệt bởi channel hạng nhất.
+
+Erlang gần hơn với CSP gốc, nơi bạn giao tiếp với một tiến trình theo tên thay vì qua channel.
+
+Các mô hình tương đương nhưng diễn đạt mọi thứ khác nhau.
+
+Phép loại suy thô: ghi vào tệp theo tên (tiến trình, Erlang) so với ghi vào file descriptor (channel, Go).
+
+* Ví dụ cơ bản
+
+* Một hàm nhàm chán
+
+Chúng ta cần một ví dụ để thể hiện các thuộc tính thú vị của các nguyên thủy đồng thời.
+
+Để tránh phân tán, chúng ta làm một ví dụ nhàm chán.
+
+.play concurrency/support/boring.go /START/,/STOP.*/
+
+* Ít nhàm chán hơn một chút
+
+Làm cho khoảng thời gian giữa các thông báo không thể đoán trước (vẫn dưới một giây).
+
+.play concurrency/support/lessboring.go /START/,/STOP/
+
+* Chạy nó
+
+Hàm boring chạy mãi mãi, như một vị khách nhàm chán trong bữa tiệc.
+
+.play concurrency/support/lessboring.go /^func.main/,$
+
+* Bỏ qua nó
+
+Lệnh go chạy hàm như bình thường, nhưng không bắt người gọi chờ.
+
+Nó khởi chạy một goroutine.
+
+Chức năng tương tự như & ở cuối lệnh shell.
+
+.play concurrency/support/goboring.go 1,/^}/
+
+* Bỏ qua nó ít hơn một chút
+
+Khi main trả về, chương trình thoát và kéo hàm boring xuống cùng.
+
+Chúng ta có thể ở lại một chút, và trên đường chỉ ra rằng cả main lẫn goroutine đã khởi chạy đều đang chạy.
+
+.play concurrency/support/waitgoboring.go /func.main/,/^}/
+
+* Goroutine
+
+Goroutine là gì? Đó là hàm thực thi độc lập, được khởi chạy bởi lệnh go.
+
+Nó có call stack riêng, tăng và thu nhỏ theo yêu cầu.
+
+Rất rẻ. Thực tế để có hàng nghìn, thậm chí hàng trăm nghìn goroutine.
+
+Không phải là thread.
+
+Có thể chỉ có một thread trong chương trình với hàng nghìn goroutine.
+
+Thay vào đó, goroutine được ghép kênh động vào thread khi cần để giữ tất cả goroutine chạy.
+
+Nhưng nếu bạn nghĩ nó như một thread rất rẻ, bạn không sai lắm.
+
+* Giao tiếp
+
+Các ví dụ nhàm chán của chúng ta đã gian lận: hàm main không thể thấy đầu ra từ goroutine khác.
+
+Nó chỉ được in ra màn hình, nơi chúng ta giả vờ nhìn thấy cuộc trò chuyện.
+
+Các cuộc trò chuyện thực đòi hỏi giao tiếp.
+
+* Channel
+
+Một channel trong Go cung cấp kết nối giữa hai goroutine, cho phép chúng giao tiếp.
+
+.code concurrency/support/helpers.go /START1/,/STOP1/
+.code concurrency/support/helpers.go /START2/,/STOP2/
+.code concurrency/support/helpers.go /START3/,/STOP3/
+
+* Dùng channel
+
+Một channel kết nối các goroutine main và boring để chúng có thể giao tiếp.
+
+.play concurrency/support/changoboring.go /START1/,/STOP1/
+.code concurrency/support/changoboring.go /START2/,/STOP2/
+
+* Đồng bộ hóa
+
+Khi hàm main thực thi <-c, nó sẽ chờ một giá trị được gửi.
+
+Tương tự, khi hàm boring thực thi c <- value, nó chờ một receiver sẵn sàng.
+
+Người gửi và người nhận đều phải sẵn sàng để tham gia giao tiếp. Nếu không chúng ta chờ cho đến khi họ sẵn sàng.
+
+Do đó channel vừa giao tiếp vừa đồng bộ hóa.
+
+* Một lưu ý về channel có đệm
+
+Lưu ý cho chuyên gia: Channel trong Go cũng có thể được tạo với bộ đệm.
+
+Đệm loại bỏ đồng bộ hóa.
+
+Đệm làm chúng giống hộp thư của Erlang hơn.
+
+Channel có đệm có thể quan trọng với một số bài toán nhưng chúng tinh tế hơn để lý luận.
+
+Chúng ta sẽ không cần chúng hôm nay.
+
+* Cách tiếp cận của Go
+
+Đừng giao tiếp bằng cách chia sẻ bộ nhớ, hãy chia sẻ bộ nhớ bằng cách giao tiếp.
+
+* "Các mẫu"
+
+* Generator: hàm trả về channel
+
+Channel là các giá trị hạng nhất, giống như chuỗi hay số nguyên.
+
+.play concurrency/support/generatorboring.go /START1/,/STOP1/
+.code concurrency/support/generatorboring.go /START2/,/STOP2/
+
+* Channel như tay cầm trên một dịch vụ
+
+Hàm boring của chúng ta trả về channel cho phép chúng ta giao tiếp với dịch vụ nhàm chán nó cung cấp.
+
+Chúng ta có thể có nhiều instance của dịch vụ hơn.
+
+.play concurrency/support/generator2boring.go /START1/,/STOP1/
+
+* Ghép kênh
+
+Các chương trình này làm Joe và Ann đếm theo bước cùng nhau.
+Thay vào đó chúng ta có thể dùng hàm fan-in để cho phép ai sẵn sàng thì nói.
+
+.code concurrency/support/faninboring.go /START3/,/STOP3/
+.play concurrency/support/faninboring.go /START1/,/STOP1/
+
+* Fan-in
+
+.image concurrency/images/gophermegaphones.jpg
+
+* Khôi phục trình tự
+
+Gửi một channel trên channel, làm goroutine chờ đến lượt.
+
+Nhận tất cả thông báo, sau đó kích hoạt lại chúng bằng cách gửi trên channel riêng.
+
+Trước tiên chúng ta định nghĩa kiểu thông báo chứa channel để trả lời.
+
+.code concurrency/support/sequenceboring.go /START0/,/STOP0/
+
+* Khôi phục trình tự.
+
+Mỗi người nói phải chờ được cho phép.
+
+.code concurrency/support/sequenceboring.go /START1/,/STOP1/
+.code concurrency/support/sequenceboring.go /START2/,/STOP2/
+.play concurrency/support/sequenceboring.go /START3/,/STOP3/
+
+* Select
+
+Cấu trúc điều khiển dành riêng cho lập trình đồng thời.
+
+Lý do channel và goroutine được tích hợp vào ngôn ngữ.
+
+* Select
+
+Câu lệnh select cung cấp cách khác để xử lý nhiều channel.
+Nó giống switch, nhưng mỗi case là một thao tác giao tiếp:
+- Tất cả channel được đánh giá.
+- Selection chặn cho đến khi một giao tiếp có thể tiến hành, rồi thực hiện.
+- Nếu nhiều channel có thể tiến hành, select chọn ngẫu nhiên.
+- Mệnh đề default, nếu có, thực thi ngay lập tức nếu không có channel nào sẵn sàng.
+
+.code concurrency/support/select.go /START0/,/STOP0/
+
+* Fan-in lại
+
+Viết lại hàm fanIn gốc của chúng ta. Chỉ cần một goroutine. Cũ:
+
+.code concurrency/support/faninboring.go /START3/,/STOP3/
+
+* Fan-in dùng select
+
+Viết lại hàm fanIn gốc của chúng ta. Chỉ cần một goroutine. Mới:
+
+.play concurrency/support/selectboring.go /START3/,/STOP3/
+
+* Timeout dùng select
+
+Hàm time.After trả về channel chặn trong khoảng thời gian đã chỉ định.
+Sau khoảng thời gian, channel truyền thời gian hiện tại, một lần.
+
+.play concurrency/support/timeout.go /START1/,/STOP1/
+
+* Timeout cho toàn bộ cuộc trò chuyện dùng select
+
+Tạo timer một lần, bên ngoài vòng lặp, để đặt timeout cho toàn bộ cuộc trò chuyện.
+(Trong chương trình trước, chúng ta có timeout cho mỗi thông báo.)
+
+.play concurrency/support/timeoutall.go /START1/,/STOP1/
+
+
+* Kênh thoát
+
+Chúng ta có thể đảo ngược điều này và bảo Joe dừng khi chúng ta chán nghe anh ấy.
+
+.code concurrency/support/quit.go /START1/,/STOP1/
+.play concurrency/support/quit.go /START2/,/STOP2/
+
+
+* Nhận trên kênh thoát
+
+Làm sao chúng ta biết nó đã kết thúc? Chờ nó thông báo đã xong: nhận trên kênh thoát
+
+.code concurrency/support/rcvquit.go /START1/,/STOP1/
+.play concurrency/support/rcvquit.go /START2/,/STOP2/
+
+* Chuỗi hoa cúc
+
+.play concurrency/support/daisy.go /func/,$
+
+* Trò thì thầm của người Trung Quốc, phong cách gopher
+
+.image concurrency/images/gophereartrumpet.jpg
+
+* Phần mềm hệ thống
+
+Go được thiết kế để viết phần mềm hệ thống.
+Hãy xem cách các tính năng đồng thời phát huy tác dụng.
+
+* Ví dụ: Tìm kiếm Google
+
+Câu hỏi: Tìm kiếm Google làm gì?
+
+Trả lời: Cho một truy vấn, trả về một trang kết quả tìm kiếm (và một số quảng cáo).
+
+Câu hỏi: Chúng ta lấy kết quả tìm kiếm như thế nào?
+
+Trả lời: Gửi truy vấn đến tìm kiếm Web, tìm kiếm Hình ảnh, YouTube, Maps, Tin tức, v.v., rồi trộn kết quả.
+
+Chúng ta triển khai điều này như thế nào?
+
+* Tìm kiếm Google: Framework giả
+
+Chúng ta có thể mô phỏng hàm tìm kiếm, giống như cách chúng ta mô phỏng cuộc trò chuyện trước đây.
+
+.code concurrency/support/google.go /START2/,/STOP2/
+
+* Tìm kiếm Google: Kiểm thử framework
+
+.play concurrency/support/google.go /func.main/,/}/
+
+* Tìm kiếm Google 1.0
+
+Hàm Google nhận truy vấn và trả về slice kết quả (chỉ là chuỗi).
+
+Google gọi tìm kiếm Web, Hình ảnh và Video theo thứ tự, thêm vào slice kết quả.
+
+.play concurrency/support/google.go /START1/,/STOP1/
+
+* Tìm kiếm Google 2.0
+
+Chạy tìm kiếm Web, Hình ảnh và Video đồng thời, và chờ tất cả kết quả.
+
+Không có khóa. Không có biến điều kiện. Không có callback.
+
+.play concurrency/support/google2.1.go /Google/,/^}/
+
+* Tìm kiếm Google 2.1
+
+Không chờ các máy chủ chậm. Không có khóa. Không có biến điều kiện. Không có callback.
+
+.play concurrency/support/google2.2.go /START/,/STOP/
+
+* Tránh timeout
+
+Câu hỏi: Làm sao chúng ta tránh bỏ kết quả từ các máy chủ chậm?
+
+Trả lời: Sao chép các máy chủ. Gửi yêu cầu đến nhiều bản sao, và dùng phản hồi đầu tiên.
+
+.code concurrency/support/google2.3.go /START1/,/STOP1/
+
+* Dùng hàm First
+
+.play concurrency/support/google2.3.go /START2/,/STOP2/
+
+* Tìm kiếm Google 3.0
+
+Giảm độ trễ đuôi dùng các máy chủ tìm kiếm được sao chép.
+
+.play concurrency/support/google3.0.go /START/,/STOP/
+
+* Và vẫn...
+
+Không có khóa. Không có biến điều kiện. Không có callback.
+
+* Tóm tắt
+
+Chỉ với một vài biến đổi đơn giản chúng ta đã dùng các nguyên thủy đồng thời của Go để chuyển đổi một chương trình
+
+- chậm
+- tuần tự
+- nhạy cảm với lỗi
+
+thành chương trình
+
+- nhanh
+- đồng thời
+- được sao chép
+- mạnh mẽ.
+
+* Thêm những mẹo hay
+
+Có vô số cách dùng các công cụ này, nhiều cách được trình bày ở nơi khác.
+
+Đồ chơi Chatroulette:
+
+.link /s/chat-roulette go.dev/s/chat-roulette
+
+Bộ cân bằng tải:
+
+.link /s/load-balancer go.dev/s/load-balancer
+
+Sàng số nguyên tố đồng thời:
+
+.link /s/prime-sieve go.dev/s/prime-sieve
+
+Chuỗi lũy thừa đồng thời (của McIlroy):
+
+.link /s/power-series go.dev/s/power-series
+
+* Đừng lạm dụng
+
+Chúng thú vị để chơi, nhưng đừng sử dụng những ý tưởng này quá mức.
+
+Goroutine và channel là những ý tưởng lớn. Chúng là công cụ để xây dựng chương trình.
+
+Nhưng đôi khi tất cả những gì bạn cần là một bộ đếm tham chiếu.
+
+Go có các package "sync" và "sync/atomic" cung cấp mutex, biến điều kiện, v.v. Chúng cung cấp công cụ cho các bài toán nhỏ hơn.
+
+Thường những thứ này sẽ cùng nhau giải quyết một bài toán lớn hơn.
+
+Luôn dùng công cụ phù hợp cho công việc.
+
+* Kết luận
+
+Goroutine và channel giúp dễ dàng diễn đạt các thao tác phức tạp liên quan đến
+
+- nhiều đầu vào
+- nhiều đầu ra
+- timeout
+- lỗi
+
+Và chúng thú vị để dùng.
+
+
+* Các liên kết
+
+Trang chủ Go:
+
+.link / go.dev
+
+Go Tour (học Go trong trình duyệt)
+
+.link /tour/ go.dev/tour
+
+Tài liệu package:
+
+.link /pkg go.dev/pkg
+
+Nhiều bài viết:
+
+.link /doc go.dev/doc
+
+Lập trình đồng thời không phải là song song:
+
+.link /s/concurrency-is-not-parallelism go.dev/s/concurrency-is-not-parallelism

@@ -1,0 +1,99 @@
+<!--{
+	"Title": "Tài liệu lệnh",
+	"Breadcrumb": true
+}-->
+
+<p>
+Có một bộ chương trình để xây dựng và xử lý mã nguồn Go.
+Thay vì được chạy trực tiếp, các chương trình trong bộ thường được gọi
+bởi chương trình <a href="/cmd/go/">go</a>.
+</p>
+
+<p>
+Cách phổ biến nhất để chạy các chương trình này là dưới dạng subcommand của chương trình go,
+ví dụ như <code>go fmt</code>. Khi chạy như vậy, lệnh hoạt động trên
+các gói hoàn chỉnh của mã nguồn Go, với chương trình go gọi
+tệp nhị phân cơ bản với các đối số phù hợp để xử lý cấp gói.
+</p>
+
+<p>
+Các chương trình cũng có thể được chạy dưới dạng tệp nhị phân độc lập, với các đối số không thay đổi,
+sử dụng subcommand <code>tool</code> của go, chẳng hạn như <code>go tool cgo</code>.
+Đối với hầu hết các lệnh, điều này chủ yếu hữu ích cho việc gỡ lỗi.
+Một số lệnh, chẳng hạn như <code>pprof</code>, chỉ có thể truy cập qua
+subcommand <code>tool</code> của go.
+</p>
+
+<p>
+Quá trình cài đặt Go cũng cài đặt một tệp thực thi
+gọi là <code>gofmt</code>, tương đương với <code>go fmt</code>,
+vì nó được tham chiếu thường xuyên.
+</p>
+
+<p>
+Nhấp vào các liên kết để biết thêm tài liệu, phương thức gọi và chi tiết sử dụng.
+</p>
+
+<table class="dir">
+<tr>
+<th>Tên</th>
+<th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+<th>Tóm tắt</th>
+</tr>
+
+<tr>
+<td><a href="/cmd/go/">go</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>
+Chương trình <code>go</code> quản lý mã nguồn Go và chạy các lệnh khác
+được liệt kê ở đây.
+Xem tài liệu lệnh để biết chi tiết sử dụng.
+</td>
+</tr>
+
+<tr>
+<td><a href="/cmd/cgo/">cgo</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>Cgo cho phép tạo ra các gói Go gọi mã C.</td>
+</tr>
+
+<tr>
+<td><a href="/cmd/cover/">cover</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>Cover là chương trình để tạo và phân tích các coverage profile
+được tạo bởi <code>"go test -coverprofile"</code>.</td>
+</tr>
+
+<tr>
+<td><a href="/cmd/fix/">fix</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>Fix tìm các chương trình Go sử dụng các tính năng cũ của ngôn ngữ và thư viện
+và viết lại chúng để sử dụng các tính năng mới hơn.</td>
+</tr>
+
+<tr>
+<td><a href="/cmd/gofmt/">fmt</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>Fmt định dạng các gói Go, nó cũng có sẵn như một lệnh độc lập <a href="/cmd/gofmt/">
+gofmt</a> với các tùy chọn tổng quát hơn.</td>
+</tr>
+
+<tr>
+<td><a href="/cmd/doc">doc</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>Doc trích xuất và tạo tài liệu cho các gói Go.</td>
+</tr>
+
+<tr>
+<td><a href="/cmd/vet/">vet</a></td>
+<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+<td>Vet kiểm tra mã nguồn Go và báo cáo các cấu trúc đáng ngờ, chẳng hạn như các lời gọi Printf
+có đối số không khớp với chuỗi định dạng.</td>
+</tr>
+
+</table>
+
+<p>
+Đây là danh sách rút gọn. Xem <a href="/cmd/">tài liệu lệnh đầy đủ</a>
+để có tài liệu về các trình biên dịch và hơn thế nữa.
+</p>

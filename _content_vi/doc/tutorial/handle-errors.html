@@ -1,0 +1,187 @@
+<!--{
+    "Title": "Trả về và xử lý lỗi",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Xử lý lỗi là một tính năng thiết yếu của mã chất lượng. Trong phần này, bạn sẽ
+  thêm một chút mã để trả về lỗi từ module greetings, rồi xử lý nó
+  trong phần gọi hàm.
+</p>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Phần này là một phần của hướng dẫn nhiều bước, bắt đầu từ
+  <a href="/doc/tutorial/create-module.html">Tạo một module Go</a>.
+</aside>
+
+<ol>
+  <li>
+    Trong greetings/greetings.go, thêm đoạn mã được đánh dấu bên dưới.
+
+    <p>
+      Không có lý do gì để gửi lời chào lại nếu bạn không biết phải chào ai.
+      Trả về lỗi cho người gọi nếu tên bị rỗng. Sao chép đoạn mã sau
+      vào greetings.go và lưu tệp.
+    </p>
+
+    <pre>
+package greetings
+
+import (
+    <ins>"errors"</ins>
+    "fmt"
+)
+
+// Hello returns a greeting for the named person.
+func Hello(name string) <ins>(</ins>string<ins>, error)</ins> {
+    <ins>// If no name was given, return an error with a message.
+    if name == "" {
+        return "", errors.New("empty name")
+    }</ins>
+
+    // If a name was received, return a value that embeds the name
+    // in a greeting message.
+    message := fmt.Sprintf("Hi, %v. Welcome!", name)
+    return message<ins>, nil</ins>
+}
+</pre>
+
+    <p>
+      Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Thay đổi hàm để nó trả về hai giá trị: một
+        <code>string</code> và một <code>error</code>. Người gọi sẽ kiểm tra
+        giá trị thứ hai để xem có lỗi xảy ra hay không. (Bất kỳ hàm Go nào cũng có thể
+        trả về nhiều giá trị. Để biết thêm, xem
+        <a href="/doc/effective_go.html#multiple-returns">Effective Go</a>.)
+      </li>
+      <li>
+        Import gói <code>errors</code> từ thư viện chuẩn của Go để bạn có thể dùng
+        <a href="https://pkg.go.dev/errors/#example-New"
+          >hàm <code>errors.New</code></a
+        > của nó.
+      </li>
+      <li>
+        Thêm câu lệnh <code>if</code> để kiểm tra yêu cầu không hợp lệ (một
+        chuỗi rỗng ở nơi tên phải có) và trả về lỗi nếu
+        yêu cầu không hợp lệ. Hàm <code>errors.New</code> trả về một
+        <code>error</code> chứa thông báo của bạn.
+      </li>
+      <li>
+        Thêm <code>nil</code> (nghĩa là không có lỗi) làm giá trị thứ hai trong
+        lần trả về thành công. Như vậy, người gọi có thể thấy rằng hàm
+        đã thực hiện thành công.
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    Trong tệp hello/hello.go của bạn, xử lý lỗi được trả về bởi hàm
+    <code>Hello</code>, cùng với giá trị không lỗi.
+
+    <p>
+      Dán đoạn mã sau vào hello.go.
+    </p>
+
+    <pre>
+package main
+
+import (
+    "fmt"
+    <ins>"log"</ins>
+
+    "example.com/greetings"
+)
+
+func main() {
+    <ins>// Set properties of the predefined Logger, including
+    // the log entry prefix and a flag to disable printing
+    // the time, source file, and line number.
+    log.SetPrefix("greetings: ")
+    log.SetFlags(0)</ins>
+
+    // Request a greeting message.
+    <ins>message, err := greetings.Hello("")</ins>
+    <ins>// If an error was returned, print it to the console and
+    // exit the program.
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // If no error was returned, print the returned message
+    // to the console.</ins>
+    fmt.Println(message)
+}
+</pre>
+
+    <p>
+      Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Cấu hình
+        <a href="https://pkg.go.dev/log/">gói <code>log</code></a> để
+        in tên lệnh ("greetings: ") ở đầu các thông báo log,
+        không có nhãn thời gian hoặc thông tin tệp nguồn.
+      </li>
+      <li>
+        Gán cả hai giá trị trả về của <code>Hello</code>, bao gồm cả
+        <code>error</code>, vào các biến.
+      </li>
+      <li>
+        Thay đổi đối số <code>Hello</code> từ tên của Gladys thành một chuỗi rỗng,
+        để bạn có thể thử mã xử lý lỗi của mình.
+      </li>
+      <li>
+        Tìm kiếm giá trị <code>error</code> khác nil. Không có lý do gì để tiếp tục
+        trong trường hợp này.
+      </li>
+      <li>
+        Dùng các hàm trong <code>log package</code> của thư viện chuẩn để
+        xuất thông tin lỗi. Nếu bạn gặp lỗi, bạn dùng
+        <a href="https://pkg.go.dev/log?tab=doc#Fatal"
+          >hàm <code>Fatal</code></a
+        >
+        của gói <code>log</code> để in lỗi và dừng chương trình.
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    Tại dòng lệnh trong thư mục <code>hello</code>, chạy hello.go để
+    xác nhận mã hoạt động.
+
+    <p>
+      Vì bạn đang truyền vào một tên rỗng, bạn sẽ nhận được lỗi.
+    </p>
+
+    <pre>
+$ go run .
+greetings: empty name
+exit status 1
+</pre
+    >
+  </li>
+</ol>
+
+<p>
+  Đó là cách xử lý lỗi thông thường trong Go: Trả về lỗi như một giá trị để người gọi
+  có thể kiểm tra nó.
+</p>
+
+<p>
+  Tiếp theo, bạn sẽ dùng một slice trong Go để trả về một lời chào được chọn ngẫu nhiên.
+</p>
+
+<p class="Navigation">
+  <a class="Navigation-prev" href="/doc/tutorial/call-module-code.html"
+    >&lt; Gọi mã của bạn từ một module khác</a
+  >
+  <a class="Navigation-next" href="/doc/tutorial/random-greeting.html"
+    >Trả về lời chào ngẫu nhiên &gt;</a
+  >
+</p>

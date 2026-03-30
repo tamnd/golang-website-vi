@@ -1,0 +1,375 @@
+Go: 90% hoàn hảo, 100% thời gian.
+"GoCon Tokyo"
+31 May 2014
+Tags: go, gocon
+
+Brad Fitzpatrick
+@bradfitz
+bradfitz@golang.org
+http://bradfitz.com
+http://camlistore.org
+
+* Xin chào!
+
+* "60% thời gian, nó luôn hoạt động...."
+
+.image gocon-tokyo/60p.jpg
+
+* "Điều đó vô nghĩa"
+
+* Bắt đầu một dự án mới, chọn ngôn ngữ...
+
+* Tuyên bố miễn trừ trách nhiệm
+
+- Chỉ là kinh nghiệm cá nhân
+- Ý kiến của tôi
+- Số liệu giả vui vẻ (ví dụ: "90% hoàn hảo, 100% thời gian.")
+- Có thể là 91%.
+- Tất cả ngôn ngữ đều vừa tuyệt vời vừa tệ
+- <3
+
+* 2010
+
+* Ý tưởng: Camlistore
+
+- Tất cả dữ liệu cuộc đời tôi từ mọi nơi,
+- Import, sao lưu, phục vụ, duyệt, tìm kiếm, chia sẻ, lập chỉ mục
+- Được thiết kế để tồn tại 100+ năm
+- Không tin vào bất kỳ công ty nào
+- Năm 2010: một ý tưởng
+- Năm 2014: dự án bận rộn, thú vị, tích cực
+
+* Nên dùng ngôn ngữ nào cho Camlistore?
+
+* Trước Go
+
+- Bắt đầu một dự án mới từ 1994 ~ 2010...
+- Perl hay C?
+- Đôi khi nhưng hiếm khi Java.
+
+* Perl: Ưu điểm
+
+- Thú vị
+- Biểu đạt
+- Hoàn thành công việc, nhanh chóng
+
+* Python, Ruby, Javascript: Ưu điểm
+
+- Tương tự
+
+* Perl: Nhược điểm
+
+- Không nhanh như C
+- Đôi khi cần viết bằng C
+- ... hoặc viết bằng XS (ngôn ngữ kết nối Perl-C)
+- Gọi Perl-C, C-Perl chậm
+- Đơn luồng, đơn lõi, callback hell
+
+* Python, Ruby, Javascript: Nhược điểm
+
+- Tương tự, nhưng thậm chí chậm hơn :)
+- JavaScript bây giờ nhanh hơn, nhưng không nhanh bằng C
+
+* Tóm tắt
+
+- Perlythonubyscript: chậm cho máy tính, nhanh & vui cho con người
+- C: chậm cho con người, nhanh cho máy tính
+- C++: vui hơn C một chút, nhưng phức tạp hơn
+- Java: tẻ nhạt (dài dòng), khởi động chậm, dễ tìm lập trình viên
+- PHP: nếu ai đó trả bạn đủ nhiều, có thể
+
+* Vui so với nhanh
+
+.image gocon-tokyo/funfast-nogo.svg
+
+* Có thể kết hợp hai ngôn ngữ?
+
+- Phần vui, chậm bằng Perlythonubyscript?
+- Phần quan trọng, nhanh bằng C?
+
+* Nhưng...
+
+- Bạn sẽ muốn chia sẻ mã.
+- Gọi từ C sang X hoặc từ X sang C là chậm.
+- Ngôn ngữ kết nối C-X là ngôn ngữ ít vui nhất
+- Bạn sẽ lười biếng và viết bằng ngôn ngữ vui
+- Hoặc lười biếng và lãng phí thời gian, viết quá nhiều thứ bằng C++ (như Google)
+
+* Server? Thread hay sự kiện?
+
+* Thread
+
+- C, C++, Java, ...
+- Thread? Nặng. Tốn nhiều bộ nhớ mỗi thread cho stack. Hãy cẩn thận!
+  Executor pool = new ScheduledThreadPoolExecutor(/* ???? đoán một con số */);
+
+* Sự kiện
+
+- Perlythonubyscript: sự kiện. Không có lựa chọn. Callback hell.
+- C, C++: libevent, v.v. Callback hell.
+
+.image gocon-tokyo/spaghetti.jpg
+
+- C#: await async await async await async await async ồn ào
+
+* Đồng thời và hiệu năng
+
+.image gocon-tokyo/concurrency0.svg
+
+* Thật khó để chọn ngôn ngữ!
+
+* 2010. Hãy thử Go!
+
+* Go: 90% hoàn hảo, 100% thời gian.
+
+* Go: 90% hoàn hảo, 100% thời gian.
+
+- Go rất giỏi nhiều thứ
+- Mã cấp cao khi bạn muốn
+- Mã cấp thấp khi bạn muốn
+- Bắt đầu cao, profiling, xuống cấp thấp khi cần
+- Kiểu tĩnh mà không cần gõ nhiều
+
+* Trước Go
+
+.image gocon-tokyo/funfast-nogo.svg
+
+* Sau Go
+
+.image gocon-tokyo/funfast.svg
+
+* Đồng thời của Go
+
+- Tích hợp sẵn! Luồng nhẹ, không có callback hell
+- Mã dễ đọc, từ trên xuống
+- Viết server dễ dàng
+
+  for {
+    conn, err := listener.Accept()
+    // check err
+    go serve(conn)
+  }
+
+- Mô hình goroutine-mỗi-request có thể mở rộng
+
+* Đồng thời trước Go
+
+.image gocon-tokyo/concurrency0.svg
+
+* Sau Go
+
+.image gocon-tokyo/concurrency.svg
+
+* Go đang xuất hiện cho đủ loại nhiệm vụ
+
+* Web framework
+
+- Thường là công việc cho các ngôn ngữ scripting: Node.js, Python, Ruby, Perl, PHP, v.v.
+- net/http trong thư viện chuẩn
+- Các framework http khác ở trên: gorilla, martini, Revel v.v...
+- Không cần nginx: http server của thư viện chuẩn có thể mở rộng
+
+* Xử lý hình ảnh
+
+- không có libpng, imagemagick, v.v.
+- mã hóa & giải mã PNG, JPEG, GIF thuần Go trong thư viện chuẩn
+- chậm hơn, nhưng an toàn hơn
+- đang trở nên nhanh hơn
+
+* Mật mã
+
+- không có OpenSSL, không có GnuTLS
+- AES, TLS (SSL), OpenPGP thuần Go, v.v.
+- chậm hơn, nhưng an toàn hơn
+- đang trở nên nhanh hơn
+
+* Thay thế shell script
+
+- Thay vì các script Perl & shell nhỏ, tôi bây giờ viết bằng Go
+- Gói os/exec & goroutine giúp quản lý subprocess dễ hơn shell
+
+* Camlistore
+
+- web handler
+- dùng các API web của bên thứ ba
+- thumbnail hình ảnh: giải mã, thay đổi kích thước, mã hóa
+- phân tích EXIF, ID3
+- driver database
+- mật mã, giải mã/thay đổi kích thước/mã hóa hình ảnh
+- tìm kiếm, lập chỉ mục: kiểm soát bố cục bộ nhớ chặt chẽ
+- WebSockets, HTTPS
+- tất cả thuần Go!
+
+* Điều khiển drone bay
+
+.link http://www.godrone.io
+- "Go có phù hợp cho ứng dụng thời gian thực như này không?"
+- "Tuy nhiên, đối với mọi mục đích thực tế, GC chỉ cần theo kịp vòng lặp ổn định hóa chạy ở 200 Hz. Điều này có nghĩa là tạm dừng GC dưới 5ms không ảnh hưởng đến hiệu năng. Tạm dừng dài hơn sẽ giảm hiệu năng ổn định hóa, nhưng ngưỡng dung sai có thể lên đến một giây..." (heap nhỏ)
+
+.image gocon-tokyo/drone.png
+
+* Emulator
+
+.link http://dave.cheney.net/2013/01/09/go-the-language-for-emulators Go: The Language For Emulators
+
+.image gocon-tokyo/trs.png
+
+* Disassembler, linker, trình biên dịch.
+
+- trình biên dịch llgo (Go -> LLVM IR -> ...)
+- disassembler của Go 1.3
+- linker của Go 1.4
+- trình biên dịch của Go 1.4 hoặc Go 1.5
+
+* Mobile
+
+- Go chạy trên ARM
+- cổng iOS của minux
+- tiến trình con Camlistore, goandroid
+
+.image gocon-tokyo/goandroid.png
+
+* Tổng hợp âm thanh
+
+- https://github.com/nf/sigourney
+
+.image gocon-tokyo/sigourney.png
+
+* Hạ tầng đám mây
+
+.link http://redmonk.com/dberkholz/2014/03/18/go-the-emerging-language-of-cloud-infrastructure/ Go: the emerging language of cloud infrastructure
+
+- Docker, Packer
+- etcd và fleet của CoreOS
+- Ubuntu Juju, Mozilla Heka, Apcera's NATS, gnatsd
+
+.image gocon-tokyo/docker.png
+
+* Load balancer & server
+
+- vitess của YouTube: MySQL
+- net/http/httputil.ReverseProxy
+- dl.google.com
+- v.v.
+
+* Raspberry Pi GPIO
+
+.link https://github.com/davecheney/gpio
+.link https://github.com/stianeikeland/go-rpio
+.link https://github.com/luismesas/goPi
+
+.image gocon-tokyo/gpio.gif
+
+* Ngôn ngữ nào khác được dùng cho tất cả những thứ này?
+
+- ứng dụng web
+- script
+- quản trị hệ thống
+- xử lý hình ảnh
+- load balancer, server
+- mật mã
+- phần cứng
+
+Go!
+
+* Và thậm chí tốt hơn...
+
+* Công cụ tích hợp sẵn của Go
+
+- testing
+- benchmarking
+- profiling (CPU, memory, blocking)
+- thư viện chuẩn đồ sộ
+- "go get"
+- godoc
+- gofmt, goimports
+- race detector
+- binary tĩnh
+
+* Vậy tại sao Go không hoàn hảo?
+
+* Generics
+
+- Không có generics
+- Đôi khi khó chịu, nhưng hiếm khi
+- Dùng map, slice, interface
+- Đôi khi phải dùng interface{} xấu xí
+- Không có thuật toán trong stdlib
+- Chưa có đề xuất nào thực sự tốt
+
+* Không có generics (Simon Peyton Jones: "Haskell là vô dụng")
+
+.image gocon-tokyo/generics.svg
+
+* Có thể xảy ra data race
+
+- shared, mutable state là có thể
+- dùng channel
+- hãy cẩn thận
+- quy ước và tài liệu giúp ích
+- runtime race detector cũng giúp ích
+  $ go test -race
+* Sinh mã
+
+- Trình biên dịch Go mặc định thường tạo mã khá thô
+- Đặc biệt trên ARM
+- Nhưng đang trở nên tốt hơn
+- Trong Go 1.4, 1.5+: trình biên dịch Go bằng Go, tái cấu trúc, thêm SSA, nhiều tối ưu hóa hơn
+
+* gccgo
+
+- gccgo tạo mã rất tốt
+- ... nhưng thiếu escape analysis: giết hiệu năng với nhiều alloc nhỏ + rác
+- ... GC không chính xác. Xấu cho 32-bit.
+
+* Biên dịch sang JavaScript chưa tốt
+
+- Sẽ hay nếu viết frontend & backend cùng ngôn ngữ, chia sẻ mã
+- go/types + go/ssa cho phép nhiều thứ:
+.link http://tardisgo.github.io/ TARDIS Go Compiler
+.image gocon-tokyo/tardis.png
+
+* Hỗ trợ Mobile hạn chế
+
+- Không có hỗ trợ Android tích hợp (nhưng có goandroid, tiến trình con...)
+- Không có hỗ trợ iOS tích hợp (nhưng có cổng chưa được merge...)
+
+* Nhúng Go vào C/C++/Java/v.v.
+
+- Không thể nhúng Go vào ngôn ngữ, môi trường khác.
+- ví dụ: Android, iOS, chương trình C/C++
+- vấn đề với thiết lập bộ nhớ, GC, tín hiệu, ...
+- cần thiết kế embedding API
+- Trong Go 1.4?
+
+* Thư viện chia sẻ
+
+- không có thư viện chia sẻ
+- không thể tải mã Go tại runtime
+
+* Bộ gom rác
+
+- Tạm dừng: nhanh hơn mỗi bản phát hành, nhiều người giỏi đang làm.
+- Chính xác: heap trong 1.2, hầu hết stack trong 1.3, thêm nữa trong 1.4.
+- 4 phiên bản memcached: Perl, C, C++, Go
+
+* Hot stack split
+
+- Gần như được sửa hoàn toàn trong stack liền mạch của Go 1.3
+- Phần còn lại sẽ có trong Go 1.4.
+
+.image gocon-tokyo/contig-stack.png
+
+* Nhưng...
+
+- Các vấn đề có thể sửa được.
+- Mọi thứ tiếp tục tốt hơn với mỗi bản phát hành.
+
+* Go cho tất cả
+
+- Từ giữa 2010, tôi thích Go 90%-hoàn-hảo cho tất cả việc hack của mình:
+.image gocon-tokyo/changestats.png
+- Go linh hoạt, thú vị, dễ đọc
+- Go nhanh (cho cả máy tính & con người)
+- Go tốt khi làm việc với người khác
+- Go cho tất cả!

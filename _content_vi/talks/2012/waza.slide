@@ -1,0 +1,453 @@
+#_Bài thuyết trình này là bài phát biểu kết thúc của hội nghị Heroku Waza vào tháng 1 năm 2012.
+#_Nó đã được chỉnh sửa đôi chút ở đây cho rõ ràng và để dùng trong định dạng "present"; bản gốc
+#_đã dùng một tiền thân của công cụ đó.
+
+Concurrency không phải là Parallelism
+Waza ngày 11 tháng 1 năm 2012
+
+Rob Pike
+r@golang.org
+
+* Video
+
+Bài nói này được trình bày tại hội nghị Waza của Heroku vào tháng 1 năm 2012.
+
+.link http://vimeo.com/49718712 Xem bài nói trên Vimeo
+
+* Thế giới hiện đại là parallel
+
+Đa lõi.
+
+Mạng lưới.
+
+Đám mây CPU.
+
+Lượng người dùng khổng lồ.
+
+Công nghệ của chúng ta nên hỗ trợ điều này.
+Đó là lúc tính đồng thời xuất hiện.
+
+* Go hỗ trợ tính đồng thời
+
+Go cung cấp:
+
+- thực thi đồng thời (goroutines)
+- đồng bộ hóa và nhắn tin (channels)
+- kiểm soát đồng thời đa chiều (select)
+
+* Đồng thời thật tuyệt! Vui với parallelism!!
+
+KHÔNG! Đây là sự nhầm lẫn.
+
+Khi Go được công bố, nhiều người bị nhầm lẫn về sự khác biệt này.
+
+"Tôi chạy sieve số nguyên tố với 4 bộ xử lý và nó chậm hơn!"
+
+* Đồng thời (Concurrency)
+
+Lập trình như là sự kết hợp của các tiến trình thực thi độc lập.
+
+(Tiến trình theo nghĩa chung, không phải tiến trình Linux. Nổi tiếng là khó định nghĩa.)
+
+* Song song (Parallelism)
+
+Lập trình như là thực thi đồng thời các phép tính (có thể liên quan).
+
+* Đồng thời vs. Song song
+
+Đồng thời là về việc xử lý nhiều thứ cùng lúc.
+
+Song song là về việc làm nhiều thứ cùng lúc.
+
+Không giống nhau, nhưng có liên quan.
+
+Đồng thời là về cấu trúc, song song là về thực thi.
+
+Đồng thời cung cấp một cách cấu trúc giải pháp để giải quyết vấn đề có thể (nhưng không nhất thiết) là parallelizable.
+
+* Một sự tương đồng
+
+Đồng thời: Trình điều khiển chuột, bàn phím, màn hình và đĩa.
+
+Song song: Tích vô hướng của vector.
+
+* Đồng thời cộng với giao tiếp
+
+Đồng thời là một cách cấu trúc chương trình bằng cách chia nhỏ nó thành các phần có thể thực thi độc lập.
+
+Giao tiếp là phương tiện để phối hợp các thực thi độc lập.
+
+Đây là mô hình Go và (giống như Erlang và các ngôn ngữ khác) nó dựa trên CSP:
+
+C. A. R. Hoare: Communicating Sequential Processes (CACM 1978)
+
+* Những chú gopher
+
+Điều này quá trừu tượng. Hãy cụ thể hơn.
+
+* Vấn đề của chúng ta
+
+Chuyển một đống sách hướng dẫn ngôn ngữ lỗi thời đến lò thiêu.
+
+.image waza/gophersimple1.jpg
+
+Chỉ với một gopher thì sẽ mất quá nhiều thời gian.
+
+* Thêm gopher!
+
+.image waza/gophersimple3.jpg
+
+Nhiều gopher hơn chưa đủ; họ cần thêm xe đẩy.
+
+* Nhiều gopher hơn và nhiều xe đẩy hơn
+
+.image waza/gophersimple2.jpg
+
+Điều này sẽ diễn ra nhanh hơn, nhưng sẽ có các điểm thắt cổ chai ở đống sách và lò thiêu.
+Cũng cần đồng bộ hóa các gopher.
+Một thông điệp (nghĩa là, giao tiếp giữa các gopher) sẽ làm được.
+
+* Nhân đôi tất cả
+
+Loại bỏ điểm thắt cổ chai; làm cho chúng thực sự độc lập.
+
+.image waza/gophersimple4.jpg
+
+Điều này sẽ tiêu thụ đầu vào nhanh gấp đôi.
+
+* Kết hợp đồng thời
+
+.image waza/gophersimple4.jpg
+Sự kết hợp đồng thời của hai quy trình gopher.
+
+* Kết hợp đồng thời
+
+Thiết kế này không tự động là parallel!
+
+Nếu chỉ có một gopher di chuyển tại một thời điểm?
+Thì nó vẫn là đồng thời (điều đó nằm trong thiết kế), chỉ là không song song.
+
+Tuy nhiên, nó có thể tự động hóa song song!
+
+Hơn nữa, sự kết hợp đồng thời gợi ý các mô hình khác.
+
+* Thiết kế khác
+
+.image waza/gophercomplex0.jpg
+
+Ba gopher đang hoạt động, nhưng có thể bị chậm trễ.
+Mỗi gopher là một quy trình thực thi độc lập,
+cộng với phối hợp (giao tiếp).
+
+* Độ hạt mịn hơn
+
+Thêm một quy trình gopher để trả xe đẩy trống.
+
+.image waza/gophercomplex1.jpg
+
+Bốn gopher đang hoạt động để luồng tốt hơn, mỗi gopher làm một nhiệm vụ đơn giản.
+
+Nếu chúng ta sắp xếp mọi thứ đúng (khó xảy ra nhưng không phải không thể), đó là nhanh gấp bốn lần so với thiết kế một gopher ban đầu.
+
+* Quan sát
+
+Chúng ta cải thiện hiệu suất bằng cách thêm một quy trình đồng thời vào thiết kế hiện có.
+
+Nhiều gopher làm nhiều việc hơn; hoạt động tốt hơn.
+
+Đây là một nhận thức sâu sắc hơn là chỉ là parallelism.
+
+* Các quy trình đồng thời
+
+Bốn quy trình gopher riêng biệt:
+
+- xếp sách lên xe đẩy
+- di chuyển xe đẩy đến lò thiêu
+- dỡ xe đẩy vào lò thiêu
+- trả xe đẩy trống về
+
+Các thiết kế đồng thời khác nhau cho phép các cách song song hóa khác nhau.
+
+* Song song hóa nhiều hơn!
+
+Chúng ta có thể song song hóa theo trục khác; thiết kế đồng thời làm cho điều này dễ dàng. Tám gopher, tất cả đều bận rộn.
+
+.image waza/gophercomplex2.jpg
+
+* Hoặc có thể không có song song hóa nào
+
+Hãy nhớ rằng, ngay cả khi chỉ có một gopher hoạt động tại một thời điểm (không có parallelism), đây vẫn là giải pháp đúng và đồng thời.
+
+.image waza/gophercomplex2.jpg
+
+* Thiết kế khác
+
+Đây là cách khác để cấu trúc vấn đề như sự kết hợp đồng thời của các quy trình gopher.
+
+Hai quy trình gopher, cộng với một đống dàn dựng.
+
+.image waza/gophercomplex3.jpg
+
+* Song song hóa theo cách thông thường
+
+Chạy nhiều quy trình đồng thời hơn để có thông lượng cao hơn.
+
+.image waza/gophercomplex4.jpg
+
+* Hoặc theo cách khác
+
+Đưa đống dàn dựng vào mô hình đồng thời đa gopher:
+
+.image waza/gophercomplex5.jpg
+
+* Tối ưu hóa hoàn toàn
+
+Dùng tất cả kỹ thuật của chúng ta. Mười sáu gopher đang làm việc chăm chỉ!
+
+.image waza/gophercomplex6.jpg
+
+* Bài học
+
+Có nhiều cách để chia nhỏ quá trình xử lý.
+
+Đó là thiết kế đồng thời.
+
+Khi chúng ta có sự phân tách, song song hóa có thể xuất hiện tự nhiên và tính đúng đắn trở nên dễ dàng.
+
+* Trở lại với Máy tính
+
+Trong bài toán vận chuyển sách của chúng ta, hãy thay thế:
+
+- đống sách => nội dung web
+- gopher => CPU
+- xe đẩy => marshaling, rendering hoặc mạng
+- lò thiêu => proxy, trình duyệt hoặc consumer khác
+
+Nó trở thành một thiết kế đồng thời cho một dịch vụ web có thể mở rộng.
+Những gopher phục vụ nội dung web.
+
+* Một chút về Go
+
+Không phải nơi cho hướng dẫn, chỉ là những điểm nổi bật nhanh.
+
+* Goroutines
+
+Một goroutine là một hàm chạy độc lập trong cùng không gian địa chỉ với các goroutine khác
+
+.code waza/snippets /f.runs/
+
+.code waza/snippets /f.starts.running/,/return/
+
+Giống như khởi chạy một hàm với ký hiệu `&` của shell.
+
+* Goroutines không phải là thread
+
+(Chúng giống thread một chút, nhưng rẻ hơn nhiều.)
+
+Goroutines được ghép lên các OS thread khi cần.
+
+Khi một goroutine chặn, thread đó bị chặn nhưng không có goroutine nào khác bị chặn.
+
+* Channels
+
+Channel là các giá trị có kiểu cho phép goroutines đồng bộ hóa và trao đổi thông tin.
+
+.code waza/snippets /make.*chan/,/completedAt/
+
+* Select
+
+Câu lệnh `select` giống như `switch`, nhưng quyết định dựa trên khả năng giao tiếp thay vì giá trị bằng nhau.
+
+.code waza/snippets /select/,/}/
+
+* Go thực sự hỗ trợ tính đồng thời
+
+Thực sự vậy.
+
+Việc tạo hàng nghìn goroutine trong một chương trình là thông thường.
+(Đã từng debug một chương trình sau khi nó tạo ra 1,3 triệu goroutine.)
+
+Stack bắt đầu nhỏ, nhưng tăng và giảm khi cần.
+
+Goroutines không miễn phí, nhưng rất rẻ.
+
+* Closures cũng là một phần của câu chuyện
+
+Làm cho một số tính toán đồng thời dễ biểu đạt hơn.
+
+Chúng chỉ là các hàm cục bộ.
+Đây là ví dụ không đồng thời:
+
+.code waza/snippets /Compose/,/sin,/
+
+* Một số ví dụ
+
+Học Go đồng thời qua thực hành.
+
+* Khởi chạy daemons
+
+Dùng closure để bọc một thao tác nền.
+
+Đoạn mã này copy các mục từ input channel sang output channel:
+
+.code waza/snippets /copy.input/,/^}/
+
+Thao tác `for` `range` chạy cho đến khi channel cạn kiệt.
+
+* Bộ cân bằng tải đơn giản (1)
+
+Một đơn vị công việc:
+
+.code waza/load1 /type/,/^}/
+
+* Bộ cân bằng tải đơn giản (2)
+
+Tác vụ worker
+
+.code waza/load1 /worker/,/^}/
+
+Phải đảm bảo các worker khác có thể chạy khi một worker bị chặn.
+
+* Bộ cân bằng tải đơn giản (3)
+
+Bộ chạy
+
+.code waza/load1 /Run/,/^}/
+
+Vấn đề dễ nhưng cũng khó giải quyết một cách ngắn gọn mà không có tính đồng thời.
+
+* Tính đồng thời cho phép parallelism
+
+Bộ cân bằng tải là parallel ngầm định và có thể mở rộng.
+
+`NumWorkers` có thể rất lớn.
+
+Các công cụ của tính đồng thời làm cho việc xây dựng một thiết kế an toàn, hoạt động tốt, có thể mở rộng và song song trở nên gần như tầm thường.
+
+* Tính đồng thời đơn giản hóa đồng bộ hóa
+
+Không cần đồng bộ hóa tường minh.
+
+Cấu trúc của chương trình là đồng bộ hóa ngầm.
+
+* Điều đó quá dễ
+
+Hãy làm một bộ cân bằng tải thực tế hơn.
+
+* Bộ cân bằng tải
+
+.image waza/gopherchart.jpg
+
+* Định nghĩa Request
+
+Requester gửi Request đến balancer
+
+.code waza/load2 /^type.Request/,/^}/
+
+Lưu ý kênh trả về bên trong request.
+Channel là các giá trị hạng nhất.
+
+* Hàm Requester
+
+Mô phỏng nhân tạo nhưng minh họa của một requester, một bộ tạo tải.
+
+.code waza/load2 /^func.requester/,/^}/
+
+* Định nghĩa Worker
+
+Một channel của requests, cộng với một số dữ liệu theo dõi tải.
+
+.code waza/load2 /type.Worker/,/^}/
+
+* Worker
+
+Balancer gửi request đến worker có tải nhẹ nhất
+
+.code waza/load2 /^func.*work.*done/,/^}/
+
+Channel của requests (`w.requests`) chuyển requests đến mỗi worker. Balancer theo dõi số lượng requests đang chờ xử lý như một thước đo tải.
+Mỗi phản hồi đi trực tiếp đến requester của nó.
+
+Có thể chạy phần thân vòng lặp như goroutine để tăng parallelism.
+
+* Định nghĩa Balancer
+
+Bộ cân bằng tải cần một pool workers và một channel duy nhất mà các requesters có thể báo cáo hoàn thành tác vụ.
+
+.code waza/load2 /type.Pool/,/^}/
+
+* Hàm Balancer
+
+Dễ thôi!
+
+.code waza/load2 /func.*balance/,/^}/
+
+Chỉ cần cài đặt dispatch và completed.
+
+* Một heap channel
+
+Làm Pool thành cài đặt của interface `Heap` bằng cách cung cấp một số phương thức như:
+
+.code waza/load2 /func.*Less/,/^}/
+
+Bây giờ chúng ta cân bằng bằng cách làm `Pool` thành một heap được theo dõi theo tải.
+
+* Dispatch
+
+Tất cả các mảnh ghép đã vào chỗ.
+
+.code waza/load2 /Send.Request/,/^}/
+
+* Completed
+
+.code waza/load2 /Job.is.complete/,/^}/
+
+* Bài học
+
+Một vấn đề phức tạp có thể được chia thành các thành phần dễ hiểu.
+
+Các mảnh có thể được kết hợp đồng thời.
+
+Kết quả dễ hiểu, hiệu quả, có thể mở rộng và đúng đắn.
+
+Thậm chí có thể song song.
+
+* Một ví dụ nữa
+
+Chúng ta có một cơ sở dữ liệu được sao chép và muốn giảm thiểu độ trễ bằng cách hỏi tất cả và trả về phản hồi đầu tiên đến.
+
+* Truy vấn cơ sở dữ liệu được sao chép
+
+.code waza/snippets /func.Query/,/^}/
+Các công cụ đồng thời và bộ gom rác làm cho đây là giải pháp dễ dàng cho một vấn đề tinh tế.
+
+(Việc dọn dẹp các tiến trình hoàn thành muộn được để lại như bài tập.)
+
+
+* Kết luận
+
+
+Tính đồng thời mạnh mẽ.
+
+Tính đồng thời không phải là parallelism.
+
+Tính đồng thời cho phép parallelism.
+
+Tính đồng thời làm cho parallelism (và mở rộng quy mô và mọi thứ khác) trở nên dễ dàng.
+
+* Để biết thêm thông tin
+
+Go: golang.org
+
+Một số lịch sử: swtch.com/~rsc/thread/
+
+Một bài nói trước (video): tinyurl.com/newsqueak1
+
+Parallelism không phải là concurrency (Harper): tinyurl.com/pincharper
+
+Hệ thống cửa sổ đồng thời (Pike): tinyurl.com/pikecws
+
+Chuỗi lũy thừa đồng thời (McIlroy): tinyurl.com/powser
+
+Và cuối cùng, song song nhưng không đồng thời:
+research.google.com/archive/sawzall.html

@@ -1,0 +1,204 @@
+Go trên Android
+Xem trước
+
+DroidCon
+20 Sep 2014
+
+David Crawshaw
+Google
+@davidcrawshaw
+
+* Giới thiệu ngắn về Go
+
+* Go là gì
+
+Go là một ngôn ngữ lập trình đa năng.
+
+Ra đời từ sự bực bội với C++ và Java:
+- Thời gian build chậm
+- Quá nhiều sự phức tạp
+
+Go nhanh và đơn giản.
+
+Xem thêm: [[/talks/2012/splash.article]]
+
+* Năm năm sau
+
+Go không phụ thuộc vào một nền tảng cụ thể.
+Tự đứng vững bằng chính ưu điểm của mình.
+
+.image droidcon/gopherswim.jpg
+
+Nhiều người dùng, ví dụ:
+SoundCloud, Docker, Secret, The New York Times
+
+"Ngôn ngữ lập trình cho đám mây."
+
+* Ngoài đám mây
+
+Go đã tìm thấy những ứng dụng khác.
+
+Phổ biến trên các hệ thống Linux nhúng.
+Phần cứng Beacon của PayPal chạy bằng Go.
+
+Phân tích dữ liệu quy mô lớn.
+
+Với nhiều người trong chúng ta, nó thay thế python/perl/ruby.
+
+Chúng ta có thể dùng Go ở đâu nữa?
+Điện thoại và máy tính bảng thì sao?
+
+* Go trên Android
+
+Lập trình giao diện Android cần nhiều API Java.
+Thử nghiệm đầu tiên của tôi là dùng các API này từ Go.
+
+Nó không hoạt động.
+Dùng API Java trong Go chính là viết Java bằng cú pháp Go.
+
+"Bạn có thể viết FORTRAN bằng bất kỳ ngôn ngữ nào"
+
+Vậy có khi nào dùng Go trên Android có ý nghĩa không?
+Có, để đảm bảo tính di động.
+
+* Tính di động
+
+Nhiều ứng dụng được viết cho nhiều nền tảng hơn là chỉ Android.
+Một số ứng dụng bắt đầu ở nơi khác và không bao giờ đến được Android.
+
+:-(
+
+Ngày nay, lập trình viên giải quyết tính di động nền tảng bằng C++.
+Chúng ta có thể làm tốt hơn.
+
+* Hai cách dùng Go
+
+1. Viết thư viện bằng Go, dùng chúng trong ứng dụng Java. Hoặc ứng dụng Objective-C/Swift.
+
+2. Viết ứng dụng hoàn toàn bằng Go, giới hạn trong một tập API chung trên các nền tảng.
+
+.image droidcon/gopherswrench.jpg
+
+* Thư viện Go cho ứng dụng
+
+* Giao diện đa ngôn ngữ
+
+Java là một pháo đài.
+
+Để dùng ngôn ngữ khác, bạn cần JNI.
+JNI phức tạp, nhiều lỗi, gây đau đầu.
+Nó ngăn lập trình viên Java tiếp cận nhiều thứ hay.
+
+Vì vậy, không dùng JNI.
+
+Thay vào đó, chúng ta có một công cụ cho việc đó: `gobind`
+Nó tạo giao diện Java cho bạn.
+
+[[/s/gobind]]
+
+* Cơ bản về gobind
+
+	package hi
+
+	import "fmt"
+
+	func Hello(name string) {
+		fmt.Println("Hello, %s!\n", name)
+	}
+
+Dùng `gobind` trên gói `hi` để tạo mã Go hỗ trợ và giao diện Java:
+
+
+	package go;
+
+	public abstract class Hi {
+		public static final void Hello(String name) { .. }
+	}
+
+Gọi từ Java:
+
+	Hi.Hello("DroidCon")
+
+* Tính năng gobind
+
+Hiện tại, gobind hỗ trợ nhiều kiểu Go cơ bản, struct và callback.
+
+Khi hoàn thiện, `gobind` sẽ hỗ trợ *tất cả* kiểu Go.
+
+Sự đơn giản của Go làm cho ràng buộc ngôn ngữ trở nên đơn giản.
+Với C++, SWIG có nhiều tính năng khó dùng.
+
+Với Go, chúng ta có ràng buộc ngôn ngữ không cần cấu hình.
+SWIG mà không cần file .swig.
+
+* Ứng dụng viết hoàn toàn bằng Go
+
+* Giao diện kiểu NDK
+
+Go sẽ có các thư viện chung:
+
+- Sự kiện chạm
+- OpenGL
+- Quản lý ứng dụng cơ bản
+
+Nói chung: nếu hoạt động trên NDK và iOS, nó sẽ hoạt động trong Go.
+
+* Trò chơi
+
+Mục tiêu chính của ứng dụng Go thuần là trò chơi.
+
+Kiểm soát tốt hơn việc cấp phát bộ nhớ đồng nghĩa với ít
+vấn đề bộ gom rác hơn.
+
+Ít có khả năng dùng cho các engine 3D ngân sách lớn.
+Nhưng nhiều trò chơi có thể viết bằng Go.
+
+Và chúng ta đang xây dựng một gói sprite 2D.
+
+* Trạng thái: 2014
+
+Hỗ trợ Android OS sẽ được tích hợp vào runtime Go trong bản phát hành 1.4 tháng 12.
+
+Phiên bản đầu tiên có sẵn từ kho con `go.mobile` của
+
+- `gobind`
+- Ràng buộc OpenGL ES 2
+- Gói sự kiện chạm
+- Tích hợp build Android hạn chế
+
+Thư viện Sprite sẽ trong giai đoạn thử nghiệm sớm.
+
+Cài đặt vẫn còn phức tạp hơn tôi muốn, nhưng nó sẽ hoạt động.
+
+* Demo
+
+* Lộ trình: giữa 2015
+
+Kế hoạch là hỗ trợ iOS sẽ có trong bản phát hành Go runtime 1.5 tháng 7.
+
+Cùng các ràng buộc OpenGL và gói sự kiện chạm sẽ hoạt động. Công cụ `gobind` sẽ tạo ràng buộc Objective-C/Swift.
+
+Sprite sẽ sẵn sàng cho trò chơi 2D.
+
+* Câu hỏi
+
+* Slide bổ sung
+
+* So sánh Go với Java
+
+- con trỏ
+- tạo ít rác hơn
+
+	type Point struct {
+		X float64
+		Y float64
+	}
+
+	type Points []Point
+
+- `map[int]int` hiệu quả như `android.os.SparseIntArray`
+- `map[int]float32` hiệu quả như `android.os.?`
+- tập trung vào hàm, đơn giản
+- binary gốc
+
+Xem thêm: [[/talks/2014/go4java.slide]]

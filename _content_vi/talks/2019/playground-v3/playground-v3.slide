@@ -1,0 +1,231 @@
+Playground v3
+2019-10-08
+
+Brad Fitzpatrick
+@bradfitz
+bradfitz@golang.org
+
+* Tổng quan
+
+- Đây là bài nói về play.golang.org
+- Những gì nó làm
+- Lịch sử các triển khai
+- Phiên bản mới nhất
+
+* Nó làm gì
+
+- Cho phép người dùng chạy code không tin cậy trên trình duyệt
+- Được sử dụng bởi play.golang.org, tour.golang.org, các đoạn ví dụ godoc, v.v.
+
+.image hello.png
+
+* Thời gian
+
+- thời gian được giả mạo, có thể cache
+- bắt đầu vào tháng 11 năm 2009, khi Go được công bố công khai
+
+.image time.png
+
+* Phát lại ngủ
+
+- các lần ngủ được mô phỏng phía máy chủ (hỗ trợ runtime đặc biệt)
+- các lần ghi stdout/stderr có tiêu đề nhị phân chứa thời gian ảo
+- sandbox phân tích đầu ra, mô phỏng sự trôi qua của thời gian trên trình duyệt
+- không chiếm tài nguyên máy chủ
+
+* Thú vị: xóa màn hình bằng \f
+
+.link /play/p/lrSX-aXEOMe ví dụ animation
+
+  func main() {
+     const x = `.oOo`
+     for i := 0; i < 100; i++ {
+         fmt.Printf("\f%c", x[i%len(x)])
+         time.Sleep(200 * time.Millisecond)
+     }
+  }
+
+* Thú vị: hình ảnh
+
+.link /play/p/t9ECgoq0XSD ví dụ hình ảnh
+
+.image pic.png _ 600
+
+* Lịch sử
+
+Lưu ý: các số phiên bản giả, hồi tố theo sau để dễ thảo luận.
+
+Trong thực tế, v0.0.0-20141209125517-dba9ba1953c6
+
+* Native Client (NaCl)
+
+- Tháng 7 năm 2009, bốn tháng trước Go
+- GOOS=nacl, GOARCH={386,amd64p32,arm}
+- tập con hạn chế, có thể xác minh của {386,amd64,arm}
+- một số người có tham vọng thêm vào Chrome, web
+- hầu hết người phản đối
+- "Portable NativeClient" (PNaCl) sau đó được đề xuất, bị phản đối
+- GOARCH=amd64p32: amd64, nhưng con trỏ 32-bit
+
+* Playground ~v1
+
+- Frontend App Engine, bằng Python, thực hiện các lời gọi RPC để truyền mã nguồn đến:
+- Backend C++ Borg, biên dịch Go thành NaCl, chạy dưới bộ lọc syscall ptrace
+- hai lớp hoang mang tiêu chuẩn; hoặc đủ trong lý thuyết một mình, lớp ptrace ghi/cảnh báo nghiêm ngặt khi có vi phạm
+
+* Playground ~v1.1
+
+- Frontend GAE được viết lại từ Python sang Go
+- backend vẫn là C++ chạy NaCl trên Borg
+
+* Playground ~v2
+
+- chuyển sang App Engine Flex, nơi chúng ta có thể làm nhiều thứ hơn
+- thống nhất frontend + backend
+- tự chạy Native Client sel_ldr (nhị phân chạy NaCl)
+- không còn C++
+- không còn Borg
+
+* 2017
+
+- Ngày 30 tháng 5 năm 2017: Portable Native Client (PNaCl) bị ngừng hỗ trợ
+- Go thậm chí không bao giờ triển khai PNaCl (may mắn thay, nhìn lại)
+- Go vẫn triển khai các biến thể NaCl dành riêng cho kiến trúc bị ngừng hỗ trợ kép
+
+* 2018, 2019...
+
+- WebAssembly tiếp tục phát triển
+- NaCl ngày càng trông kỳ lạ, chi phí bảo trì cao so với giá trị của nó
+- bảo trì: tài nguyên builder
+- bảo trì: hy vọng các bản vá faketime runtime vẫn áp dụng được ở mỗi phiên bản
+- bảo trì: amd64p32
+- nhưng play.golang.org vẫn phụ thuộc vào nó
+
+* Làm thế nào để sandbox play.golang.org mà không có NaCl?
+
+* Kế hoạch: Playground v3
+
+- xóa nacl/*
+- chuyển hỗ trợ faketime kỳ lạ của Nacl sang linux/amd64 ít nhất...
+- +build faketime (trong master cho Go 1.14; cảm ơn, Austin!)
+- chạy nhị phân linux/amd64 thông thường trong một số sandbox
+
+* gVisor
+
+- gVisor là một triển khai lại hầu hết hoàn chỉnh của interface syscall Linux, bằng Go
+- chạy dưới các chế độ khác nhau ("platforms"): KVM, ptrace
+- mọi thứ đều có thể hook: ~FUSE trên steroid
+- hiệu năng khá tốt, đặc biệt với KVM, không phải chúng ta thực sự cần hiệu năng
+- là Google-internal, mã nguồn mở tháng 5 năm 2018
+
+* Ai sử dụng gVisor?
+
+- Runtime thế hệ 2 của App Engine (tất cả các runtime mới)
+- Cloud Run
+- Cloud Functions
+- GKE Sandbox (container tăng cường bảo mật có thể chọn)
+- ...
+
+* Làm thế nào để sử dụng gVisor?
+
+- phức tạp, ~không được hỗ trợ để sử dụng trực tiếp
+- đi kèm với lệnh bao bọc "runsc" mà nhóm khuyến nghị
+
+* Vấn đề runsc
+
+- runsc ("run secure container") là frontend OCI "runc"-tương thích với gVisor
+- interface runc bản thân phức tạp
+- khó dùng trực tiếp
+- fuzzer syzkaller thực hiện điều đó, vì vậy code driver Go tồn tại
+- nhưng ...
+
+* root
+
+- runsc yêu cầu root
+- không có mạng và ptrace thay vì kvm, nó _gần như_ không yêu cầu root, nhưng nhóm gvisor chưa hoàn thành rootless
+- App Engine, v.v. không cho chúng ta root thực (uid=0, nhưng giả, không đủ caps, dưới gVisor chính nó)
+- gvisor không thể chạy lồng nhau dưới gvisor (không thể chạy trên Cloud Run, ví dụ)
+
+* Docker
+
+- Nhưng Docker hỗ trợ runsc dễ dàng:
+
+    docker run --runtime=runsc ...
+
+- Vì vậy chúng ta chỉ cần chạy một pool VM được chia tỷ lệ động chạy Docker + máy chủ HTTP backend điều khiển Docker, với load balancer trước pool VM.
+
+* Kiến trúc v3
+
+- frontend HTTP hiện có nhận mã nguồn, biên dịch nhị phân (hiện tại)
+- HTTP PUT nhị phân đã biên dịch vào máy chủ HTTP backend
+
+* Kiến trúc v3
+
+.image arch.png _ 700
+
+* Trên mỗi VM
+
+- một container có quyền nói chuyện HTTP
+- có /var/run/docker.dock được bind-mount, để điều khiển docker cha
+- tạo container anh chị em-nhưng-gvisor cho mỗi lần chơi
+- máy chủ HTTP đọc nhị phân được PUT, pipe vào container an toàn, đọc phản hồi stdout/stderr và trạng thái thoát
+- trả lời qua HTTP tới frontend
+
+* Xem VM
+
+.image cos.png _ 900
+
+* Kế hoạch chuyển đổi
+
+* Hiện tại
+
+- Frontend biên dịch sang nacl/amd64p32, chạy nhị phân
+
+* Hiện tại+1
+
+- Frontend biên dịch sang nacl/amd64p32, chạy nhị phân
+- hỗ trợ chọn tham gia để sử dụng backend mới (ở chế độ linux/amd64 hoặc nacl/amd64p32)
+- hỗ trợ tạm thời trong backend mới để hiểu cách bao bọc nacl bằng nhị phân sel_ldr
+
+* Hiện tại+2:
+
+- Frontend biên dịch sang nacl/amd64p2, PUT tất cả yêu cầu đến backend mới
+- cho chúng ta kinh nghiệm vận hành với backend trước ngày hỗn loạn phát hành Go 1.14
+
+* Ngày phát hành Go 1.14
+
+- lật một bit trong frontend buộc linux/amd64
+- NaCl không còn được cho phép
+- có thể xóa tất cả code playground của nó (tối thiểu)
+
+* Khả năng trong tương lai
+
+- ngừng vận chuyển các nhị phân đã biên dịch qua mạng?
+- ... lợi thế tối thiểu, có thể không đáng
+- thống nhất biên dịch & chạy trong backend?
+- 0, 1 hay 2 dịch vụ sandbox để cập nhật mỗi lần phát hành Go?
+- 2 là quá nhiều
+- 1 là hiện tại, chấp nhận được
+- 0 có thể quá rủi ro
+
+* Các lựa chọn thay thế
+
+* Cloud Run?
+
+- Gần hoàn hảo
+- nhưng không cho phép bạn tắt mạng (chưa? Cloud Functions có VPC connectors, có thể định tuyến lưu lượng đến VM Linux loại bỏ gói)
+- nếu runsc không cần root xảy ra, có thể chạy ở chế độ ptrace dưới Cloud Run
+
+* GKE Sandbox?
+
+- không rõ ràng đơn giản hơn, nhanh hơn cài đặt này
+- nhưng có thể là lựa chọn thay thế sau này
+- lo ngại về độ trễ đàn hồi của pool node? COS khởi động nhanh.
+
+* WebAssembly?
+
+- nhị phân lớn cho người dùng
+- hỗ trợ vẫn còn thử nghiệm, nhưng đang cải thiện
+- sử dụng WebAssembly cho x/tools/cmd/present?
+- ... bởi vì cái bẫy runsc Docker này quá phức tạp cho người dùng thông thường đang nói chuyện trên laptop
+- hoặc chỉ chạy không sandbox trong cmd/present

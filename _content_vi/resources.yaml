@@ -1,0 +1,60 @@
+  - title: Dịch vụ Đám mây & Mạng
+    description: "Với hệ sinh thái công cụ và API phong phú trên các nhà cung cấp đám mây lớn, việc xây dựng dịch vụ với Go ngày càng dễ dàng hơn bao giờ hết."
+    link: /solutions/cloud/
+    icon: /images/icons/sphere.svg
+    iconDark: /images/icons/sphere-dark.svg
+    iconName: Sphere
+    packages:
+    - title: cloud.google.com/go
+      url: https://cloud.google.com/go/home
+    - title: aws/client
+      url: https://aws.amazon.com/sdk-for-go/
+    - title: Azure/azure-sdk-for-go
+      url: https://github.com/Azure/azure-sdk-for-go
+  - title: Giao diện Dòng lệnh
+    description: "Với các gói mã nguồn mở phổ biến và thư viện chuẩn mạnh mẽ, hãy dùng Go để tạo ra các CLI nhanh và tinh gọn."
+    link: /solutions/clis/
+    icon: /images/icons/command-folder.svg
+    iconDark: /images/icons/command-folder-dark.svg
+    iconName: Command Line
+    packages:
+    - title: spf13/cobra
+      url: https://github.com/spf13/cobra
+    - title: spf13/viper
+      url: https://github.com/spf13/viper
+    - title: urfave/cli
+      url: https://github.com/urfave/cli
+    - title: delve
+      url: https://github.com/go-delve/delve
+    - title: chzyer/readline
+      url: https://github.com/chzyer/readline
+  - title: Phát triển Web
+    description: "Với hiệu năng bộ nhớ vượt trội và hỗ trợ nhiều IDE, Go là nền tảng cho các ứng dụng web nhanh và có khả năng mở rộng cao."
+    link: /solutions/webdev/
+    icon: /images/icons/code.svg
+    iconDark: /images/icons/code-dark.svg
+    iconName: Code
+    packages:
+    - title: net/http
+      url: /pkg/net/http/
+    - title: html/template
+      url: /pkg/html/template/
+    - title: flosch/pongo2
+      url: https://github.com/flosch/pongo2
+    - title: database/sql
+      url: /pkg/database/sql/
+    - title: elastic/go-elasticsearch
+      url: https://github.com/elastic/go-elasticsearch
+  - title: DevOps & Độ tin cậy Site
+    description: "Với thời gian biên dịch nhanh, cú pháp gọn gàng, bộ định dạng tự động và công cụ tạo tài liệu tích hợp, Go được xây dựng để hỗ trợ cả DevOps lẫn SRE."
+    link: /solutions/devops/
+    icon: /images/icons/gear.svg
+    iconDark: /images/icons/gear-dark.svg
+    iconName: Sphere
+    packages:
+    - title: open-telemetry/opentelemetry-go
+      url: https://github.com/open-telemetry/opentelemetry-go
+    - title: istio/istio
+      url: https://github.com/istio/istio
+    - title: urfave/cli
+      url: https://github.com/urfave/cli

@@ -1,0 +1,240 @@
+<!--{
+    "Title": "Gọi mã của bạn từ một module khác",
+    "Breadcrumb": true
+}-->
+
+<p>
+  Trong <a href="/doc/tutorial/create-module.html">phần trước</a>, bạn đã tạo một
+  module <code>greetings</code>. Trong phần này, bạn sẽ viết mã để gọi
+  hàm <code>Hello</code> trong module bạn vừa viết. Bạn sẽ
+  viết mã có thể thực thi như một ứng dụng và gọi mã trong module
+  <code>greetings</code>.
+</p>
+
+<aside class="Note">
+  <strong>Lưu ý:</strong> Phần này là một phần của hướng dẫn nhiều bước, bắt đầu từ
+  <a href="/doc/tutorial/create-module.html">Tạo một module Go</a>.
+</aside>
+
+<ol>
+  <li>
+    Tạo thư mục <code>hello</code> cho mã nguồn module Go của bạn. Đây là
+    nơi bạn sẽ viết phần gọi hàm.
+
+    <p>
+      Sau khi tạo thư mục này, bạn sẽ có cả thư mục hello và
+      greetings ở cùng cấp trong cấu trúc thư mục, như sau:
+    </p>
+      <pre>&lt;home&gt;/
+ |-- greetings/
+ |-- hello/</pre>
+
+    <p>
+      Ví dụ, nếu dấu nhắc lệnh của bạn đang ở thư mục greetings, bạn
+      có thể dùng các lệnh sau:
+    </p>
+
+    <pre>
+cd ..
+mkdir hello
+cd hello
+</pre
+    >
+  </li>
+
+  <li>
+    Bật tính năng theo dõi dependency cho mã bạn sắp viết.
+
+    <p>
+      Để bật theo dõi dependency cho mã của bạn, hãy chạy
+      <a
+        href="/ref/mod#go-mod-init"
+        >lệnh <code>go mod init</code></a>, truyền vào tên của module
+        mà mã của bạn sẽ nằm trong đó.</p>
+
+    <p>
+        Trong hướng dẫn này, hãy dùng <code>example.com/hello</code>
+        làm đường dẫn module.
+    </p>
+
+    <pre>
+$ go mod init example.com/hello
+go: creating new go.mod: module example.com/hello
+</pre>
+  </li>
+
+  <li>
+    Trong trình soạn thảo văn bản, trong thư mục hello, tạo một tệp để
+    viết mã và đặt tên là hello.go.
+  </li>
+
+  <li>
+    Viết mã để gọi hàm <code>Hello</code>, rồi in
+    giá trị trả về của hàm.
+
+    <p>
+      Để làm điều đó, hãy dán đoạn mã sau vào hello.go.
+    </p>
+
+    <pre>
+package main
+
+import (
+    "fmt"
+
+    "example.com/greetings"
+)
+
+func main() {
+    // Get a greeting message and print it.
+    message := greetings.Hello("Gladys")
+    fmt.Println(message)
+}
+</pre>
+
+    <p>
+      Trong đoạn mã này, bạn:
+    </p>
+
+    <ul>
+      <li>
+        Khai báo gói <code>main</code>. Trong Go, mã được thực thi như một
+        ứng dụng phải nằm trong gói <code>main</code>.
+      </li>
+      <li>
+        Import hai gói: <code>example.com/greetings</code> và
+        <a href="https://pkg.go.dev/fmt/">gói <code>fmt</code></a>. Điều này
+        cho phép mã của bạn truy cập các hàm trong những gói đó. Import
+        <code>example.com/greetings</code> (gói chứa trong module
+        bạn đã tạo trước đó) cho phép bạn truy cập hàm <code>Hello</code>.
+        Bạn cũng import <code>fmt</code>, với các hàm để xử lý
+        văn bản đầu vào và đầu ra (chẳng hạn in văn bản ra console).
+      </li>
+      <li>
+        Lấy lời chào bằng cách gọi hàm <code>Hello</code> của gói
+        <code>greetings</code>.
+      </li>
+    </ul>
+  </li>
+
+  <li>
+    Chỉnh sửa module <code>example.com/hello</code> để sử dụng module
+    <code>example.com/greetings</code> cục bộ của bạn.
+
+    <p>
+      Trong môi trường production, bạn sẽ publish module <code>example.com/greetings</code>
+      từ kho lưu trữ của nó (với đường dẫn module phản ánh vị trí đã publish),
+      nơi các công cụ Go có thể tìm và tải xuống.
+      Tuy nhiên, vì bạn chưa publish module, bạn cần điều chỉnh
+      module <code>example.com/hello</code> để nó có thể tìm thấy
+      mã <code>example.com/greetings</code> trên hệ thống tệp cục bộ của bạn.
+    </p>
+
+    <p>
+      Để làm điều đó, hãy dùng
+      <a href="/ref/mod#go-mod-edit">lệnh <code>go
+      mod edit</code></a> để chỉnh sửa module <code>example.com/hello</code>
+      nhằm chuyển hướng các công cụ Go từ đường dẫn module của nó (nơi module chưa có)
+      sang thư mục cục bộ (nơi module đang có).
+    </p>
+
+    <ol>
+      <li>
+        Từ dấu nhắc lệnh trong thư mục hello, chạy lệnh sau:
+
+    <pre>
+$ go mod edit -replace example.com/greetings=../greetings
+</pre>
+
+    <p>
+      Lệnh này chỉ định rằng <code>example.com/greetings</code> cần được
+      thay thế bằng <code>../greetings</code> để xác định vị trí
+      dependency. Sau khi chạy lệnh, tệp go.mod trong thư mục hello
+      sẽ chứa một <a href="/doc/modules/gomod-ref#replace">
+        chỉ thị <code>replace</code></a>:
+    </p>
+
+        <pre>
+module example.com/hello
+
+go 1.16
+
+<ins>replace example.com/greetings => ../greetings</ins>
+</pre>
+      </li>
+
+      <li>
+        Từ dấu nhắc lệnh trong thư mục hello, chạy
+        <a href="/ref/mod#go-mod-tidy">
+        lệnh <code>go mod tidy</code></a> để đồng bộ hóa
+        các dependency của module <code>example.com/hello</code>, thêm những dependency
+        mà mã yêu cầu nhưng chưa được theo dõi trong module.
+
+        <pre>$ go mod tidy
+go: found example.com/greetings in example.com/greetings v0.0.0-00010101000000-000000000000
+</pre>
+        <p>
+         Sau khi lệnh hoàn tất, tệp go.mod của module
+         <code>example.com/hello</code> sẽ trông như sau:
+        </p>
+
+        <pre>module example.com/hello
+
+go 1.16
+
+replace example.com/greetings => ../greetings
+
+<ins>require example.com/greetings v0.0.0-00010101000000-000000000000</ins></pre>
+
+        <p>
+          Lệnh đã tìm thấy mã cục bộ trong thư mục greetings, rồi
+          thêm một <a href="/doc/modules/gomod-ref#require">chỉ thị <code>require</code>
+          </a> để chỉ định rằng <code>example.com/hello</code>
+          yêu cầu <code>example.com/greetings</code>. Bạn đã tạo ra
+          dependency này khi import gói <code>greetings</code> trong
+          hello.go.
+        </p>
+        <p>
+          Số theo sau đường dẫn module là một <em>số phiên bản giả</em>
+          -- một số được tạo ra để thay thế số phiên bản ngữ nghĩa (mà
+          module chưa có).
+        </p>
+        <p>
+          Để tham chiếu đến một module đã <em>publish</em>, tệp go.mod thường
+          bỏ qua chỉ thị <code>replace</code> và dùng chỉ thị
+          <code>require</code> với số phiên bản được gắn thẻ ở cuối.
+        </p>
+
+        <pre>require example.com/greetings v1.1.0</pre>
+
+        <p>Để biết thêm về số phiên bản, xem
+          <a href="/doc/modules/version-numbers">Đánh số phiên bản module</a>.</p>
+      </li>
+    </ol>
+  <li>
+    Tại dấu nhắc lệnh trong thư mục <code>hello</code>, chạy mã của bạn để
+    xác nhận nó hoạt động.
+
+    <pre>
+$ go run .
+Hi, Gladys. Welcome!
+</pre>
+  </li>
+</ol>
+
+<p>
+  Chúc mừng! Bạn đã viết hai module hoạt động được.
+</p>
+
+<p>
+  Trong phần tiếp theo, bạn sẽ thêm một số xử lý lỗi.
+</p>
+
+<p class="Navigation">
+  <a class="Navigation-prev" href="/doc/tutorial/create-module.html"
+    >&lt; Tạo một module Go</a
+  >
+  <a class="Navigation-next" href="/doc/tutorial/handle-errors.html"
+    >Trả về và xử lý lỗi &gt;</a
+  >
+</p>

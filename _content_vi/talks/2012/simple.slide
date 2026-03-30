@@ -1,0 +1,382 @@
+Go: một môi trường lập trình đơn giản
+
+9 Nov 2012
+
+# Go là ngôn ngữ đa năng thu hẹp khoảng cách giữa các ngôn ngữ kiểu tĩnh hiệu quả
+# và ngôn ngữ động có năng suất cao. Nhưng không chỉ ngôn ngữ làm cho Go đặc biệt –
+# Go có thư viện chuẩn rộng lớn và nhất quán cùng các công cụ mạnh mẽ nhưng đơn giản.
+#
+# Bài nói chuyện này giới thiệu Go, sau đó là tour qua một số chương trình thực tế
+# minh họa sức mạnh, phạm vi, và sự đơn giản của môi trường lập trình Go.
+
+Andrew Gerrand
+Google Inc.
+@enneff
+adg@golang.org
+https://go.dev
+
+* Video
+
+Một video của bài nói chuyện này đã được ghi lại tại Øredev ở Malmö, Thụy Điển vào tháng 11 năm 2012.
+
+.link http://vimeo.com/53221558 Xem bài nói chuyện trên Vimeo
+
+* Bối cảnh
+
+* Tại sao cần một ngôn ngữ mới?
+
+Được thúc đẩy bởi nhu cầu của chúng tôi tại Google.
+
+Chúng tôi cần:
+
+- Hiệu quả
+- An toàn
+- Đồng thời
+- Khả năng mở rộng
+- Chu kỳ phát triển nhanh
+- Không bất ngờ
+- Một linh vật dễ thương
+
+* Thiết kế
+
+"Sự đồng thuận đã dẫn dắt thiết kế. Không có gì được đưa vào ngôn ngữ cho đến khi [Ken Thompson, Robert Griesemer, và tôi] đều đồng ý rằng nó đúng. Một số tính năng không được giải quyết cho đến sau hơn một năm thảo luận." - Rob Pike
+
+Go là:
+
+- Nhẹ nhàng, tránh sự lặp lại không cần thiết
+- Hướng đối tượng, nhưng không theo cách thông thường
+- Đồng thời, theo cách giúp bạn tỉnh táo
+- Được thiết kế cho lập trình viên thực tế
+
+* Go 1
+
+Phát hành vào tháng 3 năm 2012
+
+Một đặc tả của ngôn ngữ và thư viện sẽ được hỗ trợ trong nhiều năm.
+
+Cam kết: code viết cho Go 1.0 sẽ build và chạy được với Go 1.x.
+
+Điều tốt nhất chúng tôi từng làm.
+
+* Chú gopher
+
+.image simple/gopher.jpg
+
+* Hello, go
+
+.play simple/hello.go
+
+* Thư viện chuẩn
+
+* Các gói
+
+Code Go tồn tại trong các gói.
+
+Các gói chứa khai báo kiểu, hàm, biến và hằng số.
+
+Các gói có thể rất nhỏ (gói `errors` chỉ có một khai báo) hoặc rất lớn (gói `net/http` có hơn 100 khai báo). Hầu hết nằm ở đâu đó ở giữa.
+
+Chữ hoa quyết định tính hiển thị: `Foo` được xuất, `foo` thì không
+
+* io
+
+Gói `io` cung cấp các giao diện I/O cơ bản được sử dụng trong hầu hết code Go.
+
+Phổ biến nhất là các kiểu `Reader` và `Writer`, mô tả các luồng dữ liệu.
+
+.code simple/io/io.go
+
+Các triển khai của `Reader` và `Writer` bao gồm file, socket, (giải)nén, codec ảnh và JSON, và nhiều hơn nữa.
+
+* Kết nối chuỗi io.Readers
+
+.play simple/reader.go
+
+* net/http
+
+Gói `net/http` triển khai HTTP server và client.
+
+.play simple/hello-web.go
+
+* encoding/json
+
+Gói `encoding/json` chuyển đổi dữ liệu được mã hóa JSON sang và từ các cấu trúc dữ liệu Go gốc.
+
+.play simple/json.go /const/,$
+
+* time
+
+Gói `time` cung cấp biểu diễn về thời gian và khoảng thời gian, và các hàm liên quan đến thời gian khác.
+
+.play simple/time.go /START/,/END/
+.play simple/time2.go /START/,/END/
+
+Các giá trị `time.Time` cũng chứa `time.Location` (chỉ để hiển thị):
+
+.play simple/time3.go /START/,/END/
+
+* flag
+
+Gói `flag` cung cấp một API đơn giản để phân tích các cờ dòng lệnh.
+
+.play simple/flag.go
+
+	$ flag -message 'Hold on...' -delay 5m
+
+* Công cụ
+
+* Công cụ go
+
+Công cụ `go` là tiêu chuẩn thực tế để build và cài đặt code Go.
+
+Biên dịch và chạy chương trình một file:
+
+	$ go run hello.go
+
+Build và cài đặt gói trong thư mục hiện tại (và các phụ thuộc của nó):
+
+	$ go install
+
+Build và cài đặt gói `fmt` (và các phụ thuộc của nó):
+
+	$ go install fmt
+
+Công cụ này cũng hoạt động như một giao diện cho hầu hết các công cụ Go.
+
+* Đường dẫn import
+
+Công cụ `go` là công cụ "không cần cấu hình". Không cần Makefile hay script. Chỉ cần code Go.
+Schema build và code của bạn luôn đồng bộ; chúng là một và cùng nhau.
+
+Đường dẫn import gói phản ánh vị trí của code trong hệ thống file:
+
+  src/
+    github.com/nf/
+      gosynth/
+        main.go
+        note.go
+        osc.go
+      wav/
+        writer.go
+
+Chương trình `gosynth` import gói `wav`:
+
+  import "github.com/nf/wav"
+
+Cài đặt `gosynth` sẽ tự động cài đặt gói `wav`:
+
+  $ go install github.com/nf/gosynth
+
+* Phụ thuộc từ xa
+
+Công cụ `go` cũng tải code Go từ các kho từ xa.
+
+Đường dẫn import có thể là URL:
+
+	import "golang.org/x/net/websocket"
+
+Để tải, build và cài đặt một gói:
+
+	$ go get code.google.com/p/go.net/websocket
+
+Để tải, build và cài đặt `gosynth` và các phụ thuộc của nó:
+
+	$ go get github.com/nf/gosynth
+
+Thiết kế đơn giản này dẫn đến các công cụ thú vị khác:
+
+.link http://go.pkgdoc.org
+
+* Godoc
+
+Godoc trích xuất tài liệu từ code Go và trình bày nó dưới nhiều dạng.
+
+Các comment không cần định dạng đặc biệt, chúng chỉ cần đứng trước những gì chúng tài liệu.
+
+	// Split slices s into all substrings separated by sep and returns a slice of
+	// the substrings between those separators.
+	// If sep is empty, Split splits after each UTF-8 sequence.
+	// It is equivalent to SplitN with a count of -1.
+	func Split(s, sep string) []string {
+
+.image simple/split.png
+
+Tài liệu nằm cùng với code thì dễ cập nhật.
+
+* Gofmt
+
+Công cụ `gofmt` là bộ định dạng đẹp cho code nguồn Go.
+
+Tất cả code Go trong lõi đều được gofmt, cũng như ~70% code Go mã nguồn mở.
+
+Kết thúc các cuộc tranh luận nhàm chán về định dạng.
+
+Cải thiện khả năng đọc. Cải thiện khả năng viết.
+
+Tiết kiệm một lượng thời gian _khổng_lồ_.
+
+* Kiểm thử: viết
+
+Công cụ `go` và gói `testing` cung cấp framework kiểm thử nhẹ.
+
+.code simple/test/string_test.go /func TestIndex/,/^}/
+
+* Kiểm thử: chạy
+
+Công cụ go chạy các bài kiểm thử.
+
+	$ go test
+	PASS
+
+	$ go test -v
+	=== RUN TestIndex
+	--- PASS: TestIndex (0.00 seconds)
+	PASS
+
+Để chạy kiểm thử cho tất cả các dự án của tôi:
+
+	$ go test github.com/nf/...
+
+* Kiểm thử: benchmark
+
+Gói `testing` cũng hỗ trợ benchmark.
+
+Một hàm benchmark mẫu:
+
+.code simple/test/string_test.go /func BenchmarkIndex/,/^}/
+
+Gói benchmark sẽ biến đổi `b.N` cho đến khi hàm benchmark kéo dài đủ lâu để đo lường đáng tin cậy.
+
+	$ go test -test.bench=Index
+	PASS
+	BenchmarkIndex	50000000	        37.3 ns/op
+
+* Kiểm thử: ví dụ tài liệu
+
+Gói `testing` cũng hỗ trợ các ví dụ có thể kiểm thử.
+
+.code simple/test/string_test.go /func ExampleIndex/,/^}/
+
+Các ví dụ được build và chạy như một phần của bộ kiểm thử thông thường:
+
+	$ go test -v
+	=== RUN: ExampleIndex
+	--- PASS: ExampleIndex (0.00 seconds)
+	PASS
+
+Ví dụ được hiển thị trong `godoc` cùng với thứ nó minh họa:
+
+.link /pkg/strings/#Index go.dev/pkg/strings/#Index
+
+* Và còn nhiều hơn nữa
+
+- `vet`: kiểm tra code để phát hiện các lỗi lập trình phổ biến
+- `pprof`: profile CPU và bộ nhớ
+- `fix`: tự động di chuyển code khi API thay đổi
+- Hỗ trợ GDB
+- Hỗ trợ trình soạn thảo: Vim, Emacs, Eclipse, Sublime Text
+
+* Một ví dụ
+
+* Webfront
+
+`Webfront` là một HTTP server và reverse proxy.
+
+Nó đọc file quy tắc định dạng JSON như sau:
+
+.code simple/webfront/main.go /^\[/,/\]/
+
+Đối với tất cả các yêu cầu đến host `example.com` (hoặc bất kỳ tên nào kết thúc bằng `".example.com"`) nó phục vụ file từ thư mục `/var/www`.
+
+Đối với các yêu cầu đến `example.org`, nó chuyển tiếp yêu cầu đến HTTP server đang lắng nghe trên localhost cổng 8080.
+
+* Kiểu Rule
+
+Một giá trị `Rule` xác định phải làm gì với yêu cầu đến một host cụ thể.
+
+.code simple/webfront/main.go /Rule represents/,/^}/
+
+Nó tương ứng trực tiếp với các mục trong file cấu hình JSON.
+
+.code simple/webfront/main.go /^\[/,/\]/
+
+* Các phương thức của Rule
+
+.code simple/webfront/main.go /Match returns/,/^}/
+.code simple/webfront/main.go /Handler returns/,/^}/
+
+* Kiểu Server
+
+Kiểu `Server` chịu trách nhiệm tải (và làm mới) các quy tắc từ file quy tắc và phục vụ các HTTP request với handler phù hợp.
+
+.code simple/webfront/main.go /Server implements/,/^}/
+.code simple/webfront/main.go /ServeHTTP matches/,/^}/
+
+* Phương thức handler
+
+.code simple/webfront/main.go /handler returns/,/^}/
+
+* Phân tích các quy tắc
+
+Hàm `parseRules` sử dụng gói `encoding/json` để đọc file quy tắc vào cấu trúc dữ liệu Go.
+
+.code simple/webfront/main.go /parseRules reads/,/^}/
+
+* Phương thức loadRules
+
+.code simple/webfront/main.go /loadRules tests/,/^}/
+
+* Xây dựng server
+
+.code simple/webfront/main.go /NewServer constructs/,/^}/
+
+Hàm khởi tạo này khởi chạy một goroutine chạy phương thức `refreshRules`.
+
+* Làm mới các quy tắc
+
+.code simple/webfront/main.go /refreshRules polls/,/^}/
+
+* Kết hợp tất cả lại
+
+Hàm main phân tích các cờ dòng lệnh, tạo một `Server`, và khởi chạy một HTTP server phục vụ tất cả các yêu cầu với `Server`.
+
+.code simple/webfront/main.go /^var/,/^}/
+
+* Demo
+
+* Kiểm thử (1/3)
+
+Bài kiểm thử tích hợp `Server` sử dụng gói `httptest` để tạo một HTTP server giả, tổng hợp một tập quy tắc, và tạo một phiên bản `Server` sử dụng các quy tắc đó.
+
+.code simple/webfront/server_test.go /^func testHandler/,/STOP/
+
+* Kiểm thử (2/3)
+
+Mỗi trường hợp kiểm thử trong bảng chỉ định URL yêu cầu và mã phản hồi và nội dung phản hồi dự kiến.
+
+.code simple/webfront/server_test.go /TESTS START/,/STOP/
+
+* Kiểm thử (3/3)
+
+Đối với mỗi trường hợp kiểm thử, tạo một `http.Request` cho URL và một `httptest.ResponseRecorder` để ghi lại phản hồi, và truyền chúng đến phương thức `Server.ServeHTTP`. Sau đó kiểm tra rằng phản hồi khớp với trường hợp kiểm thử.
+
+.code simple/webfront/server_test.go /RANGE START/,/^}/
+
+* Demo
+
+* Kết luận
+
+* Đọc thêm
+
+Tất cả về Go:
+
+.link / go.dev
+
+Các slide cho bài nói chuyện này:
+
+.link /talks/2012/simple.slide go.dev/talks/2012/simple.slide
+
+webfront:
+
+.link https://github.com/nf/webfront
+

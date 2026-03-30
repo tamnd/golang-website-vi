@@ -1,0 +1,138 @@
+{{define "layout"}}
+
+ {{$canShare := not googleCN}}
+
+<div class="PlayPage">
+  <div class="Playground-controls">
+    <h1 class="Playground-title">Go Playground</h1>
+    <div class="Playground-buttons">
+    {{if .playVersions -}}
+    <select class="Playground-selectGoVersion js-playgroundVersionEl" aria-label="Go version">
+    {{range .playVersions -}}
+    <option value="{{.Backend}}">{{.Name}}</option>
+    {{end -}}
+    </select>
+    {{end -}}
+    <button id="run" class="Button Button--primary js-playgroundRunEl Playground-runButton" title="Chạy code này [shift-enter]">Chạy</button>
+    <div class="Playground-secondaryButtons">
+      <button id="fmt" class="Button js-playgroundFmtEl Playground-button" title="Định dạng code này">Định dạng</button>
+      {{- if $canShare}}
+      <button id="share" class="Button js-playgroundShareEl Playground-button" title="Chia sẻ code này">Chia sẻ</button>
+      {{- end}}
+    </div>
+    <input type="text" class="Playground-shareURL js-playgroundShareURLEl" title="URL chia sẻ" style="display: none;"></input>
+    <select class="Playground-selectExample js-playgroundToysEl" aria-label="Code examples">
+    <option value="hello.go">Hello, World!</option>
+    <option value="life.go">Conway's Game of Life</option>
+    <option value="fib.go">Fibonacci Closure</option>
+    <option value="peano.go">Peano Integers</option>
+    <option value="pi.go">Concurrent pi</option>
+    <option value="sieve.go">Concurrent Prime Sieve</option>
+    <option value="solitaire.go">Peg Solitaire Solver</option>
+    <option value="tree.go">Tree Comparison</option>
+    <option value="clear.go">Clear Screen</option>
+    <option value="http.go">HTTP Server</option>
+    <option value="image.go">Display Image</option>
+    <option value="multi.txt">Multiple Files</option>
+    <option value="sleep.go">Sleep</option>
+    <option value="test.go">Test Function</option>
+    <option value="index-dev.txt">Generic index</option>
+    </select>
+    </div>
+  </div>
+  <div class="Playground-inputContainer">
+    <div class="Playground-preContainer" id="editor-description">
+      Nhấn Esc để thoát khỏi trình soạn thảo.
+    </div>
+    <div id="wrap">
+    <textarea id="code" name="code" class="Playground-input js-playgroundCodeEl" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Try Go" aria-describedby="editor-description">{{if strings.Contains .URL "/play/p/"}}Đang tải...
+{{else}}
+// Bạn có thể chỉnh sửa code này!
+// Click vào đây và bắt đầu gõ.
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, 世界")
+}{{end}}</textarea>
+    </div>
+  </div>
+  <div class="Playground-outputContainer js-playgroundOutputEl">
+    <pre class="Playground-output"><noscript>Hello, 世界</noscript></pre>
+  </div>
+
+<div class="PlayAbout">
+<p><b>Giới thiệu về Playground</b></p>
+
+<p>
+Go Playground là dịch vụ web chạy trên các máy chủ của
+<a href="/">go.dev</a>.
+Dịch vụ nhận một chương trình Go, <a href="/cmd/vet/">kiểm tra</a>, biên dịch, liên kết và
+chạy chương trình trong một sandbox, sau đó trả về kết quả đầu ra.
+</p>
+
+<p>
+Nếu chương trình chứa <a href="/pkg/testing">test hoặc ví dụ</a>
+và không có hàm main, dịch vụ sẽ chạy các test.
+Benchmark có thể sẽ không được hỗ trợ vì chương trình chạy trong môi trường sandbox
+với tài nguyên hạn chế.
+</p>
+
+<p>
+Có những giới hạn đối với các chương trình có thể chạy trong playground:
+</p>
+
+<ul>
+
+<li>
+Playground có thể sử dụng hầu hết thư viện chuẩn, với một số ngoại lệ.
+Chương trình playground chỉ giao tiếp với thế giới bên ngoài
+bằng cách ghi vào standard output và standard error.
+</li>
+
+<li>
+Trong playground, thời gian bắt đầu từ 2009-11-10 23:00:00 UTC
+(xác định tầm quan trọng của ngày này là bài tập dành cho người đọc).
+Điều này giúp dễ dàng cache chương trình bằng cách cho chúng kết quả đầu ra xác định.
+</li>
+
+<li>
+Cũng có giới hạn về thời gian thực thi và mức sử dụng CPU và bộ nhớ.
+</li>
+
+</ul>
+
+<p>
+Bài viết "<a href="/blog/playground" target="_blank" rel="noopener">Bên trong
+Go Playground</a>" mô tả cách triển khai playground.
+Mã nguồn có tại <a href="https://go.googlesource.com/playground" target="_blank" rel="noopener">https://go.googlesource.com/playground</a>.
+</p>
+
+<p>
+Playground sử dụng <a href="/play/p/Ztyu2FJaajl">phiên bản ổn định mới nhất của Go</a>.
+</p>
+
+<p>
+Dịch vụ playground được sử dụng bởi nhiều hơn chỉ dự án Go chính thức
+(<a href="https://gobyexample.com/">Go by Example</a> là một ví dụ khác)
+và chúng tôi vui lòng cho bạn sử dụng nó trên trang của riêng bạn.
+Chúng tôi chỉ yêu cầu bạn
+<a href="mailto:golang-dev@googlegroups.com">liên hệ với chúng tôi trước (lưu ý đây là danh sách gửi thư công khai)</a>,
+sử dụng user agent duy nhất trong các yêu cầu của bạn (để chúng tôi có thể nhận dạng bạn),
+và dịch vụ của bạn mang lại lợi ích cho cộng đồng Go.
+</p>
+
+<p>
+Mọi yêu cầu xóa nội dung nên được gửi đến
+<a href="mailto:security@golang.org">security@golang.org</a>.
+Vui lòng bao gồm URL và lý do yêu cầu.
+</p>
+</div>
+</div>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-11222381-7"></script>
+<script src="/js/jquery-linedtextarea.js" defer></script>
+<script src="/js/playsite.js" defer></script>
+
+{{end}}

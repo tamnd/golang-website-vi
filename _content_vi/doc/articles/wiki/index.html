@@ -1,0 +1,716 @@
+<!--{
+	"Title": "Writing Web Applications",
+	"Template": true,
+	"Breadcrumb": true
+}-->
+
+<h2>Giới thiệu</h2>
+
+<p>
+Những nội dung được đề cập trong hướng dẫn này:
+</p>
+<ul>
+<li>Tạo cấu trúc dữ liệu với các phương thức load và save</li>
+<li>Dùng gói <code>net/http</code> để xây dựng ứng dụng web
+<li>Dùng gói <code>html/template</code> để xử lý các template HTML</li>
+<li>Dùng gói <code>regexp</code> để xác thực đầu vào của người dùng</li>
+<li>Dùng closure</li>
+</ul>
+
+<p>
+Kiến thức được giả định trước:
+</p>
+<ul>
+<li>Kinh nghiệm lập trình</li>
+<li>Hiểu biết về các công nghệ web cơ bản (HTTP, HTML)</li>
+<li>Một số kiến thức về dòng lệnh UNIX/DOS</li>
+</ul>
+
+<h2>Bắt đầu</h2>
+
+<p>
+Hiện tại, bạn cần có máy chạy FreeBSD, Linux, macOS hoặc Windows để chạy Go.
+Chúng ta sẽ dùng <code>$</code> để biểu thị dấu nhắc lệnh.
+</p>
+
+<p>
+Cài đặt Go (xem <a href="/doc/install">Hướng dẫn cài đặt</a>).
+</p>
+
+<p>
+Tạo một thư mục mới cho hướng dẫn này bên trong <code>GOPATH</code> của bạn và cd vào đó:
+</p>
+
+<pre>
+$ mkdir gowiki
+$ cd gowiki
+</pre>
+
+<p>
+Tạo một tệp tên <code>wiki.go</code>, mở trong trình soạn thảo yêu thích của bạn, và
+thêm các dòng sau:
+</p>
+
+<pre>
+package main
+
+import (
+    "fmt"
+    "os"
+)
+</pre>
+
+<p>
+Chúng ta import các gói <code>fmt</code> và <code>os</code> từ thư viện chuẩn của Go.
+Sau này, khi chúng ta triển khai thêm chức năng, chúng ta sẽ thêm nhiều gói hơn vào
+khai báo <code>import</code> này.
+</p>
+
+<h2>Cấu trúc dữ liệu</h2>
+
+<p>
+Hãy bắt đầu bằng cách định nghĩa các cấu trúc dữ liệu. Một wiki bao gồm một chuỗi các
+trang liên kết với nhau, mỗi trang có tiêu đề và nội dung (nội dung trang). Ở đây, chúng
+ta định nghĩa <code>Page</code> là một struct với hai trường đại diện cho tiêu đề và nội
+dung.
+</p>
+
+{{code "part1.go" `/^type Page/` `/}/`}}
+
+<p>
+Kiểu <code>[]byte</code> có nghĩa là "một slice của <code>byte</code>".
+(Xem <a href="/doc/articles/slices_usage_and_internals.html">Slices: cách dùng và
+cơ chế nội bộ</a> để biết thêm về slice.)
+Phần tử <code>Body</code> là <code>[]byte</code> thay vì
+<code>string</code> vì đó là kiểu mà các thư viện <code>io</code> chúng ta sẽ dùng mong
+đợi, như bạn sẽ thấy bên dưới.
+</p>
+
+<p>
+Struct <code>Page</code> mô tả cách dữ liệu trang sẽ được lưu trong bộ nhớ. Nhưng còn
+việc lưu trữ lâu dài thì sao? Chúng ta có thể giải quyết điều đó bằng cách tạo phương
+thức <code>save</code> trên <code>Page</code>:
+</p>
+
+{{code "part1.go" `/^func.*Page.*save/` `/}/`}}
+
+<p>
+Chữ ký của phương thức này có nghĩa là: "Đây là phương thức tên <code>save</code> nhận
+<code>p</code>, một con trỏ đến <code>Page</code>, làm receiver. Nó không có tham số
+và trả về một giá trị kiểu <code>error</code>."
+</p>
+
+<p>
+Phương thức này sẽ lưu <code>Body</code> của <code>Page</code> vào một tệp văn bản.
+Để đơn giản, chúng ta sẽ dùng <code>Title</code> làm tên tệp.
+</p>
+
+<p>
+Phương thức <code>save</code> trả về một giá trị <code>error</code> vì đó là kiểu trả về
+của <code>WriteFile</code> (một hàm thư viện chuẩn ghi một slice byte vào tệp). Phương
+thức <code>save</code> trả về giá trị error để cho phép ứng dụng xử lý nó nếu có sự cố
+xảy ra khi ghi tệp. Nếu mọi việc suôn sẻ, <code>Page.save()</code> sẽ trả về
+<code>nil</code> (giá trị không của con trỏ, interface và một số kiểu khác).
+</p>
+
+<p>
+Hằng số nguyên dạng bát phân <code>0600</code>, được truyền làm tham số thứ ba cho
+<code>WriteFile</code>, cho biết rằng tệp nên được tạo với quyền đọc-ghi chỉ dành cho
+người dùng hiện tại. (Xem trang man Unix <code>open(2)</code> để biết chi tiết.)
+</p>
+
+<p>
+Ngoài việc lưu trang, chúng ta cũng muốn tải trang:
+</p>
+
+{{code "part1-noerror.go" `/^func loadPage/` `/^}/`}}
+
+<p>
+Hàm <code>loadPage</code> xây dựng tên tệp từ tham số tiêu đề, đọc nội dung tệp vào một
+biến mới <code>body</code>, và trả về một con trỏ đến một <code>Page</code> literal được
+xây dựng với các giá trị tiêu đề và nội dung phù hợp.
+</p>
+
+<p>
+Các hàm có thể trả về nhiều giá trị. Hàm thư viện chuẩn
+<code>os.ReadFile</code> trả về <code>[]byte</code> và <code>error</code>.
+Trong <code>loadPage</code>, error chưa được xử lý; "định danh rỗng" được biểu diễn
+bằng ký hiệu gạch dưới (<code>_</code>) được dùng để bỏ qua giá trị trả về error
+(về bản chất là gán giá trị cho không có gì).
+</p>
+
+<p>
+Nhưng điều gì xảy ra nếu <code>ReadFile</code> gặp lỗi? Ví dụ, tệp có thể không tồn tại.
+Chúng ta không nên bỏ qua các lỗi như vậy. Hãy sửa hàm để trả về <code>*Page</code> và
+<code>error</code>.
+</p>
+
+{{code "part1.go" `/^func loadPage/` `/^}/`}}
+
+<p>
+Những hàm gọi hàm này bây giờ có thể kiểm tra tham số thứ hai; nếu nó là
+<code>nil</code> thì Page đã được tải thành công. Nếu không, đó sẽ là một
+<code>error</code> mà người gọi có thể xử lý (xem
+<a href="/ref/spec#Errors">đặc tả ngôn ngữ</a> để biết chi tiết).
+</p>
+
+<p>
+Tại thời điểm này chúng ta có một cấu trúc dữ liệu đơn giản và khả năng lưu vào và tải
+từ tệp. Hãy viết một hàm <code>main</code> để kiểm tra những gì chúng ta đã viết:
+</p>
+
+{{code "part1.go" `/^func main/` `/^}/`}}
+
+<p>
+Sau khi biên dịch và thực thi mã này, một tệp tên <code>TestPage.txt</code> sẽ được tạo,
+chứa nội dung của <code>p1</code>. Tệp sau đó sẽ được đọc vào struct <code>p2</code>, và
+phần tử <code>Body</code> của nó sẽ được in ra màn hình.
+</p>
+
+<p>
+Bạn có thể biên dịch và chạy chương trình như sau:
+</p>
+
+<pre>
+$ go build wiki.go
+$ ./wiki
+This is a sample Page.
+</pre>
+
+<p>
+(Nếu bạn dùng Windows bạn phải gõ "<code>wiki</code>" mà không có
+"<code>./</code>" để chạy chương trình.)
+</p>
+
+<p>
+<a href="part1.go">Nhấn vào đây để xem mã chúng ta đã viết cho đến nay.</a>
+</p>
+
+<h2>Giới thiệu gói <code>net/http</code> (xen kẽ)</h2>
+
+<p>
+Đây là một ví dụ đầy đủ về một máy chủ web đơn giản hoạt động được:
+</p>
+
+{{code "http-sample.go"}}
+
+<p>
+Hàm <code>main</code> bắt đầu bằng lời gọi đến
+<code>http.HandleFunc</code>, cho gói <code>http</code> biết xử lý tất cả các yêu cầu
+đến root web (<code>"/"</code>) bằng
+<code>handler</code>.
+</p>
+
+<p>
+Sau đó nó gọi <code>http.ListenAndServe</code>, chỉ định rằng nó nên lắng nghe trên cổng
+8080 trên bất kỳ interface nào (<code>":8080"</code>). (Đừng lo về tham số thứ hai của
+nó, <code>nil</code>, lúc này.)
+Hàm này sẽ chặn cho đến khi chương trình bị kết thúc.
+</p>
+
+<p>
+<code>ListenAndServe</code> luôn trả về một error, vì nó chỉ trả về khi xảy ra lỗi không
+mong đợi. Để ghi log error đó chúng ta bọc lời gọi hàm bằng <code>log.Fatal</code>.
+</p>
+
+<p>
+Hàm <code>handler</code> có kiểu <code>http.HandlerFunc</code>.
+Nó nhận một <code>http.ResponseWriter</code> và một <code>http.Request</code> làm đối số.
+</p>
+
+<p>
+Một giá trị <code>http.ResponseWriter</code> tập hợp response của máy chủ HTTP; bằng cách
+ghi vào nó, chúng ta gửi dữ liệu đến HTTP client.
+</p>
+
+<p>
+<code>http.Request</code> là cấu trúc dữ liệu đại diện cho HTTP request của client.
+<code>r.URL.Path</code> là thành phần đường dẫn của URL trong request. Phần
+<code>[1:]</code> ở cuối có nghĩa là "tạo một sub-slice của <code>Path</code> từ ký tự
+thứ 1 đến hết." Điều này bỏ đi ký tự "/" đứng đầu trong tên đường dẫn.
+</p>
+
+<p>
+Nếu bạn chạy chương trình này và truy cập URL:
+</p>
+<pre>http://localhost:8080/monkeys</pre>
+<p>
+chương trình sẽ hiển thị một trang chứa:
+</p>
+<pre>Hi there, I love monkeys!</pre>
+
+<h2>Dùng <code>net/http</code> để phục vụ các trang wiki</h2>
+
+<p>
+Để dùng gói <code>net/http</code>, nó phải được import:
+</p>
+
+<pre>
+import (
+    "fmt"
+    "os"
+    "log"
+    <b>"net/http"</b>
+)
+</pre>
+
+<p>
+Hãy tạo một handler, <code>viewHandler</code>, cho phép người dùng xem một trang wiki.
+Nó sẽ xử lý các URL có tiền tố "/view/".
+</p>
+
+{{code "part2.go" `/^func viewHandler/` `/^}/`}}
+
+<p>
+Một lần nữa, lưu ý việc dùng <code>_</code> để bỏ qua giá trị trả về <code>error</code>
+từ <code>loadPage</code>. Điều này được thực hiện ở đây để đơn giản và thường được coi là
+thực hành không tốt. Chúng ta sẽ xử lý điều này sau.
+</p>
+
+<p>
+Đầu tiên, hàm này trích xuất tiêu đề trang từ <code>r.URL.Path</code>, thành phần đường
+dẫn của URL trong request. <code>Path</code> được cắt lại bằng
+<code>[len("/view/"):]</code> để bỏ thành phần <code>"/view/"</code> đứng đầu của đường
+dẫn request. Điều này là vì đường dẫn sẽ luôn bắt đầu bằng <code>"/view/"</code>, không
+phải là một phần của tiêu đề trang.
+</p>
+
+<p>
+Hàm sau đó tải dữ liệu trang, định dạng trang bằng một chuỗi HTML đơn giản, và ghi vào
+<code>w</code>, <code>http.ResponseWriter</code>.
+</p>
+
+<p>
+Để dùng handler này, chúng ta viết lại hàm <code>main</code> để
+khởi tạo <code>http</code> dùng <code>viewHandler</code> để xử lý bất kỳ yêu cầu nào
+dưới đường dẫn <code>/view/</code>.
+</p>
+
+{{code "part2.go" `/^func main/` `/^}/`}}
+
+<p>
+<a href="part2.go">Nhấn vào đây để xem mã chúng ta đã viết cho đến nay.</a>
+</p>
+
+<p>
+Hãy tạo một số dữ liệu trang (dưới dạng <code>test.txt</code>), biên dịch mã và thử phục
+vụ một trang wiki.
+</p>
+
+<p>
+Mở tệp <code>test.txt</code> trong trình soạn thảo của bạn và lưu chuỗi "Hello world"
+(không có dấu ngoặc kép) vào đó.
+</p>
+
+<pre>
+$ go build wiki.go
+$ ./wiki
+</pre>
+
+<p>
+(Nếu bạn dùng Windows bạn phải gõ "<code>wiki</code>" mà không có
+"<code>./</code>" để chạy chương trình.)
+</p>
+
+<p>
+Với máy chủ web này đang chạy, truy cập <code><a
+href="http://localhost:8080/view/test">http://localhost:8080/view/test</a></code>
+sẽ hiển thị một trang có tiêu đề "test" chứa các từ "Hello world".
+</p>
+
+<h2>Chỉnh sửa trang</h2>
+
+<p>
+Một wiki không phải là wiki nếu không có khả năng chỉnh sửa trang. Hãy tạo hai handler
+mới: một tên <code>editHandler</code> để hiển thị biểu mẫu 'chỉnh sửa trang', và handler
+kia tên <code>saveHandler</code> để lưu dữ liệu được nhập qua biểu mẫu.
+</p>
+
+<p>
+Đầu tiên, chúng ta thêm chúng vào <code>main()</code>:
+</p>
+
+{{code "final-noclosure.go" `/^func main/` `/^}/`}}
+
+<p>
+Hàm <code>editHandler</code> tải trang
+(hoặc, nếu nó không tồn tại, tạo một struct <code>Page</code> rỗng),
+và hiển thị một biểu mẫu HTML.
+</p>
+
+{{code "notemplate.go" `/^func editHandler/` `/^}/`}}
+
+<p>
+Hàm này sẽ hoạt động tốt, nhưng tất cả HTML được hard-code đó khá xấu xí.
+Tất nhiên, có một cách tốt hơn.
+</p>
+
+<h2>Gói <code>html/template</code></h2>
+
+<p>
+Gói <code>html/template</code> là một phần của thư viện chuẩn Go. Chúng ta có thể dùng
+<code>html/template</code> để giữ HTML trong một tệp riêng biệt, cho phép chúng ta thay
+đổi bố cục trang chỉnh sửa mà không cần sửa đổi mã Go bên dưới.
+</p>
+
+<p>
+Đầu tiên, chúng ta phải thêm <code>html/template</code> vào danh sách import. Chúng ta
+cũng sẽ không dùng <code>fmt</code> nữa, nên phải xóa nó đi.
+</p>
+
+<pre>
+import (
+    <b>"html/template"</b>
+    "os"
+    "net/http"
+)
+</pre>
+
+<p>
+Hãy tạo một tệp template chứa biểu mẫu HTML.
+Mở một tệp mới tên <code>edit.html</code> và thêm các dòng sau:
+</p>
+
+{{code "edit.html"}}
+
+<p>
+Sửa <code>editHandler</code> để dùng template thay vì HTML được hard-code:
+</p>
+
+{{code "final-noerror.go" `/^func editHandler/` `/^}/`}}
+
+<p>
+Hàm <code>template.ParseFiles</code> sẽ đọc nội dung của
+<code>edit.html</code> và trả về một <code>*template.Template</code>.
+</p>
+
+<p>
+Phương thức <code>t.Execute</code> thực thi template, ghi HTML được tạo ra vào
+<code>http.ResponseWriter</code>.
+Các định danh có dấu chấm <code>.Title</code> và <code>.Body</code> tham chiếu đến
+<code>p.Title</code> và <code>p.Body</code>.
+</p>
+
+<p>
+Các chỉ thị template được đặt trong dấu ngoặc nhọn kép.
+Lệnh <code>printf "%s" .Body</code> là một lời gọi hàm
+xuất ra <code>.Body</code> dưới dạng chuỗi thay vì một luồng byte,
+giống như một lời gọi đến <code>fmt.Printf</code>.
+Gói <code>html/template</code> giúp đảm bảo rằng chỉ có HTML an toàn và có cấu trúc đúng
+được tạo ra bởi các hành động template. Ví dụ, nó tự động escape bất kỳ dấu lớn hơn
+(<code>&gt;</code>), thay thế bằng <code>&#x26;gt;</code>, để đảm bảo dữ liệu người dùng
+không làm hỏng HTML của biểu mẫu.
+</p>
+
+<p>
+Vì chúng ta đang làm việc với template, hãy tạo một template cho
+<code>viewHandler</code> của chúng ta tên <code>view.html</code>:
+</p>
+
+{{code "view.html"}}
+
+<p>
+Sửa <code>viewHandler</code> cho phù hợp:
+</p>
+
+{{code "final-noerror.go" `/^func viewHandler/` `/^}/`}}
+
+<p>
+Lưu ý rằng chúng ta đã dùng hầu như cùng một mã template trong cả hai handler. Hãy loại
+bỏ sự trùng lặp này bằng cách chuyển mã template vào một hàm riêng:
+</p>
+
+{{code "final-template.go" `/^func renderTemplate/` `/^}/`}}
+
+<p>
+Và sửa các handler để dùng hàm đó:
+</p>
+
+{{code "final-template.go" `/^func viewHandler/` `/^}/`}}
+{{code "final-template.go" `/^func editHandler/` `/^}/`}}
+
+<p>
+Nếu chúng ta comment out việc đăng ký save handler chưa được triển khai trong
+<code>main</code>, chúng ta có thể biên dịch và kiểm thử chương trình một lần nữa.
+<a href="part3.go">Nhấn vào đây để xem mã chúng ta đã viết cho đến nay.</a>
+</p>
+
+<h2>Xử lý các trang không tồn tại</h2>
+
+<p>
+Điều gì xảy ra nếu bạn truy cập <a href="http://localhost:8080/view/APageThatDoesntExist">
+<code>/view/APageThatDoesntExist</code></a>? Bạn sẽ thấy một trang chứa HTML. Điều này
+là vì nó bỏ qua giá trị error trả về từ <code>loadPage</code> và tiếp tục cố gắng điền
+vào template mà không có dữ liệu. Thay vào đó, nếu trang được yêu cầu không tồn tại, nó
+nên chuyển hướng client đến trang chỉnh sửa để nội dung có thể được tạo:
+</p>
+
+{{code "part3-errorhandling.go" `/^func viewHandler/` `/^}/`}}
+
+<p>
+Hàm <code>http.Redirect</code> thêm mã trạng thái HTTP
+<code>http.StatusFound</code> (302) và một header <code>Location</code>
+vào HTTP response.
+</p>
+
+<h2>Lưu trang</h2>
+
+<p>
+Hàm <code>saveHandler</code> sẽ xử lý việc gửi biểu mẫu trên các trang chỉnh sửa.
+Sau khi bỏ comment dòng liên quan trong <code>main</code>, hãy triển khai handler:
+</p>
+
+{{code "final-template.go" `/^func saveHandler/` `/^}/`}}
+
+<p>
+Tiêu đề trang (được cung cấp trong URL) và trường duy nhất của biểu mẫu,
+<code>Body</code>, được lưu vào một <code>Page</code> mới.
+Phương thức <code>save()</code> sau đó được gọi để ghi dữ liệu vào tệp, và client được
+chuyển hướng đến trang <code>/view/</code>.
+</p>
+
+<p>
+Giá trị được trả về bởi <code>FormValue</code> có kiểu <code>string</code>.
+Chúng ta phải chuyển đổi giá trị đó thành <code>[]byte</code> trước khi nó phù hợp với
+struct <code>Page</code>. Chúng ta dùng <code>[]byte(body)</code> để thực hiện việc chuyển
+đổi.
+</p>
+
+<h2>Xử lý lỗi</h2>
+
+<p>
+Có một số chỗ trong chương trình của chúng ta nơi các lỗi đang bị bỏ qua. Đây là thực
+hành không tốt, không ít nhất vì khi xảy ra lỗi chương trình sẽ có hành vi không mong
+muốn. Giải pháp tốt hơn là xử lý các lỗi và trả về thông báo lỗi cho người dùng. Như
+vậy nếu có sự cố xảy ra, máy chủ sẽ hoạt động đúng như chúng ta muốn và người dùng có
+thể được thông báo.
+</p>
+
+<p>
+Đầu tiên, hãy xử lý các lỗi trong <code>renderTemplate</code>:
+</p>
+
+{{code "final-parsetemplate.go" `/^func renderTemplate/` `/^}/`}}
+
+<p>
+Hàm <code>http.Error</code> gửi một mã response HTTP được chỉ định
+(trong trường hợp này là "Internal Server Error") và thông báo lỗi.
+Quyết định đưa điều này vào một hàm riêng đã bắt đầu phát huy tác dụng.
+</p>
+
+<p>
+Bây giờ hãy sửa <code>saveHandler</code>:
+</p>
+
+{{code "part3-errorhandling.go" `/^func saveHandler/` `/^}/`}}
+
+<p>
+Bất kỳ lỗi nào xảy ra trong <code>p.save()</code> sẽ được báo cáo cho người dùng.
+</p>
+
+<h2>Bộ nhớ đệm template</h2>
+
+<p>
+Có một sự kém hiệu quả trong mã này: <code>renderTemplate</code> gọi
+<code>ParseFiles</code> mỗi khi một trang được render.
+Cách tốt hơn là gọi <code>ParseFiles</code> một lần khi khởi tạo chương trình, phân tích
+tất cả các template vào một <code>*Template</code> duy nhất.
+Sau đó chúng ta có thể dùng phương thức
+<a href="/pkg/html/template/#Template.ExecuteTemplate"><code>ExecuteTemplate</code></a>
+để render một template cụ thể.
+</p>
+
+<p>
+Đầu tiên chúng ta tạo một biến toàn cục tên <code>templates</code> và khởi tạo nó bằng
+<code>ParseFiles</code>.
+</p>
+
+{{code "final.go" `/var templates/`}}
+
+<p>
+Hàm <code>template.Must</code> là một wrapper tiện lợi sẽ panic khi được truyền một giá
+trị <code>error</code> khác nil, và ngược lại trả về <code>*Template</code> không thay đổi.
+Panic là phù hợp ở đây; nếu các template không thể được tải thì điều hợp lý duy nhất là
+thoát khỏi chương trình.
+</p>
+
+<p>
+Hàm <code>ParseFiles</code> nhận bất kỳ số lượng đối số chuỗi nào để xác định các tệp
+template của chúng ta, và phân tích những tệp đó thành các template được đặt tên theo tên
+tệp cơ sở. Nếu chúng ta thêm nhiều template hơn vào chương trình, chúng ta sẽ thêm tên
+của chúng vào đối số của lời gọi <code>ParseFiles</code>.
+</p>
+
+<p>
+Sau đó chúng ta sửa hàm <code>renderTemplate</code> để gọi phương thức
+<code>templates.ExecuteTemplate</code> với tên của template phù hợp:
+</p>
+
+{{code "final.go" `/func renderTemplate/` `/^}/`}}
+
+<p>
+Lưu ý rằng tên template là tên tệp template, vì vậy chúng ta phải thêm
+<code>".html"</code> vào đối số <code>tmpl</code>.
+</p>
+
+<h2>Xác thực</h2>
+
+<p>
+Như bạn có thể đã nhận thấy, chương trình này có một lỗ hổng bảo mật nghiêm trọng: người
+dùng có thể cung cấp một đường dẫn tùy ý để đọc/ghi trên máy chủ. Để giảm thiểu điều
+này, chúng ta có thể viết một hàm để xác thực tiêu đề bằng biểu thức chính quy.
+</p>
+
+<p>
+Đầu tiên, thêm <code>"regexp"</code> vào danh sách <code>import</code>.
+Sau đó chúng ta có thể tạo một biến toàn cục để lưu biểu thức xác thực của chúng ta:
+</p>
+
+{{code "final-noclosure.go" `/^var validPath/`}}
+
+<p>
+Hàm <code>regexp.MustCompile</code> sẽ phân tích và biên dịch biểu thức chính quy, và
+trả về một <code>regexp.Regexp</code>.
+<code>MustCompile</code> khác với <code>Compile</code> ở chỗ nó sẽ panic nếu biên dịch
+biểu thức thất bại, trong khi <code>Compile</code> trả về một <code>error</code> làm
+tham số thứ hai.
+</p>
+
+<p>
+Bây giờ, hãy viết một hàm dùng biểu thức <code>validPath</code>
+để xác thực đường dẫn và trích xuất tiêu đề trang:
+</p>
+
+{{code "final-noclosure.go" `/func getTitle/` `/^}/`}}
+
+<p>
+Nếu tiêu đề hợp lệ, nó sẽ được trả về cùng với giá trị error <code>nil</code>.
+Nếu tiêu đề không hợp lệ, hàm sẽ ghi một lỗi "404 Not Found" vào kết nối HTTP và trả về
+một error cho handler. Để tạo một error mới, chúng ta phải import gói <code>errors</code>.
+</p>
+
+<p>
+Hãy đặt một lời gọi đến <code>getTitle</code> trong mỗi handler:
+</p>
+
+{{code "final-noclosure.go" `/^func viewHandler/` `/^}/`}}
+{{code "final-noclosure.go" `/^func editHandler/` `/^}/`}}
+{{code "final-noclosure.go" `/^func saveHandler/` `/^}/`}}
+
+<h2>Giới thiệu hàm literal và closure</h2>
+
+<p>
+Việc bắt điều kiện lỗi trong mỗi handler tạo ra nhiều mã lặp lại.
+Điều gì sẽ xảy ra nếu chúng ta có thể bọc mỗi handler trong một hàm thực hiện xác thực
+và kiểm tra lỗi này? Các
+<a href="/ref/spec#Function_literals">hàm literal</a> của Go cung cấp một phương tiện
+mạnh mẽ để trừu tượng hóa chức năng có thể giúp ích ở đây.
+</p>
+
+<p>
+Đầu tiên, chúng ta viết lại định nghĩa hàm của mỗi handler để chấp nhận một chuỗi tiêu đề:
+</p>
+
+<pre>
+func viewHandler(w http.ResponseWriter, r *http.Request, title string)
+func editHandler(w http.ResponseWriter, r *http.Request, title string)
+func saveHandler(w http.ResponseWriter, r *http.Request, title string)
+</pre>
+
+<p>
+Bây giờ hãy định nghĩa một hàm wrapper <i>nhận một hàm có kiểu như trên</i> và trả về
+một hàm có kiểu <code>http.HandlerFunc</code>
+(phù hợp để truyền cho hàm <code>http.HandleFunc</code>):
+</p>
+
+<pre>
+func makeHandler(fn func (http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        // Here we will extract the page title from the Request,
+        // and call the provided handler 'fn'
+    }
+}
+</pre>
+
+<p>
+Hàm được trả về được gọi là closure vì nó đóng gói các giá trị được định nghĩa bên ngoài
+nó. Trong trường hợp này, biến <code>fn</code> (đối số duy nhất của
+<code>makeHandler</code>) được đóng gói bởi closure. Biến
+<code>fn</code> sẽ là một trong các handler save, edit hoặc view của chúng ta.
+</p>
+
+<p>
+Bây giờ chúng ta có thể lấy mã từ <code>getTitle</code> và dùng ở đây
+(với một số sửa đổi nhỏ):
+</p>
+
+{{code "final.go" `/func makeHandler/` `/^}/`}}
+
+<p>
+Closure được trả về bởi <code>makeHandler</code> là một hàm nhận
+<code>http.ResponseWriter</code> và <code>http.Request</code> (nói cách khác, một
+<code>http.HandlerFunc</code>).
+Closure trích xuất <code>title</code> từ đường dẫn request và xác thực nó bằng regexp
+<code>validPath</code>. Nếu
+<code>title</code> không hợp lệ, một error sẽ được ghi vào
+<code>ResponseWriter</code> dùng hàm <code>http.NotFound</code>.
+Nếu <code>title</code> hợp lệ, hàm handler đóng gói
+<code>fn</code> sẽ được gọi với <code>ResponseWriter</code>,
+<code>Request</code> và <code>title</code> làm đối số.
+</p>
+
+<p>
+Bây giờ chúng ta có thể bọc các hàm handler bằng <code>makeHandler</code> trong
+<code>main</code>, trước khi chúng được đăng ký với gói <code>http</code>:
+</p>
+
+{{code "final.go" `/func main/` `/^}/`}}
+
+<p>
+Cuối cùng chúng ta xóa các lời gọi đến <code>getTitle</code> khỏi các hàm handler, làm
+cho chúng đơn giản hơn nhiều:
+</p>
+
+{{code "final.go" `/^func viewHandler/` `/^}/`}}
+{{code "final.go" `/^func editHandler/` `/^}/`}}
+{{code "final.go" `/^func saveHandler/` `/^}/`}}
+
+<h2>Thử xem nào!</h2>
+
+<p>
+<a href="final.go">Nhấn vào đây để xem danh sách mã cuối cùng.</a>
+</p>
+
+<p>
+Biên dịch lại mã và chạy ứng dụng:
+</p>
+
+<pre>
+$ go build wiki.go
+$ ./wiki
+</pre>
+
+<p>
+Truy cập <a href="http://localhost:8080/view/ANewPage">http://localhost:8080/view/ANewPage</a>
+sẽ hiển thị biểu mẫu chỉnh sửa trang. Sau đó bạn có thể nhập một số văn bản, nhấn 'Lưu',
+và được chuyển hướng đến trang mới tạo.
+</p>
+
+<h2>Các bài tập khác</h2>
+
+<p>
+Dưới đây là một số bài tập đơn giản bạn có thể muốn tự thực hiện:
+</p>
+
+<ul>
+<li>Lưu trữ template trong <code>tmpl/</code> và dữ liệu trang trong <code>data/</code>.
+<li>Thêm một handler để làm cho root web chuyển hướng đến
+	<code>/view/FrontPage</code>.</li>
+<li>Làm đẹp các template trang bằng cách làm cho chúng thành HTML hợp lệ và thêm một số
+	quy tắc CSS.</li>
+<li>Triển khai liên kết liên trang bằng cách chuyển đổi các trường hợp của
+	<code>[PageName]</code> thành <br>
+	<code>&lt;a href="/view/PageName"&gt;PageName&lt;/a&gt;</code>.
+	(gợi ý: bạn có thể dùng <code>regexp.ReplaceAllFunc</code> để làm điều này)
+	</li>
+</ul>

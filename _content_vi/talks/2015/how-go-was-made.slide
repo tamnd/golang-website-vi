@@ -1,0 +1,610 @@
+Go được tạo ra như thế nào
+GopherCon Closing Keynote
+9 Jul 2015
+
+Andrew Gerrand
+adg@golang.org
+
+
+* Video
+
+Một video của bài nói này được ghi lại tại GopherCon ở Denver.
+
+.link https://www.youtube.com/watch?v=0ht89TxZZnk Xem bài nói trên YouTube
+
+
+* Bài nói này
+
+Go được tạo ra như thế nào?
+
+Quá trình phát triển của nó là gì?
+
+Quá trình đó đã thay đổi như thế nào?
+
+Tương lai của nó là gì?
+
+.image how-go-was-made/gopherswrench.jpg 300 _
+
+
+* Những ngày đầu
+
+
+* Ba người bạn
+
+Thí nghiệm tư duy của Robert Griesemer, Rob Pike và Ken Thompson:
+
+"Một ngôn ngữ lập trình hiện đại và thực tế nên trông như thế nào?"
+
+
+* Quy trình ban đầu
+
+Thảo luận thiết kế qua thư và gặp mặt trực tiếp.
+
+Dựa trên sự đồng thuận:
+Một tính năng chỉ được chấp nhận khi *cả* ba tác giả đồng ý rằng nó cần thiết.
+
+Hầu hết các thay đổi đề xuất đều bị từ chối.
+
+
+* Đặc tả ban đầu
+
+Thành phẩm đầu tiên của Go là đặc tả ngôn ngữ.
+
+Commit đầu tiên (nay là git hash `18c5b48`) là bản nháp của đặc tả đó:
+
+	Author: Robert Griesemer <gri@golang.org>
+	Date:   Sun Mar 2 20:47:34 2008 -0800
+
+	    Go spec starting point.
+
+Toàn bộ lịch sử của Go được lưu giữ trong kho lưu trữ cốt lõi.
+
+
+* Chương trình Go đầu tiên
+
+Chương trình Go đầu tiên là Sàng số nguyên tố, được đưa vào đặc tả.
+
+	func Filter(in *chan< int, out *chan> int, prime int) {
+	  for {
+	    i := <in;  // Receive value of new variable 'i' from 'in'.
+	    if i % prime != 0 {
+	      >out = i  // Send 'i' to channel 'out'.
+	    }
+	  }
+	}
+
+	func Sieve() {
+	  ch := new(chan int);  // Create a new channel.
+	  go Generate(ch);  // Start Generate() as a subprocess.
+	  for {
+	    prime := <ch;
+	    printf("%d\n",  prime);
+	    ch1 := new(chan int);
+	    go Filter(ch, ch1, prime);
+	    ch = ch1
+	  }
+	}
+
+
+* Quản lý phiên bản
+
+Subversion là hệ thống quản lý phiên bản đầu tiên của dự án. (không có code review!)
+Bộ ba đã thực hiện 400 commit lên Subversion.
+
+Commit cuối cùng trên Subversion (git hash `777ee7`, 21 tháng 7 năm 2008) chứa:
+
+- đặc tả,
+- một trình biên dịch Go (linux/darwin amd64),
+- một vài gói (fmt, rand và math),
+- một số chương trình kiểm thử.
+
+`test/helloworld.go`:
+
+	package main
+
+	func main() {
+		print "hello, world\n";
+	}
+
+
+* Trở nên nghiêm túc hơn
+
+Vào tháng 7 năm 2008, dự án chuyển từ Subversion sang Perforce,
+để sử dụng hệ thống code review xuất sắc của Google.
+
+Nhóm phát triển lớn hơn:
+
+- Russ Cox gia nhập vào tháng 8 năm 2008,
+- Ian Lance Taylor gia nhập vào tháng 9,
+- ~20 Googler khác tham gia trong thời gian 20% của họ.
+
+
+* Những thay đổi ban đầu
+
+Việc thực hiện thay đổi trong những ngày đó rất dễ dàng.
+Mọi người đều biết nhau.
+Có ~0 người dùng.
+Toàn bộ mã nguồn ở một nơi.
+
+Quy trình làm việc không chính thức nhưng hướng tới thiết kế.
+
+
+* Chờ đợi thiết kế tốt (1/2)
+
+Nhiều vấn đề không có giải pháp rõ ràng.
+
+Nhóm sẵn sàng chờ đợi cho đến khi tìm được thiết kế đúng đắn.
+
+Ví dụ:
+
+Gói `fmt` được viết từ lâu trước `reflect`.
+Trước đó, `fmt` có API ghép chuỗi khó dùng:
+
+	fmt.New().s("i = ").d(i).putnl()
+
+Bây giờ:
+
+	fmt.Println("i = ", i)
+
+
+* Chờ đợi thiết kế tốt (2/2)
+
+Một ví dụ khác:
+
+Slice mất hơn một năm để hoàn thiện.
+Trước đó, có "mảng mở" nhưng chúng rất khó dùng.
+
+`src/lib/container/vector.go` @ `f4dcf51`:
+
+	// BUG: workaround for non-constant allocation.
+	// i must be a power of 10.
+	func Alloc(i int) *[]Element {
+		switch i {
+		case 1:
+			return new([1]Element);
+		case 10:
+			return new([10]Element);
+		case 100:
+			return new([100]Element);
+		case 1000:
+			return new([1000]Element);
+		}
+		print "bad size ", i, "\n";
+		panic "not known size\n";
+	}
+
+
+* Một thay đổi ngôn ngữ ban đầu
+
+`chan` và `map` ban đầu được viết là `*chan` và `*map`.
+
+Nhóm đã họp để thảo luận về việc loại bỏ các dấu hoa thị.
+
+Russ đã triển khai thay đổi trình biên dịch (`dc7b2e9`),
+và cập nhật ~tất cả các tệp Go hiện có (`08ca30b`).
+
+.code how-go-was-made/mapchan.diff
+
+Cách tiếp cận nhanh chóng này hoạt động tốt ở quy mô nhỏ.
+
+
+* Hướng tới mã nguồn mở
+
+Vào giữa năm 2009, nhóm chuẩn bị cho việc phát hành mã nguồn mở.
+
+Chuyển sang hệ thống quản lý phiên bản thứ ba:
+Mercurial, với Rietveld cho code review.
+# (We would go on to use these tools for five years.)
+
+Commit cuối cùng trên Perforce (`9e96f25`, ngày 29 tháng 10) chứa
+
+- một đặc tả và trình biên dịch hoàn thiện,
+- một thư viện chuẩn rộng lớn (82 gói),
+- gofmt, godoc, cgo,
+- framework kiểm thử,
+- FAQ, Effective Go và nhiều hơn nữa.
+
+
+* Mã nguồn mở
+
+
+* Phát hành
+
+10 tháng 11 năm 2009: Go được phát hành. (`78c47c3`)
+
+.image how-go-was-made/website.png 500 _
+
+
+* Phản ứng
+
+Có phản ứng rất lớn khi phát hành. Nhóm bị choáng ngợp.
+
+Mọi người gửi thay đổi từ ngày đầu tiên. Thay đổi đầu tiên từ người ngoài Google:
+
+	commit 022e3ae2659491e519d392e266acd86223a510f4
+	Author: Kevin Ballard <kevin@sb.org>
+	Date:   Tue Nov 10 20:04:14 2009 -0800
+
+	    Fix go-mode.el to work on empty buffers
+
+	    Fixes #8.
+
+	    R=agl, agl1, rsc
+	    https://golang.org/cl/153056
+
+Trong tháng đầu tiên, 32 người bên ngoài Google đã đóng góp cho Go.
+
+Quy trình đóng góp đã hoạt động.
+
+
+* Những thay đổi sau khi phát hành
+
+Nhóm tiếp tục thực hiện những thay đổi lớn sau khi phát hành.
+
+Nhưng quy trình bây giờ đã khác, vì họ đã có một cộng đồng.
+
+
+* Thay đổi công khai lớn đầu tiên (1/2)
+
+Ngày 9 tháng 12, Rob Pike gửi đề xuất thay đổi công khai đầu tiên.
+
+Ông đề xuất loại bỏ dấu chấm phẩy ở cuối dòng.
+[[/s/semicolon-proposal][go.dev/s/semicolon-proposal]]
+
+Đề xuất là một "tài liệu thiết kế" bao gồm:
+
+- bối cảnh,
+- lý do,
+- một đặc tả chính thức của thay đổi,
+- kế hoạch triển khai, và
+- ví dụ (bao gồm bản sao của chương trình Sàng số nguyên tố không có dấu chấm phẩy).
+
+
+* Thay đổi công khai lớn đầu tiên (2/2)
+
+Tài liệu thiết kế đã được chia sẻ với cộng đồng để lấy phản hồi.
+
+"Vui lòng đọc đề xuất và suy nghĩ về hậu quả của nó.
+Chúng tôi khá chắc rằng nó làm cho ngôn ngữ dễ sử dụng hơn và hy sinh gần như không có gì về độ chính xác hay an toàn."
+
+Phản ứng là tích cực.
+
+Đề xuất đã được triển khai.
+
+Hầu hết các thay đổi được thực hiện tự động (cảm ơn `gofmt`)).
+
+Đây sẽ là hình dạng của những điều sắp tới.
+
+
+* Quản lý thay đổi
+
+* Quản lý thay đổi
+
+Nhóm đã cẩn thận chọn lọc các thay đổi vào ngôn ngữ.
+(Nhớ lại: "Chờ đợi thiết kế tốt.")
+
+Có nhiều thay đổi và bổ sung được đề xuất cho Go.
+
+Như trước đây, nhiều hơn bị từ chối hơn được chấp nhận.
+
+Một số phù hợp với mục tiêu của dự án, một số thì không.
+
+Một đề xuất được chấp nhận sớm:
+
+- Làm cho giới hạn trên và dưới của phép cắt slice là tùy chọn. (`x[lo:]`, `x[:hi]`)
+
+Và một đề xuất bị từ chối:
+
+- Cho phép chỉ số âm trong phép cắt slice. (`x[-n]` `==` `x[len(x)-n]`)
+
+
+* Truyền đạt mục tiêu
+
+Ban đầu, chúng tôi làm kém trong việc giải thích mục tiêu và quy trình phát triển của dự án.
+
+Điều này gây ra sự thất vọng. ("Tại sao họ không chấp nhận đề xuất của tôi?")
+
+Chúng tôi mất một lúc để diễn đạt được điều đó:
+[[/talks/2012/splash.article][Bài nói]] của Rob Pike vào tháng 10 năm 2012
+"Go tại Google: Thiết kế Ngôn ngữ Phục vụ Kỹ thuật Phần mềm"
+là giải thích toàn diện đầu tiên về _lý*do*tồn*tại_ của Go.
+
+Tôi ước chúng tôi đã có tài liệu này được viết vào năm 2009.
+(Nhưng chúng tôi không thể viết được lúc đó.)
+
+Hãy đọc nó, nếu bạn chưa đọc.
+
+
+* Một suy nghĩ về tính mở
+
+Điều gì sẽ xảy ra nếu Go là mã nguồn mở ngay từ đầu?
+
+Có thể sẽ dễ hơn để công chúng hiểu dự án.
+
+Nhưng không đơn giản như vậy:
+
+Những ý tưởng còn mong manh trong giai đoạn đầu; chúng cần được nuôi dưỡng trước khi được tiếp xúc với thế giới.
+
+
+* Quản lý thay đổi
+
+* Snapshot hàng tuần
+
+Cố gắng giữ cho mọi người đồng bộ.
+
+- Áp dụng tag Mercurial cho một revision cụ thể, ổn định.
+- Thông báo cho danh sách thư người dùng với nhật ký thay đổi chi tiết.
+
+Tuyệt vời cho người dùng tiên phong và các nhà phát triển cốt lõi.
+
+
+* Vấn đề với snapshot hàng tuần
+
+Người đóng góp làm việc ở đầu ngọn; người dùng đồng bộ với snapshot hàng tuần.
+
+Gánh nặng cho người dùng:
+
+- khó chịu khi cập nhật hàng tuần,
+- đau đớn khi cập nhật ít thường xuyên hơn.
+
+Sự chênh lệch phiên bản xảy ra vì người dùng ở các snapshot hàng tuần khác nhau.
+
+Sự chênh lệch phân mảnh cộng đồng và làm chậm việc áp dụng.
+
+
+* Quy trình phát hành chính thức
+
+Tháng 3 năm 2011: giới thiệu các phiên bản phát hành mỗi 1-2 tháng.
+
+- Chọn snapshot ổn định nhất trong vài snapshot gần đây và gắn tag.
+- Thông báo với ghi chú phát hành rút gọn "phải đọc".
+
+Giữ cộng đồng đồng bộ hơn. Giảm sự xáo trộn.
+
+Được người dùng yêu thích.
+
+Nhưng sự chênh lệch vẫn phổ biến: những người mạo hiểm và các nhà phát triển cốt lõi vẫn sử dụng snapshot hàng tuần (hoặc phiên bản ngọn!).
+
+
+* Giới thiệu Gofix
+
+Công cụ cập nhật code một cách tự động để thích nghi với các thay đổi ngôn ngữ và thư viện.
+
+  gofix prog.go
+
+Được thông báo vào tháng 5 năm 2011.
+
+Giảm bớt gánh nặng của việc cập nhật theo kịp.
+Ghi chú phát hành bây giờ hầu hết nói "chạy gofix."
+
+Không phải là script sed. Hoạt động trên AST.
+
+
+* Ví dụ về gofix
+
+API `reflect` đã được thiết kế lại hoàn toàn vào năm 2011.
+Gofix đã thực hiện hầu hết các thay đổi:
+
+.image how-go-was-made/reflect1.png _ 1000
+.image how-go-was-made/reflect3.png _ 1000
+.image how-go-was-made/reflect2.png _ 1000
+
+
+* Vấn đề về phiên bản vẫn còn
+
+Gofix không phải là phương thuốc chữa bách bệnh.
+
+Là gốc rễ của đồ thị phụ thuộc, một ngôn ngữ lập trình có thể bị ảnh hưởng nặng nề bởi sự chênh lệch phiên bản.
+
+Vấn đề cơ bản vẫn còn:
+Code bạn viết hôm nay có thể không biên dịch được vào ngày mai.
+
+Một số công ty không muốn đặt cược vào Go vì họ coi nó không ổn định.
+
+
+* Nhu cầu ổn định
+
+Gofix làm cho việc thay đổi rất dễ dàng, và cũng làm cho việc thử nghiệm dễ dàng.
+Nhưng nó không thể làm tất cả mọi thứ.
+
+Ưu tiên: Nếu thay đổi dễ dàng, thay đổi nào là quan trọng?
+
+Muốn thực hiện những thay đổi lớn cho ngôn ngữ và thư viện,
+nhưng điều này đòi hỏi phải lập kế hoạch.
+
+Quyết định: thiết kế và triển khai một phiên bản ổn định của Go, thư viện và công cụ của nó.
+
+
+* Go 1
+
+* Go 1 là gì?
+
+Một đặc tả của ngôn ngữ và thư viện sẽ được hỗ trợ trong nhiều năm.
+
+Có sẵn dưới dạng gói nhị phân có thể tải xuống.
+
+Cơ hội để:
+
+- sửa những khó chịu nhỏ về ngôn ngữ,
+- sửa sự không nhất quán trong thư viện chuẩn,
+- tập trung vào việc sửa lỗi và dọn dẹp TODO,
+- thiết kế và xây dựng bộ công cụ build mạnh mẽ (loại bỏ make),
+- nâng cấp hỗ trợ Windows.
+
+Đánh bóng và tinh chỉnh, không phải thiết kế lại.
+
+
+* Lập kế hoạch Go 1
+
+Nhóm tại Google chuẩn bị một tài liệu thiết kế chi tiết.
+
+Đã triển khai (nhưng không commit) nhiều thay đổi được đề xuất.
+
+Họp một tuần để thảo luận và tinh chỉnh tài liệu (tháng 10 năm 2011).
+
+Trình bày tài liệu cho cộng đồng để thảo luận.
+
+Phản hồi của cộng đồng rất cần thiết để tinh chỉnh tài liệu.
+
+.link /blog/preview-of-go-version-1 go.dev/blog/preview-of-go-version-1
+
+
+* Ví dụ: errors (1/5)
+
+Trước Go 1, không có kiểu error.
+Thay vào đó, gói `os` cung cấp kiểu `Error`:
+
+	package os
+
+	type Error interface {
+		String() string
+	}
+
+Các tham chiếu đến `os.Error` rất phổ biến.
+
+	package io
+
+	type Reader interface {
+		Read(p []byte) (n int, err os.Error)
+	}
+
+	type Closer interface {
+		Close() os.Error
+	}
+
+
+
+* Ví dụ: errors (2/5)
+
+Trước cuộc họp Go 1, Russ đã đề cập vấn đề này trong tài liệu thiết kế:
+
+.image how-go-was-made/errors-issue.png 500 _
+
+
+* Ví dụ: errors (3/5)
+
+Tại cuộc họp, nhóm đã thảo luận vấn đề,
+Russ trình bày dữ liệu từ các thí nghiệm của mình với sự thay đổi,
+và chúng tôi đưa ra quyết định tạm thời:
+
+.image how-go-was-made/errors-discussion.png 350 _
+
+
+* Ví dụ: errors (4/5)
+
+Trên danh sách thư, cộng đồng đưa ra một số gợi ý sắc bén:
+
+.image how-go-was-made/errors-rog.png 500 _
+
+
+* Ví dụ: errors (5/5)
+
+Nhiều gợi ý đó đã được tích hợp vào tài liệu thiết kế Go 1:
+
+.image how-go-was-made/errors-final.png 500 _
+
+
+* Triển khai Go 1
+
+Tạo nhiều issue mới trên trình theo dõi.
+
+Các người đóng góp tự đề cử để giải quyết các issue cụ thể.
+
+Dừng phát triển tính năng mới; ưu tiên sự ổn định.
+
+
+* Thành công của Go 1
+
+Phiên bản Go 1 vào tháng 3 năm 2012 mở ra một kỷ nguyên mới cho dự án.
+
+Người dùng đánh giá cao sự ổn định. Sự tăng trưởng cộng đồng rất lớn.
+
+.image how-go-was-made/trends.png
+
+Các người đóng góp tập trung vào triển khai, công cụ và hệ sinh thái.
+
+
+* Chu kỳ phát hành
+
+Phiên bản tiếp theo là Go 1.1, hơn một năm sau Go 1.
+
+Điều này quá lâu; chuyển sang chu kỳ phát hành 6 tháng.
+
+Đã tuân theo kế hoạch này cho 1.2, 1.3 và 1.4, và chúng tôi (gần như) đúng lịch cho 1.5.
+
+
+* Tương lai của sự thay đổi
+
+
+* Một câu hỏi
+
+Quy trình phát triển của Go nhấn mạnh thiết kế trước.
+
+Dự án có ~450 người đóng góp và nhiều người commit từ bên ngoài Google.
+
+Nhưng hầu hết các đề xuất thay đổi
+(mặc dù được thúc đẩy bởi phản hồi cộng đồng)
+được thực hiện bởi nhóm Go tại Google.
+
+Tại sao vậy?
+
+
+* Hướng dẫn đóng góp
+
+Hướng dẫn đóng góp Go rất kỹ lưỡng về quy trình code review.
+
+Nhưng về thiết kế, chỉ có điều này:
+
+"Trước khi bắt đầu viết điều gì đó mới cho dự án Go, hãy gửi thư đến danh sách thư để thảo luận về kế hoạch của bạn."
+
+Điều này có mô tả cách tiếp cận thiết kế của dự án không? Chỉ ở bề ngoài.
+
+Các đề xuất thành công bao gồm các tài liệu thiết kế
+thảo luận về lý do, sự đánh đổi và triển khai.
+
+Có một khoảng trống trong quy trình được ghi lại của chúng tôi.
+
+
+* Quy trình Đề xuất Thay đổi Go: một đề xuất
+
+Brad Fitzpatrick và tôi gần đây đã đề xuất một Quy trình Đề xuất Thay đổi chính thức.
+
+Mục tiêu của nó:
+
+- Làm rõ quy trình thiết kế cho người đóng góp mới.
+- Cam kết đánh giá kịp thời các đề xuất.
+- Xây dựng lịch sử được ghi lại của các đề xuất.
+
+
+* Nó hoạt động như thế nào?
+
+Quy trình thay đổi mới, tóm tắt:
+
+- Tạo một issue.
+- Những người đóng góp phân loại issue.
+- Viết một tài liệu thiết kế (theo mẫu).
+- Những người đóng góp xem xét tài liệu.
+- Nếu đề xuất được chấp nhận, hãy triển khai nó.
+
+[[/s/proposal-process][go.dev/s/proposal-process]]
+
+
+* Một quy trình thử nghiệm
+
+Quy trình mới là một thử nghiệm.
+
+Chúng tôi vẫn đang thảo luận chính xác về cách nó nên hoạt động.
+
+Tôi hy vọng nó sẽ làm cho quy trình thiết kế của Go dễ tiếp cận hơn với cộng đồng.
+
+
+* Kết luận
+
+Quy trình hướng thiết kế của Go đã phục vụ chúng tôi tốt.
+
+Nhưng khi Go được sử dụng rộng rãi hơn,
+cộng đồng cần một vai trò lớn hơn trong việc định hình tương lai của nó.
+
+Với sự giúp đỡ của bạn, chúng ta có thể làm cho 5 năm tiếp theo của Go ngoạn mục hơn 5 năm vừa rồi.
+
+.image how-go-was-made/5years.png 350 _

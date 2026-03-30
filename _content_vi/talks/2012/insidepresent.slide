@@ -1,0 +1,144 @@
+Bên trong công cụ "present"
+
+Andrew Gerrand
+Google
+@enneff
+adg@golang.org
+https://go.dev
+
+
+* API của Playground
+
+API được sử dụng bởi Playground (và Tour) là một HTTP POST request đơn giản
+trả về phản hồi được mã hóa JSON.
+
+Yêu cầu:
+
+	POST /compile HTTP/1.1
+	Host:play.golang.org
+	Content-Length:113
+	Content-Type:application/x-www-form-urlencoded; charset=UTF-8
+
+	body=package+main%0A%0Aimport+%22fmt%22%0A%0Afunc+main()+%7B%0A%09fmt.Println(%22Hello%2C+playground%22)%0A%7D%0A
+
+Nội dung phản hồi:
+
+	{"compile_errors":"","output":"Hello, playground\n"}
+
+
+* Nhược điểm của Playground
+
+Dịch vụ biên dịch không có khái niệm về thời gian. (Cần thiết để giới hạn việc sử dụng tài nguyên.)
+
+API phản ánh điều này; đầu ra được gửi trong một lần, không phải dạng streaming.
+
+Ngay cả khi chạy cục bộ, API không phù hợp để minh họa code sử dụng time.
+
+Rob cần sử dụng time trong bài nói chuyện _Mẫu_lập_trình_đồng_thời_trong_Go_ của mình.
+
+
+* WebSockets xuất hiện
+
+WebSockets là kênh giao tiếp hai chiều giữa chương trình JavaScript chạy trên trình duyệt web và máy chủ web. Chúng là một phần của HTML 5.
+
+Gói `websocket` trong kho `go.net` con của Go cung cấp client và server WebSocket.
+
+Tôi nghĩ có thể dùng WebSockets để stream đầu ra chương trình đến một
+bài trình bày đang chạy.
+
+Và vì vậy công cụ `present` ra đời.
+
+
+* Hello, WebSocket
+
+.code insidepresent/websocket.js
+.play insidepresent/websocket.go
+
+
+* Các thông điệp
+
+Client (trình duyệt) và server (present) giao tiếp bằng các thông điệp được mã hóa JSON.
+
+.code insidepresent/socket.go /Message is/,/^}/
+
+Định dạng `encoding/json` của Go có thể chuyển đổi các giá trị `Message` này sang và từ JSON.
+
+Go:
+
+	Message{Id: "0", Kind: "run", Body: `package main; func main() { print("hello"); }`}
+
+JSON:
+
+	{"Id":"0","Kind":"run","Body":"package main; func main() { print(\"hello\"); }"}
+
+
+* Trên đường truyền
+
+.play insidepresent/hello.go
+
+.html insidepresent/wire.html
+
+
+* Triển khai
+
+* socketHandler (1/3)
+
+Đầu tiên, đăng ký handler với gói `net/http`:
+
+	http.Handle("/socket", websocket.Handler(socketHandler))
+
+Triển khai:
+
+.code insidepresent/socket.go /func socketHandler/,/errc/
+
+* socketHandler (2/3)
+
+.code insidepresent/socket.go /Decode messages/,/END/
+
+* socketHandler (3/3)
+
+.code insidepresent/socket-simple.go /Start and kill/,/^}/
+
+
+* Process
+
+.code insidepresent/socket.go /Process represents/,/^}/
+
+* StartProcess
+
+.code insidepresent/socket.go /StartProcess builds/,/^}/
+
+* Process.start (1/2)
+
+.code insidepresent/socket.go /start builds/,/END/
+
+* Process.start (2/2)
+
+.code insidepresent/socket.go /build x\.go/,/^}/
+
+* Process.cmd
+
+.code insidepresent/socket.go /cmd builds/,/^}/
+.code insidepresent/socket.go /messageWriter is/,/END/
+
+* Process.wait và Process.end
+
+.code insidepresent/socket.go /wait waits/,/^}/
+.code insidepresent/socket.go /end sends/,/^}/
+
+* Process.Kill
+
+.code insidepresent/socket.go /Kill stops/,/^}/
+
+
+* Một điều nữa
+
+* Giới hạn đầu ra (1/2)
+
+.code insidepresent/socket.go /switch m\.Kind/,/^			}/
+
+* Giới hạn đầu ra (2/2)
+
+.code insidepresent/socket.go /limiter returns/,/^}/
+
+

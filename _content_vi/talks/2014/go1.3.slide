@@ -1,0 +1,323 @@
+Hướng đến Go 1.3
+(và xa hơn)
+
+Andrew Gerrand
+Gopher
+@enneff
+https://go.dev
+
+
+* Go 1.3
+
+Đóng băng mã nguồn vào ngày 1 tháng 3 năm 2014.
+
+Phát hành vào ngày 1 tháng 6 năm 2014.
+
+(Sáu tháng sau Go 1.2, phát hành ngày 1 tháng 12 năm 2013.)
+
+
+* Danh sách việc cần làm
+
+Sau Go 1.2, các người đóng góp Go đã tổng hợp danh sách việc cần làm:
+
+.link /s/go13todo go.dev/s/go13todo
+
+Danh sách mang tính kỳ vọng; không phải tất cả đều sẽ được hoàn thành.
+
+Bài nói chuyện này dựa trên danh sách đó.
+
+
+* GC hoàn toàn chính xác
+
+Cuối cùng!
+
+
+* Sao chép stack (1/2)
+
+.link /s/contigstacks go.dev/s/contigstacks
+
+Cơ chế tách stack của Go 1.2 gặp vấn đề "hot split".
+
+Stack sao chép (hay "liền mạch") được phát triển bằng cách cấp phát lại và sao chép.
+Giải quyết vấn đề "hot split".
+Làm cho stack khởi tạo nhỏ hơn có thể thực tế - nhiều goroutine hơn trong cùng không gian bộ nhớ.
+
+* Sao chép stack (2/2)
+
+.image go1.3/json.png
+
+
+* Túi thủ thuật hiệu năng của Dmitry
+
+Thay đổi runtime:
+
+- tăng kích thước trang lên 8K (giảm ~10% thời gian tạm dừng GC)
+- không thu thập GC root một cách tường minh (giảm ~6% thời gian tạm dừng GC)
+- nạp trước block tiếp theo trong mallocgc (giảm ~2% CPU)
+- phát triển slice thông minh hơn (giảm 2-20% CPU)
+- kết hợp các cấp phát NoScan nhỏ (benchmark json nhanh hơn 10%)
+- không thêm ký tự kết thúc null cho chuỗi (ít alloc hơn 1% trong benchmark json)
+- gỡ khóa khỏi các đường dẫn nóng netpoll (TCP nhanh hơn ~5%)
+- cấp phát ID goroutine theo lô (tạo goroutine nhanh hơn 8-66%)
+- dùng ring không khóa cho hàng đợi công việc (lập lịch goroutine nhanh hơn 5-40%)
+- pool defer theo từng P (tiết kiệm bộ nhớ cho chương trình có nhiều goroutine)
+
+Và nhiều cải tiến khác sắp tới...
+
+
+* Viết lại channel
+
+.link /s/go13chan go.dev/s/go13chan
+
+Mục tiêu:
+
+- làm các thao tác channel đơn luồng (không tranh chấp) nhanh hơn
+- làm các thao tác channel có đệm tranh chấp (producer/consumer) nhanh hơn
+- làm các thao tác không chặn thất bại (ví dụ: kiểm tra channel "stop") nhanh hơn
+- làm semaphore channel (chan struct{}) nhanh hơn
+- làm câu lệnh select nhanh hơn
+
+Không phải mục tiêu:
+
+- làm channel hoàn toàn không khóa (điều này sẽ làm phức tạp đáng kể cài đặt và chậm hơn trong các trường hợp thông thường)
+- làm các thao tác channel đồng bộ tranh chấp nhanh hơn
+
+
+* sync.Pool (1/2)
+
+Nhiều thư viện Go có danh sách tự do thread-safe tùy chỉnh, như thế này:
+
+	var objPool = make(chan *Object, 10)
+
+	func obj() *Object {
+		select {
+		case p := <-objPool:
+			return p
+		default:
+		}
+		return NewObject()
+	}
+
+	func objPut(p *Object) {
+		select {
+		case objPool <- p:
+		default:
+		}
+	}
+
+	p := obj()
+	// use p
+	objPut(p)
+
+* sync.Pool (2/2)
+
+Kiểu `sync.Pool` cung cấp một danh sách tự do thread-safe toàn cục.
+
+Nó cho phép runtime thu hồi các mục khi thích hợp
+(ví dụ: trong quá trình thu gom rác).
+
+	var objPool = sync.Pool{
+		New: func() interface{} {
+			return NewObject()
+		},
+	}
+
+	p := objPool.Get().(*Object)
+	// use p
+	objPool.Put(p)
+
+Đây là kiểu thử nghiệm và có thể sẽ không được phát hành.
+
+
+* Cổng Native Client
+
+.link /s/go13nacl go.dev/s/go13nacl
+
+Native Client (NaCl) là môi trường thực thi hạn chế dành cho binary x86.
+
+Được dùng đặc biệt để chạy binary được biên dịch bên trong Google Chrome.
+NaCl cũng cung cấp công cụ để thực thi binary dòng lệnh
+
+Go 1.3 nhắm đến công cụ dòng lệnh đó cho kiến trúc x86 32-bit và 64-bit.
+(NaCl hỗ trợ ARM 32-bit, nhưng chúng ta không có kế hoạch hỗ trợ.)
+
+[[/play/][Sân chơi Go]] dùng chuỗi công cụ NaCl để thực thi an toàn các chương trình không đáng tin cậy.
+
+Chuỗi công cụ NaCl bao gồm khả năng giả lập thời gian, mạng và hệ thống tệp của sân chơi.
+
+
+* Các cổng hệ điều hành
+
+Solaris: đang tiến hành, đúng tiến độ cho Go 1.3.
+
+DragonflyBSD: đã hoàn thành, đang tìm người bảo trì.
+
+Plan 9: vẫn chưa xong.
+
+darwin/arm, android/arm: một người đóng góp đang làm, còn một đoạn nữa.
+
+
+* Lệnh go và fsnotify
+
+.link /s/go13fsnotify go.dev/s/go13fsnotify
+
+Trong Go 1.2, lệnh `go` `build` kiểm tra stat mọi tệp nguồn phụ thuộc để xem chúng có thay đổi không.
+
+Điều này chiếm một phần lớn tổng thời gian build.
+
+Lệnh "go background" được đề xuất khởi động một daemon theo dõi các tệp nguồn để phát hiện thay đổi.
+
+Khi build, các lệnh `go` có thể hỏi daemon tệp nào đã thay đổi.
+
+Một gói `os/fsnotify` mới sẽ được thêm vào thư viện chuẩn để hỗ trợ lệnh `go`.
+
+Một giao diện được đề xuất đang được thảo luận tại đây:
+
+.link /cl/48310043 go.dev/cl/48310043
+
+
+* Hỗ trợ liên kết với mã Objective C
+
+Chuỗi công cụ Go 1.2 có thể liên kết với mã C++ bằng `cgo` (nhưng bạn cần viết một cầu nối C nhỏ vào mã C++).
+
+Điều tương tự có thể thực hiện với mã Objective C, với một số thay đổi cho go tool.
+
+Điều này sẽ giúp viết ứng dụng OS X gốc dễ dàng hơn.
+
+
+* Giải quyết vấn đề binary phình to
+
+.link /issue/6853 go.dev/issue/6853
+
+Binary Go đang trở nên khá lớn. Rob đã thử nghiệm:
+
+	Để thử nghiệm, tôi đã build "hello, world" ở các điểm phát hành go 1.0, 1.1 và 1.2.
+	Đây là kích thước binary:
+
+	% ls -l x.1.?
+	-rwxr-xr-x  1 r  staff  1191952 Nov 30 10:25 x.1.0
+	-rwxr-xr-x  1 r  staff  1525936 Nov 30 10:20 x.1.1
+	-rwxr-xr-x  1 r  staff  2188576 Nov 30 10:18 x.1.2
+
+Binary Go chứa nhiều bộ ký hiệu gỡ lỗi (cho gdb, profiler, reflection, v.v.).
+
+Chúng tôi có kế hoạch hợp lý hóa chúng như một phần của công việc trên linker.
+Nhân tiện...
+
+
+* Đại tu linker (1/3)
+
+.link /s/go13linker go.dev/s/go13linker
+
+Chuỗi công cụ `gc` có phần khác thường.
+
+Các trình biên dịch không tạo ra mã máy mà là một ngôn ngữ assembly trung gian.
+
+Linker dịch nó thành mã máy.
+
+Các gói có thể được biên dịch song song bởi các lần chạy trình biên dịch độc lập,
+nhưng việc liên kết phải được thực hiện bởi một tiến trình linker đơn lẻ sau khi biên dịch hoàn tất.
+
+Linker `gc` đã trở thành điểm nghẽn cổ chai khi build chương trình
+vì nó làm nhiều hơn một linker thông thường.
+
+* Đại tu linker (2/3)
+
+Công việc của linker Go 1.2 có thể được chia thành hai phần:
+
+- dịch luồng đầu vào các lệnh giả sang mã thực thi, khối dữ liệu và danh sách relocation,
+- xóa mã chết, hợp nhất phần còn lại, giải quyết relocation và tạo một số cấu trúc dữ liệu toàn chương trình.
+
+.image go1.3/liblink1.png
+
+* Đại tu linker (3/3)
+
+Trong Go 1.3, phần lớn linker cũ được chuyển sang thư viện `liblink` được dùng bởi assembler và trình biên dịch (`6a`, `6c`, `6g`, v.v.). Điều này cho phép thực hiện nhiều công việc song song hơn.
+
+.image go1.3/liblink2.png
+
+Và vì linker giờ đơn giản hơn nhiều, chúng ta có thể viết lại nó bằng Go.
+
+
+* Đại tu trình biên dịch
+
+.link /s/go13compiler go.dev/s/go13compiler
+
+Chuỗi công cụ "gc" dựa trên các trình biên dịch C của Plan 9.
+
+Các assembler, trình biên dịch C và linker được chuyển sang toàn bộ.
+
+Các trình biên dịch Go là các chương trình C mới phù hợp với chuỗi công cụ đó.
+
+Sẽ thật tuyệt nếu có một trình biên dịch Go được viết bằng Go không?
+
+* Đại tu trình biên dịch: tại sao dùng C lúc đó?
+
+Nhiều lợi ích khi viết trình biên dịch bằng C:
+
+- Go chưa tồn tại
+- Khi Go đã tồn tại, nó thay đổi thường xuyên
+
+Ngày nay, Go đã tồn tại và ổn định kể từ Go 1.
+Những lợi ích này không còn liên quan nữa.
+
+* Đại tu trình biên dịch: tại sao dùng Go bây giờ?
+
+Lợi ích của trình biên dịch dựa trên Go:
+
+- Mã Go dễ viết và gỡ lỗi hơn
+- Go có hỗ trợ tốt hơn cho tính module hóa, viết lại tự động, unit testing và profiling
+- Lập trình viên Go có nhiều khả năng làm việc trên trình biên dịch viết bằng Go hơn
+- Mã Go dễ song song hóa hơn
+- Go thú vị hơn!
+
+* Đại tu trình biên dịch: kế hoạch
+
+Không phải viết lại.
+
+Dịch các trình biên dịch C sang Go.
+
+Viết và dùng bộ dịch tự động để làm điều này.
+
+Bắt đầu quá trình với Go 1.3 và tiếp tục trong các bản phát hành tương lai.
+
+* Đại tu trình biên dịch: năm giai đoạn
+
+- Phát triển và gỡ lỗi bộ dịch.
+- Dịch C sang Go và xóa mã C.
+- Làm sạch và ghi chép mã, thêm unit test. (Mục tiêu Go 1.4)
+- Profiling và tối ưu hóa trình biên dịch và chia nó thành các gói.
+- Thay thế frontend bằng `go/parser` và `go/types`. (Có thể với các phiên bản mới của các gói đó.)
+
+* Đại tu trình biên dịch: bootstrapping
+
+Phải có cách build trình biên dịch từ đầu.
+
+Kế hoạch của chúng ta là trình biên dịch Go 1.3 phải biên dịch được bằng Go 1.2, và Go 1.4 phải biên dịch được bằng Go 1.3, v.v.
+
+Viết một shell script để thực hiện điều này tự động. Bootstrap một lần mỗi máy.
+
+Cách này kém hiệu quả theo thời gian, vì vậy chúng ta có thể viết một backend cho trình biên dịch tạo ra mã C, và giữ phiên bản C của mã nguồn trình biên dịch được check in.
+
+* Đại tu trình biên dịch: các lựa chọn thay thế
+
+Viết trình biên dịch mới từ đầu?
+
+- Các trình biên dịch hiện tại đã được kiểm thử kỹ lưỡng và xử lý tốt nhiều trường hợp tinh tế; sẽ là thiếu khôn ngoan khi bỏ đi 10 năm công sức.
+
+Dịch trình biên dịch thủ công?
+
+- Dịch thủ công tẻ nhạt và dễ sai, lỗi tinh tế và khó tìm. Có thể tiếp tục làm việc trên các trình biên dịch hiện tại trong khi viết bộ dịch.
+
+Chỉ dịch các backend và kết nối với `go/parser` và `go/types` ngay lập tức?
+
+- Các API hiện tại rất khác nhau; quá nhiều việc để thực hiện cùng một lúc.
+
+Loại bỏ các trình biên dịch hiện tại và dùng gccgo (hoặc `go/parser` và `go/types` và LLVM)?
+
+- Các trình biên dịch hiện tại là một phần lớn của tính linh hoạt của chúng ta. Gắn kết Go với các dự án C/C++ lớn như GCC hay LLVM sẽ làm giảm tính linh hoạt đó.
+
+
+* Rất nhiều thứ nhỏ
+
+Như với các bản phát hành trước, chúng ta sẽ thấy một chuỗi dài các sửa đổi và thay đổi nhỏ.

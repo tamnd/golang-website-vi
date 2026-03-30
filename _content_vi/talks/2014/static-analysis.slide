@@ -1,0 +1,284 @@
+Công cụ phân tích tĩnh
+để hiểu và tái cấu trúc mã Go
+
+golang nyc meetup
+13 Nov 2014
+
+Alan Donovan
+Google, New York
+adonovan@google.com
+
+* Video
+
+Buổi nói chuyện này được trình bày tại GothamGo Kickoff Meetup ở New York City, tháng 11 năm 2014.
+
+.link http://vimeo.com/114736889 Xem buổi nói chuyện trên Vimeo
+
+* Giới thiệu
+
+Lập trình viên nói "viết mã", nhưng hầu hết thời gian đó là dành cho _đọc_
+
+Thực ra: đọc mã và đưa ra các suy luận logic
+
+Máy móc giỏi đọc và logic
+
+*Máy_móc* *nên* *giúp_đỡ* *chúng_ta* *đọc* *mã.*
+
+Và viết nó! Tái cấu trúc có thể tẻ nhạt và dễ gây lỗi.
+
+
+* Phác thảo
+
+- Công cụ hiểu mã: `oracle`, `godoc`
+- Công nghệ phân tích
+- Công cụ tái cấu trúc: `gorename`, `eg`
+
+
+* Demo: oracle của Go
+
+Hỗ trợ các truy vấn tương tác, tích hợp với editor:
+- thứ này được định nghĩa ở đâu?
+- các phương thức của kiểu này là gì?
+- các biến tự do của lựa chọn này là gì?
+- biểu thức này có thể trỏ đến đâu?
+- các kiểu động nào mà interface hay `reflect.Value` này có thể chứa?
+
+
+* Demo: tính năng phân tích godoc
+
+Xem package
+- tập phương thức và quan hệ _implements_ cho mọi kiểu
+- đồ thị call nội bộ của mọi package
+
+Xem mã nguồn
+- loại, kiểu, định nghĩa của mọi định danh
+- tập phương thức và quan hệ _implements_ cho mọi kiểu
+- các peer của mọi lần gửi/nhận channel
+- callers của mọi hàm
+- callees của mọi call site (kể cả động)
+
+
+* Cách thức hoạt động
+
+
+
+* Thư viện và công cụ
+
+.image static-analysis/tools.svg
+
+Chủ yếu trong repo `golang.org/x/tools`
+
+
+* go/types: bộ kiểm tra kiểu Go
+
+Tính toán ánh xạ từ:
+- định danh đến định nghĩa
+- biểu thức hằng số đến giá trị
+- biểu thức đến kiểu
+
+Nhiều góc khuất tinh tế:
+- tính toán tập phương thức
+- interface đệ quy
+- shift
+
+Làm cho nó đúng, nhanh và gọn gàng là một dự án đáng kể
+
+.link https://pkg.go.dev/golang.org/x/tools/go/types golang.org/x/tools/go/types
+
+Tác giả: Robert Griesemer
+
+
+
+* go/ssa: biểu diễn trung gian (IR)
+
+Các cây cú pháp trừu tượng (AST) có kiểu quá đa dạng và tinh tế để phân tích trực tiếp
+
+Chương trình được hạ xuống dạng Static Single-Assignment (SSA):
+- đơn giản hóa phân tích dataflow vì _định_nghĩa_tiếp_cận_ là ngầm định
+- được phát minh năm 1991, nay là dòng chính (gcc, llvm)
+
+Tất cả chương trình Go có thể được biểu đạt chỉ bằng ~30 lệnh cơ bản
+
+Đơn giản, tường minh, cấp cao, độ trung thực nguồn cao
+
+.link https://pkg.go.dev/golang.org/x/tools/go/ssa golang.org/x/tools/go/ssa
+
+Dự án llgo đang sử dụng go/ssa làm frontend cho LLVM
+
+
+
+* Demo: ssadump
+
+# Hàm fibonacci đơn giản
+# % ssadump -build=F  fib.go		cơ bản
+# % ssadump -build=FD fib.go		thông tin debug
+# % ssadump -test -run unicode 		trình thông dịch toy
+
+
+
+* go/pointer: phân tích con trỏ
+
+Con trỏ làm phức tạp việc lập luận về hành vi chương trình
+- hàm có thể được gọi động
+- một biến có thể được cập nhật và truy cập thông qua các tên khác nhau ("alias")
+- kiểu runtime cũng là giá trị: `interface`, `reflect.Type`
+
+Chúng ta sử dụng *phân_tích* *con_trỏ* để trả lời câu hỏi:
+con trỏ này có thể trỏ đến biến nào?
+
+.link https://pkg.go.dev/golang.org/x/tools/go/pointer golang.org/x/tools/go/pointer
+
+# ghi chú về tính phù hợp của Go cho phân tích này:
+# (chương trình đóng---không có dlopen, classloading, không có generics, kiểu an toàn)
+
+
+* Phân tích con trỏ
+
+Gọi `pts(p)` là tập _points-to_ của con trỏ p
+Các phần tử của nó là các biến trừu tượng: biến toàn cục, cục bộ, không tên (`new(T)`)
+
+Tổng quan:
+
+- phân tích mỗi câu lệnh SSA trong toàn bộ chương trình
+
+- tạo ra các ràng buộc phù hợp trên tập points-to của mỗi biến
+
+	Statement      Constraint
+	 y = &x         pts(y) ⊇ {x}
+	 y = x          pts(y) ⊇ pts(x)		         	"inclusion-based"
+	*y = x          ∀o ∈ pts(y). pts(o) ⊇ pts(x)
+	 y = *x         ∀o ∈ pts(x). pts(y) ⊇ pts(o)
+	 y = &x->f      \
+	 y = x.(T)       } không hiển thị
+	 reflection     /
+
+- giải hệ ràng buộc
+
+
+* Phân tích con trỏ: tạo ràng buộc
+
+Tất cả thao tác Go có thể được biểu đạt trong các ràng buộc này
+Thao tác hàm, map, slice và channel đều đơn giản hóa thành thao tác struct
+
+Xử lý chuyển đổi `unsafe.Pointer` là không hợp lệ
+Nhưng chúng ta không quan tâm! Đây không phải là trình biên dịch
+
+Hệ ràng buộc là:
+- *nhạy_cảm_với_trường*: các trường struct x.f và x.g có nghiệm riêng biệt
+- *không_nhạy_cảm_với_luồng*: thứ tự của các câu lệnh bị bỏ qua
+- *không_nhạy_cảm_với_ngữ_cảnh*: mỗi hàm chỉ được phân tích một lần
+- *toàn_chương_trình*: mã nguồn Go cần thiết cho tất cả phụ thuộc
+- *dựa_trên_bao_gồm*: tức là phân tích của Andersen
+
+Tối ưu hóa: không tạo ràng buộc cho các kiểu "không thú vị"
+chẳng hạn như các kiểu không liên quan đến truy vấn Oracle một lần
+
+* Phân tích con trỏ: tối ưu hóa trước khi giải
+
+Hệ ràng buộc cho chương trình 124KLoC (oracle) có:
+
+254,000 biến
+184,000 phương trình
+
+Giai đoạn giải là O(|v|³), vì vậy tối ưu hóa trước khi giải là cực kỳ quan trọng
+
+Chúng ta có thể đưa xuống:
+
+88,000 biến
+65,000 phương trình
+
+* Pointer Equivalence by Hash-Value Numbering (Hardekopf & Lin '07)
+
+        p = &x                  a = &x                         if ... {
+        q = p                   b = a                            p, q = &x, &y
+        r = q                   c = b                          } else {
+        s = r                   if ... { a = c }                 p, q = &y, &x
+                                                               }
+
+.image static-analysis/hvn.svg
+
+Hash-Value Numbering
+
+* Phân tích con trỏ: giải
+
+Về cơ bản là bao đóng chuyển vị của một đồ thị
+
+Nhiều tối ưu hóa, ví dụ:
+
+_sparse_bit_vectors_, một biểu diễn rất compact cho các tập points-to
+
+.link https://pkg.go.dev/golang.org/x/tools/container/ints golang.org/x/tools/container/ints
+
+Log của solver hơn 1GB. Debug thật vui.
+
+
+#* Sparse bit vector
+#`golang.org/x/tools/container/ints`
+#
+#.image sparsebitvector.svg
+#
+#Biểu diễn rất compact của sparse `set<int>`
+#Danh sách liên kết đôi của các khối (offset int, data [256]bit).
+
+
+* Đồ thị call
+
+*Đồ_thị* *call* có thể được đọc trực tiếp từ nghiệm
+
+Công cụ `golang.org/x/tools/cmd/callgraph` in ra các đồ thị call thô
+
+Demo (nếu còn thời gian)
+
+
+* Công cụ tái cấu trúc
+
+* gorename: đổi tên định danh chính xác, an toàn với kiểu
+
+Một công cụ tái cấu trúc, có thể sử dụng từ...
+
+- dòng lệnh
+
+	% gorename -from bytes.Buffer.Len -to Size
+	Renamed 105 occurrences in 42 files in 33 packages.
+
+- nhiều editor ([[https://code.google.com/p/go/source/browse/refactor/rename/rename.el?repo=tools&r=511801758bb9a0b83f9bf931342889fbedbc9b48][Emacs]], [[http://quick.as/dgof2p7][Vim]], [[https://github.com/smartystreets/sublime-gorename][Sublime]], [[https://github.com/davidrjenni/agorn][Acme]])
+
+Tất cả việc đổi tên đều có thể đảo ngược
+
+Đáng tin cậy: hoặc là có xung đột được báo cáo, hoặc việc tái cấu trúc giữ nguyên hành vi*
+
+*ngoại trừ reflection
+
+.link https://pkg.go.dev/golang.org/x/tools/cmd/gorename golang.org/x/tools/cmd/gorename
+
+* Demo: gorename
+
+
+* Tái cấu trúc dựa trên ví dụ với eg
+
+Một cổng Go của công cụ Java _Refaster_
+
+Một template chỉ định mẫu và thay thế dưới dạng biểu thức Go:
+
+	package P
+
+	import ( "errors"; "fmt" )
+
+	func before(s string) error { return fmt.Errorf("%s", s) }
+	func after(s string)  error { return errors.New(s) }
+
+Tham số là _wildcard_
+
+	% eg -t template.go <package> ...
+
+.link https://pkg.go.dev/golang.org/x/tools/cmd/eg golang.org/x/tools/cmd/eg
+
+* Demo: eg
+
+* Kết luận
+
+Ngay từ đầu, Go đã nổi tiếng với các công cụ của nó: `go`, `gofmt`
+
+Chúng ta có nhiều khối xây dựng cho các công cụ phân tích nguồn phức tạp
+
+Chúng ta nên xây dựng gì tiếp theo?

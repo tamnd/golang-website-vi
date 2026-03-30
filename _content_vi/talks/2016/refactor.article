@@ -1,0 +1,699 @@
+Tái Cấu Trúc Codebase (với sự hỗ trợ của Go)
+
+Russ Cox
+rsc@golang.org
+
+* Tóm tắt
+
+Go nên bổ sung khả năng tạo các tên thay thế tương đương cho kiểu dữ liệu,
+nhằm cho phép sửa mã nguồn dần dần trong quá trình tái cấu trúc codebase.
+Bài viết này giải thích sự cần thiết của khả năng đó và những hệ quả khi thiếu nó
+đối với các codebase Go lớn hiện nay.
+Bài viết cũng xem xét một số giải pháp tiềm năng,
+bao gồm tính năng alias được đề xuất trong quá trình phát triển
+(nhưng không được đưa vào) Go 1.8.
+Tuy nhiên, bài viết này _không_ phải là một đề xuất về giải pháp cụ thể nào.
+Thay vào đó, nó nhằm khởi đầu một cuộc thảo luận trong cộng đồng Go
+về giải pháp nào nên được đưa vào Go 1.9.
+
+Bài viết này là phiên bản mở rộng của một bài nói tại
+GothamGo ở New York vào ngày 18 tháng 11 năm 2016.
+
+* Giới thiệu
+
+Mục tiêu của Go là giúp việc xây dựng phần mềm có khả năng mở rộng trở nên dễ dàng.
+Có hai loại khả năng mở rộng mà chúng tôi quan tâm.
+Một loại là kích thước của các hệ thống mà bạn có thể xây dựng với Go,
+nghĩa là mức độ dễ dàng khi sử dụng nhiều máy tính,
+xử lý lượng lớn dữ liệu, v.v.
+Đó là trọng tâm quan trọng của Go nhưng không phải là chủ đề của bài viết này.
+Thay vào đó, bài viết này tập trung vào loại khả năng mở rộng khác:
+kích thước của các chương trình Go,
+tức là mức độ dễ dàng khi làm việc trong các codebase lớn
+với số lượng lớn kỹ sư
+thực hiện nhiều thay đổi độc lập.
+
+Một codebase như vậy là
+[[http://m.cacm.acm.org/magazines/2016/7/204032-why-google-stores-billions-of-lines-of-code-in-a-single-repository/pdf][kho lưu trữ duy nhất của Google]]
+mà hầu hết các kỹ sư làm việc hàng ngày.
+Tính đến tháng 1 năm 2015,
+kho lưu trữ đó có 40.000 commit mỗi ngày
+trên 9 triệu tệp nguồn
+và 2 tỷ dòng mã.
+Tất nhiên, kho lưu trữ còn chứa nhiều thứ hơn chỉ là mã Go.
+
+Một codebase lớn khác là tập hợp tất cả mã Go nguồn mở
+mà mọi người đã công khai trên GitHub
+và các trang lưu trữ mã khác.
+Bạn có thể coi đây là codebase của `go` `get`.
+Trái ngược với codebase của Google,
+codebase của `go` `get` hoàn toàn phi tập trung,
+do đó khó lấy con số chính xác hơn.
+Vào tháng 11 năm 2016, có 140.000 package được biết đến trên godoc.org
+và hơn 160.000
+[[https://github.com/search?utf8=%E2%9C%93&q=language%3AGo&type=Repositories&ref=searchresults][repo GitHub viết bằng Go]].
+
+Hỗ trợ phát triển phần mềm ở quy mô này đã có trong tâm trí chúng tôi
+ngay từ những ngày đầu của Go.
+Chúng tôi đã chú trọng nhiều đến việc triển khai các import một cách hiệu quả.
+Chúng tôi đảm bảo rằng khó có thể import mã mà quên không sử dụng, để tránh sự phình to của mã.
+Chúng tôi đảm bảo rằng không có sự phụ thuộc không cần thiết
+giữa các package, cả để đơn giản hóa chương trình lẫn giúp
+việc kiểm tra và tái cấu trúc chúng dễ dàng hơn.
+Để biết thêm chi tiết về những cân nhắc này, xem bài viết năm 2012 của Rob Pike
+"[[/talks/2012/splash.article][Go tại Google: Thiết kế ngôn ngữ phục vụ kỹ thuật phần mềm]]."
+
+Trong vài năm qua, chúng tôi nhận ra rằng có
+nhiều điều có thể và nên làm thêm để
+tái cấu trúc toàn bộ codebase trở nên dễ dàng hơn,
+đặc biệt ở cấp độ cấu trúc package rộng hơn,
+giúp Go có thể mở rộng cho các chương trình ngày càng lớn hơn.
+
+* Tái cấu trúc codebase
+
+Hầu hết các chương trình bắt đầu với một package.
+Khi bạn thêm mã, đôi khi bạn nhận ra
+một phần mã liên kết có thể tồn tại độc lập,
+vì vậy bạn chuyển phần đó vào package riêng của nó.
+Tái cấu trúc codebase là quá trình xem xét lại
+và điều chỉnh các quyết định về cả cách nhóm mã
+thành package lẫn mối quan hệ giữa các package đó.
+Có một số lý do tại sao bạn có thể muốn thay đổi cách
+một codebase được tổ chức thành các package.
+
+Lý do đầu tiên là để chia nhỏ một package thành các phần dễ quản lý hơn cho người dùng.
+Ví dụ, hầu hết người dùng [[/pkg/regexp/][package regexp]] không cần truy cập vào
+bộ phân tích cú pháp biểu thức chính quy, mặc dù [[https://pkg.go.dev/github.com/google/codesearch/regexp][các trường hợp nâng cao có thể cần]],
+vì vậy bộ phân tích cú pháp được xuất trong [[/pkg/regexp/syntax][một package regexp/syntax riêng biệt]].
+
+Lý do thứ hai là để [[/blog/package-names][cải thiện cách đặt tên]].
+Ví dụ, các phiên bản đầu của Go có `io.ByteBuffer`,
+nhưng chúng tôi quyết định `bytes.Buffer` là tên tốt hơn và package bytes là nơi phù hợp hơn cho mã.
+
+Lý do thứ ba là để giảm nhẹ các phụ thuộc.
+Ví dụ, chúng tôi đã chuyển `os.EOF` sang `io.EOF` để mã không sử dụng hệ điều hành
+có thể tránh import [[/pkg/os][package os]] khá nặng nề.
+
+Lý do thứ tư là để thay đổi đồ thị phụ thuộc
+sao cho một package có thể import package khác.
+Ví dụ, trong quá trình chuẩn bị cho Go 1, chúng tôi xem xét các phụ thuộc tường minh
+giữa các package và cách chúng ràng buộc các API.
+Sau đó chúng tôi thay đổi đồ thị phụ thuộc để cải thiện các API.
+
+Trước Go 1, struct `os.FileInfo` chứa các trường này:
+
+	type FileInfo struct {
+		Dev      uint64 // device number
+		Ino      uint64 // inode number
+		...
+		Atime_ns int64  // access time; ns since epoch
+		Mtime_ns int64  // modified time; ns since epoch
+		Ctime_ns int64  // change time; ns since epoch
+		Name     string // name of file
+	}
+
+Chú ý các trường thời gian `Atime_ns`, `Mtime_ns`, `Ctime_ns` có kiểu int64,
+hậu tố `_ns`, và được chú thích là "nanoseconds since epoch."
+Các trường này rõ ràng sẽ đẹp hơn khi sử dụng [[/pkg/time/#Time][`time.Time`]],
+nhưng những sai lầm trong thiết kế cấu trúc package của codebase
+đã ngăn cản điều đó.
+Để có thể sử dụng `time.Time` ở đây, chúng tôi đã tái cấu trúc codebase.
+
+Đồ thị này cho thấy tám package từ thư viện chuẩn
+trước Go 1, với mũi tên từ P đến Q chỉ ra rằng P import Q.
+
+.html refactor/import1.html
+
+Hầu hết mọi package đều phải xử lý lỗi,
+vì vậy gần như mọi package, bao gồm cả package time, đã import package os cho `os.Error`.
+Để tránh các chu trình, bất kỳ thứ gì import package os không thể tự nó được sử dụng bởi package os.
+Kết quả là, các API hệ điều hành không thể sử dụng `time.Time`.
+
+Loại vấn đề này đã thuyết phục chúng tôi rằng
+`os.Error` và hàm tạo `os.NewError` quá cơ bản
+đến mức chúng nên được chuyển ra khỏi package os.
+Cuối cùng, chúng tôi đã chuyển `os.Error` vào ngôn ngữ như [[/ref/spec/#Errors][`error`]]
+và `os.NewError` vào
+[[/pkg/errors][package errors]]
+mới như `errors.New`.
+Sau thay đổi này và các tái cấu trúc khác, đồ thị import trong Go 1 trông như:
+
+.html refactor/import2.html
+
+Package io và package time có ít phụ thuộc đủ để
+được sử dụng bởi package os, và
+định nghĩa Go 1 của [[/pkg/os/#FileInfo][`os.FileInfo`]] thực sự sử dụng `time.Time`.
+
+(Như một ghi chú thêm, ý tưởng đầu tiên của chúng tôi là chuyển `os.Error` và `os.NewError`
+sang một package mới có tên error (số ít) như `error.Value` và `error.New`.
+Phản hồi từ Roger Peppe và những người khác trong cộng đồng Go đã giúp chúng tôi
+nhận ra rằng việc biến kiểu error thành kiểu được định nghĩa sẵn trong ngôn ngữ sẽ
+cho phép nó được sử dụng ngay cả trong các ngữ cảnh cấp thấp như đặc tả của
+[[/ref/spec#Run_time_panics][các panic thời gian chạy]].
+Vì kiểu được đặt tên là `error`, package trở thành errors (số nhiều)
+và hàm tạo là `errors.New`.
+Bài nói chuyện năm 2015 của Andrew Gerrand
+"[[/talks/2015/how-go-was-made.slide#37][Cách Go được tạo ra]]" có thêm chi tiết.)
+
+* Sửa mã nguồn dần dần
+
+Lợi ích của việc tái cấu trúc codebase được áp dụng trong toàn bộ codebase.
+Tiếc thay, chi phí cũng vậy:
+thường có nhiều sửa chữa phải thực hiện do hậu quả của việc tái cấu trúc.
+Khi codebase phát triển, việc thực hiện tất cả các sửa chữa cùng một lúc trở nên không khả thi.
+Các sửa chữa phải được thực hiện dần dần,
+và ngôn ngữ lập trình phải làm cho điều đó trở nên khả thi.
+
+Như một ví dụ đơn giản,
+khi chúng tôi chuyển `io.ByteBuffer` sang `bytes.Buffer` năm 2009, [[https://go.googlesource.com/go/+/d3a412a5abf1ee8815b2e70a18ee092154af7672][commit ban đầu]]
+đã chuyển hai tệp, điều chỉnh ba makefile, và sửa 43 tệp nguồn Go khác.
+Các sửa chữa vượt trội hơn thay đổi API thực tế theo hệ số hai mươi,
+và toàn bộ codebase chỉ có 250 tệp.
+Khi codebase phát triển, hệ số sửa chữa cũng tăng theo.
+Các thay đổi tương tự trong các codebase Go lớn,
+như Docker, Juju, và Kubernetes,
+có thể có hệ số sửa chữa từ 10X đến 100X.
+Bên trong Google, chúng tôi đã thấy hệ số sửa chữa lên đến hơn 1000X.
+
+Quan điểm thông thường là khi thực hiện thay đổi API trên toàn codebase,
+thay đổi API và các sửa chữa mã liên quan nên được commit
+cùng nhau trong một commit lớn:
+
+.html refactor/atomic.html
+
+Lập luận ủng hộ cách tiếp cận này,
+mà chúng ta sẽ gọi là "sửa mã nguồn nguyên tử,"
+là nó đơn giản về mặt khái niệm:
+bằng cách cập nhật API và các sửa chữa mã trong cùng một commit,
+codebase chuyển đổi trong một bước từ API cũ sang API mới,
+mà không bao giờ làm hỏng codebase.
+Bước nguyên tử loại bỏ sự cần thiết phải lên kế hoạch cho một giai đoạn chuyển tiếp
+trong đó cả API cũ và mới phải cùng tồn tại.
+Tuy nhiên, trong các codebase lớn, sự đơn giản về khái niệm
+nhanh chóng bị lấn át bởi độ phức tạp thực tế:
+một commit lớn duy nhất có thể rất lớn.
+Các commit lớn khó chuẩn bị, khó đánh giá,
+và về cơ bản đang chạy đua với các công việc khác trong cây mã.
+Dễ dàng để bắt đầu thực hiện một chuyển đổi, chuẩn bị một commit lớn duy nhất,
+cuối cùng submit nó, và chỉ sau đó mới phát hiện ra rằng một nhà phát triển khác đã thêm
+một cách sử dụng API cũ trong khi bạn đang làm việc.
+Không có xung đột merge,
+vì vậy bạn đã bỏ lỡ cách dùng đó, và dù bạn đã rất cố gắng
+commit lớn duy nhất vẫn làm hỏng codebase.
+Khi codebase trở nên lớn hơn,
+việc sửa mã nguồn nguyên tử trở nên khó khăn hơn
+và có nhiều khả năng làm hỏng codebase một cách vô tình.
+
+Theo kinh nghiệm của chúng tôi,
+một cách tiếp cận có khả năng mở rộng tốt hơn là lên kế hoạch cho một giai đoạn chuyển tiếp
+trong đó việc sửa mã nguồn tiến hành dần dần,
+qua nhiều commit tùy theo nhu cầu:
+
+.html refactor/gradual.html
+
+Thông thường điều này có nghĩa là quá trình tổng thể chạy qua ba giai đoạn.
+Đầu tiên, giới thiệu API mới.
+API cũ và mới phải _có thể thay thế cho nhau_,
+nghĩa là phải có thể chuyển đổi từng cách sử dụng
+từ API cũ sang API mới mà không thay đổi hành vi tổng thể
+của chương trình,
+và các cách dùng API cũ và mới phải có thể cùng tồn tại
+trong một chương trình duy nhất.
+Thứ hai, qua nhiều commit tùy theo nhu cầu,
+chuyển đổi tất cả các cách dùng API cũ sang API mới.
+Thứ ba, xóa API cũ.
+
+"Sửa mã nguồn dần dần" thường tốn nhiều công sức hơn
+so với sửa mã nguồn nguyên tử,
+nhưng bản thân công việc dễ dàng hơn:
+bạn không cần phải làm đúng mọi thứ trong một lần thử.
+Ngoài ra, các commit riêng lẻ nhỏ hơn nhiều,
+làm cho chúng dễ đánh giá và submit hơn
+và, khi cần, dễ rollback hơn.
+Quan trọng nhất, việc sửa mã nguồn dần dần
+hoạt động trong các tình huống khi một commit lớn là không thể,
+ví dụ như khi mã cần sửa
+trải rộng trên nhiều repository.
+
+Thay đổi `bytes.Buffer` trông giống như sửa mã nguồn nguyên tử, nhưng thực ra không phải.
+Mặc dù commit đã cập nhật 43 tệp nguồn,
+thông điệp commit ghi,
+"để lại stub io.ByteBuffer hiện tại, cho trình biên dịch giao thức."
+Stub đó nằm trong một tệp mới có tên `io/xxx.go` với nội dung:
+
+	// This file defines the type io.ByteBuffer
+	// so that the protocol compiler's output
+	// still works. Once the protocol compiler
+	// gets fixed, this goes away.
+
+	package io
+
+	import "bytes"
+
+	type ByteBuffer struct {
+		bytes.Buffer;
+	}
+
+Hồi đó, cũng như ngày nay,
+Go được phát triển trong một repository nguồn riêng biệt
+so với phần còn lại của mã nguồn của Google.
+Trình biên dịch giao thức trong repository chính của Google là
+chịu trách nhiệm tạo ra các tệp nguồn Go từ định nghĩa protocol buffer;
+mã được tạo ra sử dụng `io.ByteBuffer`.
+Stub này đủ để giữ mã được tạo ra hoạt động
+cho đến khi trình biên dịch giao thức có thể được cập nhật.
+Sau đó [[https://go.googlesource.com/go/+/832e72beff62e4fe4897699e9b40a2b228e8503b][một commit muộn hơn]] đã xóa `xxx.go`.
+
+Mặc dù có nhiều bản sửa lỗi được đưa vào commit ban đầu,
+thay đổi này vẫn là sửa mã nguồn dần dần, không phải nguyên tử,
+vì API cũ chỉ được xóa trong một giai đoạn riêng biệt
+sau khi mã hiện có đã được chuyển đổi.
+
+Trong trường hợp cụ thể này, việc sửa dần dần đã thành công, nhưng
+API cũ và mới không hoàn toàn có thể thay thế cho nhau:
+nếu có một hàm nhận đối số `*io.ByteBuffer`
+và mã gọi hàm đó với `*io.ByteBuffer`,
+hai đoạn mã này không thể được cập nhật độc lập:
+mã truyền `*io.ByteBuffer` cho một hàm mong đợi `*bytes.Buffer`,
+hoặc ngược lại, sẽ không biên dịch được.
+
+Một lần nữa, sửa mã nguồn dần dần bao gồm ba giai đoạn:
+
+.html refactor/template.html
+
+Các giai đoạn này áp dụng cho việc sửa mã nguồn dần dần cho bất kỳ thay đổi API nào.
+Trong trường hợp cụ thể của tái cấu trúc codebase—di chuyển
+một API từ package này sang package khác, thay đổi tên đầy đủ của nó trong quá trình đó—làm cho API cũ và mới
+có thể thay thế cho nhau có nghĩa là làm cho tên cũ và mới có thể thay thế cho nhau,
+sao cho mã sử dụng tên cũ có hành vi hoàn toàn giống nhau
+như thể sử dụng tên mới.
+
+Hãy xem các ví dụ về cách Go làm điều đó có thể (hoặc không).
+
+** Hằng số
+
+Hãy bắt đầu với một ví dụ đơn giản về việc chuyển một hằng số.
+
+Package io định nghĩa [[/pkg/io/#Seeker][interface Seeker]],
+nhưng các hằng số được đặt tên mà các nhà phát triển thích sử dụng
+khi gọi phương thức `Seek` đến từ package os.
+Go 1.7 đã chuyển các hằng số sang package io và đặt cho chúng những tên idiom hơn;
+ví dụ, `os.SEEK_SET` hiện có sẵn như `io.SeekStart`.
+
+Đối với một hằng số, một tên có thể thay thế cho tên khác
+khi các định nghĩa sử dụng cùng kiểu và giá trị:
+
+	package io
+	const SeekStart int = 0
+
+	package os
+	const SEEK_SET int = 0
+
+Do [[/doc/go1compat][tính tương thích Go 1]],
+chúng tôi bị chặn ở giai đoạn 2 của thay đổi mã dần dần này.
+Chúng tôi không thể xóa các hằng số cũ,
+nhưng việc cung cấp các hằng mới trong package io cho phép
+các nhà phát triển tránh import package os trong mã
+không thực sự phụ thuộc vào chức năng của hệ điều hành.
+
+Đây cũng là ví dụ về việc sửa mã nguồn dần dần được thực hiện
+trên nhiều repository.
+Go 1.7 đã giới thiệu API mới,
+và bây giờ mọi người có mã Go có thể cập nhật mã của họ
+theo cách họ thấy phù hợp.
+Không có vội vã, không có sự phá vỡ bắt buộc đối với mã hiện có.
+
+** Hàm
+
+Bây giờ hãy xem xét việc chuyển một hàm từ package này sang package khác.
+
+Như đã đề cập ở trên,
+năm 2011 chúng tôi thay thế `os.Error` bằng kiểu được định nghĩa sẵn `error`
+và chuyển hàm tạo `os.NewError` sang một package mới như
+[[/pkg/errors/#New][`errors.New`]].
+
+Đối với một hàm, một tên có thể thay thế cho tên khác
+khi các định nghĩa sử dụng cùng chữ ký và cách triển khai.
+Trong trường hợp này, chúng ta có thể định nghĩa hàm cũ như một wrapper gọi
+hàm mới:
+
+	package errors
+	func New(msg string) error { ... }
+
+	package os
+	func NewError(msg string) os.Error {
+	    return errors.New(msg)
+	}
+
+Vì Go không cho phép so sánh các hàm về sự bằng nhau,
+không có cách nào để phân biệt hai hàm này.
+API cũ và mới có thể thay thế cho nhau,
+vì vậy chúng ta có thể tiến hành các giai đoạn 2 và 3.
+
+(Chúng ta đang bỏ qua một chi tiết nhỏ ở đây: `os.NewError` ban đầu
+trả về `os.Error`, không phải `error`,
+và hai hàm với chữ ký khác nhau _có thể_ phân biệt được.
+Để thực sự làm cho các hàm này không phân biệt được,
+chúng ta cũng cần làm cho `os.Error` và `error` không phân biệt được.
+Chúng ta sẽ trở lại chi tiết đó trong phần thảo luận về kiểu dữ liệu bên dưới.)
+
+** Biến
+
+Bây giờ hãy xem xét việc chuyển một biến từ package này sang package khác.
+
+Chúng ta đang thảo luận về API cấp package được xuất, vì vậy biến
+trong câu hỏi phải là một biến toàn cục được xuất.
+Các biến như vậy hầu như luôn được đặt tại thời điểm khởi tạo
+và sau đó chỉ được đọc, không bao giờ được ghi lại,
+để tránh các cuộc đua giữa các goroutine đọc và ghi.
+Đối với các biến toàn cục được xuất tuân theo mẫu này,
+một tên gần như có thể thay thế cho tên khác khi cả hai có
+cùng kiểu và giá trị.
+Cách đơn giản nhất để sắp xếp điều đó là khởi tạo cái này từ cái kia:
+
+	package io
+	var EOF = ...
+
+	package os
+	var EOF = io.EOF
+
+Trong ví dụ này, io.EOF và os.EOF là cùng giá trị.
+Các giá trị biến hoàn toàn có thể thay thế cho nhau.
+
+Có một vấn đề nhỏ.
+Mặc dù các giá trị biến có thể thay thế cho nhau,
+nhưng địa chỉ biến thì không.
+Trong ví dụ này, `&io.EOF` và `&os.EOF` là các con trỏ khác nhau.
+Tuy nhiên, hiếm khi xuất một biến chỉ đọc
+từ một package và mong đợi các client lấy địa chỉ của nó:
+sẽ tốt hơn cho các client nếu package xuất một biến được đặt thành địa chỉ thay vào đó,
+và sau đó mẫu hoạt động.
+
+** Kiểu dữ liệu
+
+Cuối cùng hãy xem xét việc chuyển một kiểu dữ liệu từ package này sang package khác.
+Điều này khó thực hiện hơn nhiều trong Go ngày nay, như ba ví dụ sau đây minh họa.
+
+*** os.Error của Go
+
+Hãy xem xét lại lần nữa việc chuyển đổi từ `os.Error` sang `error`.
+Không có cách nào trong Go để làm cho hai tên kiểu dữ liệu có thể thay thế cho nhau.
+Điều gần nhất chúng ta có thể làm trong Go là cho `os.Error` và `error` cùng định nghĩa cơ bản:
+
+	package os
+	type Error error
+
+Ngay cả với định nghĩa này, và ngay cả khi đây là các kiểu interface,
+Go vẫn coi hai kiểu này [[/ref/spec#Type_identity][khác nhau]],
+vì vậy một hàm trả về os.Error
+không giống như một hàm trả về error.
+Xét [[/pkg/io/#Reader][interface `io.Reader`]]:
+
+	package io
+	type Reader interface {
+	    Read(b []byte) (n int, err error)
+	}
+
+Nếu `io.Reader` được định nghĩa sử dụng `error`, như trên, thì một phương thức `Read`
+trả về `os.Error` sẽ không thỏa mãn interface.
+
+Nếu không có cách nào để làm cho hai tên cho một kiểu có thể thay thế cho nhau,
+điều đó đặt ra hai câu hỏi.
+Đầu tiên, làm thế nào chúng ta có thể thực hiện việc sửa mã nguồn dần dần cho một kiểu đã được di chuyển hoặc đổi tên?
+Thứ hai, chúng ta đã làm gì với `os.Error` vào năm 2011?
+
+Để trả lời câu hỏi thứ hai, chúng ta có thể xem lịch sử quản lý mã nguồn.
+Hóa ra để hỗ trợ việc chuyển đổi, chúng tôi
+[[https://go.googlesource.com/go/+/47f4bf763dcb120d3b005974fec848eefe0858f0][đã thêm một hack tạm thời vào trình biên dịch]]
+để làm cho mã viết bằng `os.Error` được hiểu như thể đã viết `error` thay vào đó.
+
+*** Kubernetes
+
+Vấn đề này với việc chuyển kiểu dữ liệu không chỉ giới hạn ở các thay đổi cơ bản như `os.Error`,
+cũng không giới hạn ở repository Go.
+Đây là một thay đổi từ [[https://kubernetes.io/][dự án Kubernetes]].
+Kubernetes có một package util, và tại một thời điểm nào đó các nhà phát triển
+đã quyết định tách kiểu `IntOrString` của package đó vào
+[[https://pkg.go.dev/k8s.io/kubernetes/pkg/util/intstr][package intstr]] riêng của nó.
+
+Áp dụng mẫu cho việc sửa mã nguồn dần dần,
+giai đoạn đầu tiên là thiết lập cách để hai kiểu có thể thay thế cho nhau.
+Chúng ta không thể làm điều đó,
+vì kiểu `IntOrString` được sử dụng trong các trường struct,
+và mã không thể gán cho trường đó trừ khi giá trị được gán
+có kiểu chính xác:
+
+	package util
+	type IntOrString intstr.IntOrString
+
+	// Not good enough for:
+
+	// IngressBackend describes ...
+	type IngressBackend struct {
+	    ServiceName string             `json:"serviceName"`
+	    ServicePort intstr.IntOrString `json:"servicePort"`
+	}
+
+Nếu cách dùng này là vấn đề duy nhất, thì bạn có thể tưởng tượng
+viết một getter và setter sử dụng kiểu cũ
+và thực hiện sửa mã nguồn dần dần để thay đổi tất cả mã hiện có
+để sử dụng getter và setter,
+sau đó sửa đổi trường để sử dụng kiểu mới
+và thực hiện sửa mã nguồn dần dần để thay đổi tất cả mã hiện có
+để truy cập trường trực tiếp sử dụng kiểu mới,
+rồi cuối cùng xóa getter và setter đề cập đến kiểu cũ.
+Điều đó đòi hỏi hai lần sửa mã nguồn dần dần thay vì một,
+và có nhiều cách dùng kiểu khác ngoài trường struct này.
+
+Trong thực tế, lựa chọn duy nhất ở đây là sửa mã nguồn nguyên tử,
+hoặc phá vỡ tất cả mã sử dụng `IntOrString`.
+
+*** Docker
+
+Như một ví dụ khác,
+đây là một thay đổi từ [[https://www.docker.com/][dự án Docker]].
+Docker có một package utils, và tại một thời điểm nào đó các nhà phát triển
+đã quyết định tách kiểu `JSONError` của package đó ra
+[[https://pkg.go.dev/github.com/docker/docker/pkg/jsonmessage#JSONError][package jsonmessage]] riêng biệt.
+
+Một lần nữa chúng ta gặp vấn đề rằng kiểu cũ và mới không thể thay thế cho nhau,
+nhưng nó xuất hiện theo một cách khác, cụ thể là [[/ref/spec#Type_assertions][type assertions]]:
+
+	package utils
+	type JSONError jsonmessage.JSONError
+
+	// Not good enough for:
+
+	jsonError, ok := err.(*jsonmessage.JSONError)
+	if !ok {
+		jsonError = &jsonmessage.JSONError{
+			Message: err.Error(),
+		}
+	}
+
+Nếu lỗi `err` chưa phải là `JSONError`, mã này bọc nó vào một,
+nhưng trong quá trình sửa dần dần, mã này xử lý `utils.JSONError` và `jsonmessage.JSONError` khác nhau.
+Hai kiểu không thể thay thế cho nhau.
+(Một [[/ref/spec#Type_switches][type switch]] sẽ bộc lộ cùng vấn đề.)
+
+Nếu dòng này là vấn đề duy nhất, thì bạn có thể tưởng tượng
+thêm một type assertion cho `*utils.JSONError`,
+sau đó thực hiện sửa mã nguồn dần dần để loại bỏ các cách dùng khác của `utils.JSONError`,
+và cuối cùng xóa bảo vệ kiểu bổ sung ngay trước khi xóa kiểu cũ.
+Nhưng dòng này không phải là vấn đề duy nhất.
+Kiểu cũng được sử dụng ở nơi khác trong API và có tất cả
+vấn đề của ví dụ Kubernetes.
+
+Trong thực tế, một lần nữa lựa chọn duy nhất ở đây là sửa mã nguồn nguyên tử
+hoặc phá vỡ tất cả mã sử dụng `JSONError`.
+
+* Giải pháp?
+
+Chúng ta đã thấy các ví dụ về cách chúng ta có thể và không thể chuyển
+hằng số, hàm, biến và kiểu dữ liệu từ package này sang package khác.
+Các mẫu để thiết lập API cũ và mới có thể thay thế cho nhau là:
+
+	const OldAPI = NewPackage.API
+
+	func OldAPI() { NewPackage.API() }
+
+	var OldAPI = NewPackage.API
+
+	type OldAPI ... ??? sửa đổi trình biên dịch hoặc ... ???
+
+Đối với hằng số và hàm, việc thiết lập cho sửa mã nguồn dần dần là tầm thường.
+Đối với biến, thiết lập tầm thường là chưa hoàn chỉnh nhưng chỉ theo những cách không thể xuất hiện thường xuyên trong thực tế.
+
+Đối với kiểu dữ liệu, không có cách nào để thiết lập sửa mã nguồn dần dần trong hầu hết mọi ví dụ thực tế.
+Lựa chọn phổ biến nhất là buộc sửa mã nguồn nguyên tử,
+hoặc phá vỡ tất cả mã sử dụng kiểu đã được di chuyển và để lại cho client
+để sửa mã của họ trong lần cập nhật tiếp theo.
+Trong trường hợp di chuyển os.Error, chúng tôi đã phải sửa đổi trình biên dịch.
+Không có lựa chọn nào trong số này là hợp lý.
+Các nhà phát triển nên có thể thực hiện tái cấu trúc
+liên quan đến việc di chuyển một kiểu từ package này sang package khác
+mà không cần sửa mã nguồn nguyên tử,
+không cần dùng đến mã trung gian và nhiều vòng sửa chữa,
+không buộc tất cả các package client cập nhật mã của họ ngay lập tức,
+và thậm chí không cần nghĩ đến việc sửa đổi trình biên dịch.
+
+Nhưng làm thế nào? Các tái cấu trúc này nên trông như thế nào trong tương lai?
+
+Chúng tôi không biết.
+Mục tiêu của bài viết này là định nghĩa vấn đề đủ rõ ràng
+để thảo luận các câu trả lời có thể.
+
+** Alias
+
+Như đã giải thích ở trên, vấn đề cơ bản với việc di chuyển kiểu dữ liệu là
+trong khi Go cung cấp các cách để tạo tên thay thế
+cho hằng số, hàm và (hầu hết thời gian) biến,
+không có cách nào để tạo tên thay thế cho một kiểu dữ liệu.
+
+Đối với Go 1.8, chúng tôi đã thử nghiệm việc giới thiệu hỗ trợ hạng nhất
+cho các tên thay thế này, được gọi là [[/design/16339-alias-decls][_alias_]].
+Một cú pháp khai báo mới, dạng alias, sẽ cung cấp một cách thống nhất
+để tạo tên thay thế cho bất kỳ loại định danh nào:
+
+	const OldAPI => NewPackage.API
+	func  OldAPI => NewPackage.API
+	var   OldAPI => NewPackage.API
+	type  OldAPI => NewPackage.API
+
+Thay vì bốn cơ chế khác nhau, việc tái cấu trúc package os mà chúng tôi đã xem xét ở trên
+sẽ sử dụng một cơ chế duy nhất:
+
+	package os
+	const SEEK_SET => io.SeekStart
+	func  NewError => errors.New
+	var   EOF      => io.EOF
+	type  Error    => error
+
+Trong thời gian đóng băng release Go 1.8, chúng tôi phát hiện ra hai chi tiết kỹ thuật nhỏ nhưng quan trọng chưa được giải quyết
+trong hỗ trợ alias (vấn đề [[/issue/17746][17746]] và [[/issue/17784][17784]]),
+và chúng tôi quyết định rằng không thể giải quyết chúng một cách tự tin
+trong thời gian còn lại trước khi phát hành Go 1.8,
+vì vậy chúng tôi đã giữ lại alias khỏi Go 1.8.
+
+** Quản lý phiên bản
+
+Một câu hỏi rõ ràng là liệu có nên dựa vào quản lý phiên bản và
+quản lý phụ thuộc để sửa mã nguồn,
+thay vì tập trung vào các chiến lược cho phép sửa mã nguồn dần dần.
+
+Quản lý phiên bản và chiến lược sửa mã nguồn dần dần bổ sung cho nhau.
+Công việc của hệ thống quản lý phiên bản là xác định một tập hợp tương thích của
+các phiên bản của tất cả các package cần thiết trong một chương trình, hoặc
+giải thích tại sao không thể xây dựng được tập hợp như vậy.
+Sửa mã nguồn dần dần tạo ra các kết hợp tương thích bổ sung,
+làm cho hệ thống quản lý phiên bản có nhiều khả năng tìm được cách
+để xây dựng một chương trình cụ thể hơn.
+
+Hãy xem lại các cập nhật khác nhau đối với thư viện chuẩn của Go
+mà chúng ta đã thảo luận ở trên.
+Giả sử rằng API cũ
+tương ứng trong một hệ thống quản lý phiên bản
+với phiên bản thư viện chuẩn 5.1.3.
+Trong cách tiếp cận sửa mã nguồn nguyên tử thông thường,
+API mới sẽ được giới thiệu và API cũ sẽ bị xóa cùng lúc,
+dẫn đến phiên bản 6.0.0;
+theo [[http://semver.org/][semantic versioning]],
+số phiên bản chính được tăng để chỉ ra sự không tương thích
+gây ra bởi việc xóa API cũ.
+
+Bây giờ giả sử chương trình lớn hơn của bạn phụ thuộc vào hai package, Foo và Bar.
+Foo vẫn sử dụng API thư viện chuẩn cũ.
+Bar đã được cập nhật để sử dụng API thư viện chuẩn mới,
+và đã có những thay đổi quan trọng kể từ đó mà chương trình của bạn
+cần: bạn không thể sử dụng phiên bản cũ hơn của Bar trước
+khi thư viện chuẩn thay đổi.
+
+.html refactor/version1.html
+
+Không có tập hợp thư viện tương thích nào để xây dựng chương trình của bạn:
+bạn muốn phiên bản mới nhất của Bar, yêu cầu
+thư viện chuẩn 6.0.0,
+nhưng bạn cũng cần Foo, không tương thích với thư viện chuẩn 6.0.0.
+Điều tốt nhất mà một hệ thống quản lý phiên bản có thể làm trong trường hợp này là báo cáo lỗi rõ ràng.
+(Nếu bạn đủ động lực, bạn có thể cập nhật bản sao của mình của Foo.)
+
+Ngược lại, với hỗ trợ tốt hơn cho sửa mã nguồn dần dần,
+chúng ta có thể thêm API mới, có thể thay thế trong phiên bản 5.2.0,
+và sau đó xóa API cũ trong phiên bản 6.0.0.
+
+.html refactor/version2.html
+
+Phiên bản trung gian 5.2.0 tương thích ngược với 5.1.3,
+được chỉ ra bởi số phiên bản chính chung là 5.
+Tuy nhiên, vì sự thay đổi từ 5.2.0 sang 6.0.0 chỉ xóa API,
+5.2.0 cũng, có lẽ đáng ngạc nhiên, tương thích ngược với 6.0.0.
+Giả sử rằng Bar khai báo yêu cầu của mình một cách chính xác—nó
+tương thích với cả 5.2.0 và 6.0.0—một hệ thống quản lý phiên bản có thể thấy rằng
+cả Foo và Bar đều tương thích với 5.2.0 và sử dụng phiên bản đó
+của thư viện chuẩn để xây dựng chương trình.
+
+Hỗ trợ tốt và áp dụng sửa mã nguồn dần dần giảm sự không tương thích,
+tạo cơ hội tốt hơn cho các hệ thống quản lý phiên bản tìm ra cách xây dựng chương trình của bạn.
+
+** Type alias
+
+Để cho phép sửa mã nguồn dần dần trong quá trình tái cấu trúc codebase,
+phải có thể tạo tên thay thế cho
+hằng số, hàm, biến hoặc kiểu dữ liệu.
+Go đã cho phép giới thiệu tên thay thế cho
+tất cả hằng số, tất cả hàm, và hầu hết biến, nhưng không có kiểu dữ liệu.
+Nói cách khác,
+dạng alias chung không bao giờ cần thiết cho hằng số,
+không bao giờ cần thiết cho hàm,
+chỉ đôi khi cần thiết cho biến,
+nhưng luôn cần thiết cho kiểu dữ liệu.
+
+Tầm quan trọng tương đối đối với các khai báo cụ thể
+gợi ý rằng có lẽ alias Go 1.8 là sự tổng quát hóa quá mức,
+và chúng ta nên thay vào đó tập trung vào giải pháp chỉ giới hạn cho kiểu dữ liệu.
+Giải pháp rõ ràng là alias chỉ cho kiểu dữ liệu,
+không cần toán tử mới.
+Theo
+[[http://www.freepascal.org/docs-html/ref/refse19.html][Pascal]]
+(hoặc nếu bạn thích, [[https://doc.rust-lang.org/book/type-aliases.html][Rust]]),
+một chương trình Go có thể giới thiệu type alias sử dụng toán tử gán:
+
+	type OldAPI = NewPackage.API
+
+Ý tưởng giới hạn alias cho kiểu dữ liệu đã được
+[[/issue/16339#issuecomment-233644777][nêu ra trong quá trình thảo luận alias Go 1.8]],
+nhưng có vẻ đáng thử cách tiếp cận tổng quát hơn, mà chúng tôi đã làm, nhưng không thành công.
+Nhìn lại, thực tế là `=` và `=>` có nghĩa giống hệt nhau đối với hằng số
+trong khi chúng có nghĩa gần giống nhau nhưng khác nhau một cách tinh tế đối với biến
+cho thấy rằng cách tiếp cận tổng quát không xứng đáng với sự phức tạp của nó.
+
+Thực ra, ý tưởng thêm type alias theo phong cách Pascal
+đã được [[/issue/16339#issuecomment-233759255][xem xét trong thiết kế ban đầu của Go]],
+nhưng cho đến nay chúng tôi chưa có trường hợp sử dụng mạnh mẽ cho chúng.
+
+Type alias có vẻ là một cách tiếp cận đầy hứa hẹn để khám phá,
+nhưng, ít nhất là đối với tôi, alias tổng quát cũng có vẻ đầy hứa hẹn như vậy
+trước khi thảo luận và thử nghiệm trong chu kỳ Go 1.8.
+Thay vì đưa ra kết luận trước, mục tiêu của bài viết này là
+giải thích vấn đề một cách chi tiết và xem xét một số giải pháp có thể,
+để cho phép thảo luận và đánh giá ý tưởng hiệu quả cho lần sau.
+
+* Thách thức
+
+Go hướng đến việc trở nên lý tưởng cho các codebase lớn.
+
+Trong các codebase lớn, điều quan trọng là có thể tái cấu trúc cấu trúc codebase,
+có nghĩa là di chuyển API giữa các package và cập nhật mã client.
+
+Trong các tái cấu trúc lớn như vậy, điều quan trọng là có thể sử dụng quá trình chuyển đổi dần dần từ API cũ sang API mới.
+
+Go không hỗ trợ trường hợp cụ thể của sửa mã nguồn dần dần khi di chuyển kiểu dữ liệu giữa các package. Điều đó nên được cải thiện.
+
+Tôi hy vọng cộng đồng Go chúng ta có thể cùng nhau sửa điều này trong Go 1.9. Có lẽ type alias là điểm khởi đầu tốt. Có lẽ không. Thời gian sẽ nói lên điều đó.
+
+* Lời cảm ơn
+
+Cảm ơn nhiều người đã giúp chúng tôi [[/issue/16339][suy nghĩ về các câu hỏi thiết kế]]
+đã đưa chúng ta đến đây và dẫn đến thử nghiệm alias trong quá trình phát triển Go 1.8.
+Tôi mong đợi cộng đồng Go lại giúp chúng tôi khi chúng tôi xem xét lại vấn đề này cho Go 1.9.
+Nếu bạn muốn đóng góp, vui lòng xem [[/issue/18130][issue 18130]].

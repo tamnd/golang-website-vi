@@ -1,0 +1,15 @@
+  - title: Phát triển web
+    content: Go Web Examples cung cấp các đoạn mã dễ hiểu về
+      cách dùng Go cho lập trình web.
+    url: https://gowebexamples.com
+    cta: Tìm hiểu thêm
+  - title: CLI
+    content: Workshop này sẽ hướng dẫn bạn xây dựng ứng dụng CLI bằng Go,
+      giới thiệu các nguyên tắc cơ bản của Go và các framework CLI trong quá trình đó.
+    url: https://spf13.com/presentation/building-an-awesome-cli-app-in-go-oscon/
+    cta: Tìm hiểu thêm
+  - title: Mới học lập trình?
+    content: Bắt đầu với khóa học nhập môn bao gồm các nguyên lý lập trình cơ bản
+      và nền tảng của Go.
+    url: https://www.youtube.com/watch?v=Q0sKAMal4WQ
+    cta: Tìm hiểu thêm

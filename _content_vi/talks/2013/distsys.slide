@@ -1,0 +1,446 @@
+Go dành cho các hệ thống phân tán
+
+Russ Cox
+Google
+
+* Về bài nói này
+
+Tôi đã trình bày các biến thể của bài nói này ba lần vào năm 2013, một lần tại workshop Programming Languages and Operating Systems (PLOS) của SOSP, một lần tại Hội nghị chuyên đề kỹ thuật phần mềm hàng năm của MIT Lincoln Lab và một lần tại văn phòng Cambridge, Massachusetts của Twitter.
+
+Bài nói giả định người nghe đã quen thuộc với các vấn đề cơ bản khi xây dựng hệ thống phân tán. Nó trình bày cách tiếp cận của Go để giải quyết một số vấn đề đó.
+
+* Go
+
+Go là ngôn ngữ lập trình mã nguồn mở giúp dễ dàng xây dựng phần mềm đơn giản, đáng tin cậy và hiệu quả.
+
+* Lịch sử
+
+Thiết kế bắt đầu vào cuối năm 2007.
+
+- Robert Griesemer, Rob Pike, Ken Thompson
+- Ian Lance Taylor, Russ Cox
+
+Trở thành mã nguồn mở vào tháng 11 năm 2009.
+
+Phát triển hoàn toàn công khai; cộng đồng rất tích cực.
+Ngôn ngữ ổn định từ Go 1, đầu năm 2012.
+
+* Động lực
+
+Bắt đầu như câu trả lời cho các vấn đề phần mềm tại Google:
+
+- bộ xử lý đa lõi
+- hệ thống mạng
+- cụm tính toán khổng lồ
+- quy mô: 10⁷ dòng mã
+- quy mô: 10³ lập trình viên
+- quy mô: 10⁶⁺ máy (điểm thiết kế)
+
+* Go
+
+Một ngôn ngữ đơn giản nhưng mạnh mẽ và thú vị.
+
+- bắt đầu với C, loại bỏ các phần phức tạp
+- thêm interface, đồng thời
+- ngoài ra: bộ gom rác, closures, reflection, strings, ...
+
+Để biết thêm về thiết kế:
+
+- [[http://commandcenter.blogspot.com/2012/06/less-is-exponentially-more.html][Less is exponentially more]]
+- [[/talks/2012/splash.article][Go tại Google: Thiết kế ngôn ngữ phục vụ kỹ thuật phần mềm]]
+
+* Bài nói này
+
+Kỹ thuật
+
+Interface
+
+Đồng thời
+
+* Kỹ thuật
+
+* Kỹ thuật: Import
+
+.play distsys/hello0.go
+
+import "fmt" được đảm bảo chỉ đọc đúng một file.
+
+* Kỹ thuật: Import
+
+	$ go get github.com/golang/glog
+
+.play distsys/hello1.go
+
+Vẫn được đảm bảo chỉ đọc đúng một file.
+
+Không gian tên import là phi tập trung.
+
+* Kỹ thuật: Viết lại chương trình
+
+	$ gofmt -r 'glog.Infof -> glog.Errorf' hello1.go
+	package main
+
+	import (
+		"flag"
+		"github.com/golang/glog"
+	)
+
+	func main() {
+		flag.Set("logtostderr", "true")
+		glog.Errorf("hello, world")
+	}
+	$
+
+* Kỹ thuật: Bộ gom rác
+
+Trong C và C++, quá nhiều lập trình _và_ thiết kế API liên quan đến quản lý bộ nhớ.
+
+Go chỉ có bộ gom rác, không có gì khác.
+
+Nền tảng cho interface: chi tiết quản lý bộ nhớ không chia tách các API tương tự nhau.
+
+Nền tảng cho đồng thời: quá khó theo dõi quyền sở hữu nếu không có.
+
+Tất nhiên, thêm chi phí, độ trễ, phức tạp trong hệ thống runtime.
+
+* Kỹ thuật: Bộ gom rác
+
+Kinh nghiệm với Java: Chi phí không kiểm soát được, cần điều chỉnh quá nhiều.
+
+Go cho phép giới hạn cấp phát bằng cách kiểm soát bố cục bộ nhớ.
+
+Ví dụ:
+
+	type Ring struct {
+		R, W int
+		Data [512]byte
+	}
+
+	type Point struct {
+		X, Y int
+	}
+
+	type Rectangle struct {
+		Min, Max Point
+	}
+
+* Kỹ thuật: Bộ gom rác
+
+Cài đặt bộ gom rác vẫn là lĩnh vực công việc và nghiên cứu tích cực.
+
+Quyết định thiết kế: Con trỏ nội được cho phép, cũng như con trỏ ngoài.
+
+- Không thể tái sử dụng trực tiếp các thuật toán GC của Java.
+- Nhưng cung cấp cho _lập trình viên_ nhiều quyền kiểm soát hơn đối với cấp phát.
+
+Thiết kế hiện tại: mark-and-sweep song song.
+Nếu dùng bộ nhớ khôn ngoan, hoạt động tốt trong môi trường production.
+
+* Interface
+
+* Interface
+
+Một interface định nghĩa một tập hợp các phương thức.
+
+	package io
+
+	type Writer interface {
+		Write(data []byte) (n int, err error)
+	}
+
+* Interface
+
+Một kiểu cài đặt interface bằng cách cài đặt các phương thức.
+
+	package bytes
+
+	type Buffer struct {
+		...
+	}
+
+	func (b *Buffer) Write(data []byte) (n int, err error) {
+		...
+	}
+
+* Interface
+
+Một cài đặt của interface có thể được gán cho một biến của kiểu interface đó.
+
+	package fmt
+
+	func Fprintf(w io.Writer, format string, args ...interface{})
+
+* Interface
+
+.play distsys/writebuffer.go /^func.main/+1,/^}/-1
+
+* Interface
+
+Reader là đối tác hiển nhiên.
+
+	package io
+
+	type Reader interface {
+		Read(data []byte) (n int, err error)
+	}
+
+	func Copy(dst Writer, src Reader) (n int64, err error)
+
+* Interface
+
+.play distsys/writebuffer2.go /^func.main/+1,/^}/-1
+
+* Interface
+
+Reader và Writer hóa ra rất hữu ích.
+
+Adapters
+
+	package io
+
+	func MultiWriter(writers ...Writer) Writer
+	    MultiWriter tạo một writer nhân bản các lần ghi của nó cho tất cả
+	    các writer được cung cấp, tương tự lệnh Unix tee(1).
+
+Nối chuỗi
+
+	package gzip // compress/gzip
+
+	func NewWriter(w io.Writer) *Writer
+
+Ngoài ra: buffered writers, encrypted writers, limited writers, HTTP responses.
+
+* Interface
+
+Mạng:
+
+	package net
+
+	type Conn interface {
+		Read(b []byte) (n int, err error)
+		Write(b []byte) (n int, err error)
+		Close() error
+
+		LocalAddr() Addr
+		RemoteAddr() Addr
+
+		SetDeadline(t time.Time) error
+		SetReadDeadline(t time.Time) error
+		SetWriteDeadline(t time.Time) error
+	}
+
+	func Dial(network, address string) (Conn, error)
+
+* Interface
+
+Ví dụ mạng:
+
+.play distsys/finger.go /^func.finger/+1,/^}/-1
+
+* Interface
+
+Client mạng như hàm adapter:
+
+	package smtp
+
+	func NewClient(conn net.Conn, host string) (*Client, error)
+
+Các cài đặt khác của net.Conn: testing, SSL, ...
+
+* Bài học về Interface
+
+Ưu điểm chính:
+
+- không có dependency giữa interface và cài đặt
+- kết hợp biểu đạt
+- dễ test
+- tránh thiết kế quá mức, phân cấp cứng nhắc của OO dựa trên kế thừa
+
+Nguồn gốc của tất cả tính tổng quát trong ngôn ngữ Go.
+
+* Đồng thời
+
+* Đồng thời vs Song song
+
+Đồng thời là về việc xử lý nhiều thứ cùng lúc.
+
+Song song là về việc làm nhiều thứ cùng lúc.
+
+Đồng thời là về cấu trúc, song song là về thực thi.
+
+Đồng thời cung cấp một cách cấu trúc giải pháp để giải quyết vấn đề có thể song song hóa (hoặc không).
+
+* Đồng thời vs Song song
+
+Đồng thời: trình điều khiển chuột, bàn phím, màn hình và đĩa trong hệ điều hành.
+
+Song song: tích vô hướng vector, nhân ma trận.
+
+Tính đồng thời có thể kích hoạt parallelism nhưng tự nó đã hữu ích: các chương trình hiện đại phải xử lý nhiều thứ cùng lúc.
+
+* Đồng thời
+
+Go cung cấp hai khái niệm quan trọng:
+
+Goroutine là một luồng điều khiển trong chương trình, với các biến cục bộ và stack riêng. Rẻ, dễ tạo.
+
+Channel mang các thông điệp có kiểu giữa các goroutines.
+
+* Đồng thời
+
+.play distsys/hello.go
+
+* Đồng thời: CSP
+
+Channel được áp dụng từ Communicating Sequential Processes của Hoare.
+
+- Độc lập với phần còn lại của ngôn ngữ
+- Có thể giữ mô hình quen thuộc cho tính toán
+- Tập trung vào _kết hợp_ của mã thông thường
+
+Go _cho phép_ lập trình đồng thời đơn giản, an toàn.
+Nó không _ngăn cấm_ lập trình xấu.
+
+Lưu ý: không hoàn toàn an toàn bộ nhớ; chia sẻ là hợp lệ.
+Truyền con trỏ qua channel là cách dùng thành ngữ.
+
+Kinh nghiệm cho thấy điều này thực tế.
+
+* Đồng thời
+
+Phân giải địa chỉ mạng tuần tự, cho một danh sách công việc:
+
+.play distsys/addr1.go /lookup/+1,/^}/-1
+
+* Đồng thời
+
+Phân giải địa chỉ mạng song song, cho một danh sách công việc:
+
+.play distsys/addr2.go /lookup/+1,/^}/-1
+
+* Đồng thời
+
+Lưu ý: có thể trừu tượng hóa mẫu này.
+
+.play distsys/addr3.go /lookup/+1,/^}/-1
+
+* Đồng thời
+
+Lưu ý: có thể trừu tượng hóa mẫu này thêm (giả định):
+
+	var par ParallelDo
+
+	for _, w := range worklist {
+		w := w // copy biến lặp
+		par.Do(func() {
+			w.addrs, w.err = net.LookupHost(w.host)
+		})
+	)
+
+	par.Wait()
+
+Nhưng vẫn hữu ích để có thể xây dựng các mẫu thay thế.
+
+* Đồng thời
+
+Parallelism có giới hạn:
+
+.play distsys/addr4.go /lookup/+1,/^}/-1
+
+* Đồng thời
+
+Parallelism có giới hạn, 2:
+
+.play distsys/addr5.go /lookup/+1,/^}/-1
+
+* Đồng thời:
+
+Lưu ý: có thể trừu tượng (vẫn giả định):
+
+	par.Limit(10)
+
+	for _, w := range work {
+		w := w // copy biến lặp
+		par.Do(func() {
+			w.addrs, w.err = net.LookupHost(w.host)
+		})
+	)
+
+	par.Wait()
+
+* Đồng thời
+
+Ví dụ: lưu trữ được sao chép với quorum đọc và ghi.
+
+	const (
+		F = 2
+		N = 5 // >= 2F + 1
+		ReadQuorum = F + 1
+		WriteQuorum = N - F
+	)
+
+* Đồng thời
+
+Ghi được sao chép, trả về sau khi đủ số lần ghi thành công.
+
+.play distsys/replwrite.go /^func.Write/+2,/if.delay/-2/
+
+* Đồng thời
+
+Đọc được sao chép, trả về sau khi đủ số lần đọc được thu thập.
+
+.play distsys/replread.go /^func.Read/+2,/if.delay/-2/
+
+* Đồng thời
+
+Select cho phép chọn giữa nhiều thao tác channel.
+
+Ví dụ, chương trình chat:
+
+	for {
+		select {
+		case event := <-ui:
+			// xử lý sự kiện giao diện người dùng
+		case msg := <-server:
+			// xử lý thông điệp từ server
+		case t := <-tick:
+			// thời gian đã trôi qua
+		}
+	}
+
+* Bài học về Đồng thời
+
+- Tính năng chính để xây dựng hệ thống phân tán.
+- Được hỗ trợ bởi closures và bộ gom rác.
+- Truyền thông điệp bên trong chương trình, cũng bên ngoài chương trình.
+
+Quan trọng nhất:
+
+- Không giao tiếp bằng cách chia sẻ bộ nhớ.
+- Thay vào đó, chia sẻ bộ nhớ bằng cách giao tiếp.
+
+* Sử dụng trong môi trường production
+
+vitess/vtocc, bộ cân bằng truy vấn MySQL
+
+- phục vụ tất cả các truy vấn MySQL của YouTube
+- vận hành không crash và không rò rỉ trong nhiều tháng
+
+groupcache
+
+- bộ đệm key-value bất biến trong bộ nhớ phân tán
+- được dùng bởi (các phần của) dl.google.com, Blogger, Google Code, Google Fiber, các hệ thống giám sát production
+
+* Thông tin thêm và các bài nói liên quan
+
+https://go.dev/
+
+rsc@golang.org
+
+Video:
+
+- Concurrency không phải là parallelism [[http://vimeo.com/49718712][video]]
+- Go concurrency patterns [[http://www.youtube.com/watch?v=f6kdp27TYZs][video]]
+- Advanced Go concurrency patterns [[http://www.youtube.com/watch?v=QDDwwePbDtw][video]]
+
+Có câu hỏi không?

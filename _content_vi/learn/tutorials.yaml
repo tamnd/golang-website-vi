@@ -1,0 +1,20 @@
+- title: Bắt đầu
+  content: Trong hướng dẫn này, bạn sẽ được giới thiệu ngắn gọn về lập trình Go. Trong quá trình đó, bạn sẽ cài đặt Go, viết một đoạn code "Hello, world" đơn giản, dùng lệnh go để chạy code, dùng công cụ khám phá package Go và gọi các hàm từ module bên ngoài.
+  url: /doc/tutorial/getting-started
+  thumbnail:
+  cta: Hướng dẫn
+- title: Tạo một module
+  content: Đây là phần đầu của hướng dẫn giới thiệu một số tính năng cơ bản của ngôn ngữ Go. Trong hướng dẫn này bạn sẽ tạo hai module. Module đầu tiên là một thư viện dùng để import từ các thư viện hoặc ứng dụng khác. Module thứ hai là ứng dụng gọi module đầu tiên.
+  url: /doc/tutorial/create-module
+  thumbnail:
+  cta: Hướng dẫn
+- title: Phát triển web service
+  content: Hướng dẫn này giới thiệu kiến thức cơ bản về viết API web service kiểu RESTful bằng Go và Gin Web Framework. Trong hướng dẫn này, bạn sẽ xây dựng một API server RESTful với hai endpoint.
+  url: https://shell.cloud.google.com/?walkthrough_tutorial_url=https%3A%2F%2Fraw.githubusercontent.com%2Fgolang%2Ftour%2Fmaster%2Ftutorial%2Fweb-service-gin.md&pli=1&show=ide&environment_deployment=ide
+  thumbnail:
+  cta: Hướng dẫn tương tác
+- title: Truy cập cơ sở dữ liệu quan hệ
+  content: Hướng dẫn này giới thiệu kiến thức cơ bản về truy cập cơ sở dữ liệu quan hệ bằng Go và package database/sql trong thư viện chuẩn. Trong hướng dẫn này, bạn sẽ tạo một cơ sở dữ liệu rồi viết code để truy cập nó.
+  url: /doc/tutorial/database-access
+  thumbnail:
+  cta: Hướng dẫn

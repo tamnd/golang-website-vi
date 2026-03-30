@@ -1,0 +1,451 @@
+<!--{
+	"Title": "Data Race Detector"
+}-->
+
+<h2 id="Introduction">Giới thiệu</h2>
+
+<p>
+Data race là một trong những loại lỗi phổ biến nhất và khó gỡ lỗi nhất trong các hệ thống
+đồng thời. Một data race xảy ra khi hai goroutine truy cập cùng một biến đồng thời và ít
+nhất một trong các lần truy cập là thao tác ghi. Xem
+<a href="/ref/mem/">Mô hình bộ nhớ Go</a> để biết thêm chi tiết.
+</p>
+
+<p>
+Dưới đây là ví dụ về một data race có thể dẫn đến crash và hỏng bộ nhớ:
+</p>
+
+<pre>
+func main() {
+	c := make(chan bool)
+	m := make(map[string]string)
+	go func() {
+		m["1"] = "a" // First conflicting access.
+		c &lt;- true
+	}()
+	m["2"] = "b" // Second conflicting access.
+	&lt;-c
+	for k, v := range m {
+		fmt.Println(k, v)
+	}
+}
+</pre>
+
+<h2 id="Usage">Cách dùng</h2>
+
+<p>
+Để giúp chẩn đoán các lỗi như vậy, Go bao gồm một bộ phát hiện data race tích hợp sẵn.
+Để sử dụng nó, thêm cờ <code>-race</code> vào lệnh go:
+</p>
+
+<pre>
+$ go test -race mypkg    // to test the package
+$ go run -race mysrc.go  // to run the source file
+$ go build -race mycmd   // to build the command
+$ go install -race mypkg // to install the package
+</pre>
+
+<h2 id="Report_Format">Định dạng báo cáo</h2>
+
+<p>
+Khi bộ phát hiện race tìm thấy một data race trong chương trình, nó in ra một báo cáo.
+Báo cáo chứa các stack trace cho những lần truy cập xung đột, cũng như các stack nơi các
+goroutine liên quan được tạo ra. Dưới đây là một ví dụ:
+</p>
+
+<pre>
+WARNING: DATA RACE
+Read by goroutine 185:
+  net.(*pollServer).AddFD()
+      src/net/fd_unix.go:89 +0x398
+  net.(*pollServer).WaitWrite()
+      src/net/fd_unix.go:247 +0x45
+  net.(*netFD).Write()
+      src/net/fd_unix.go:540 +0x4d4
+  net.(*conn).Write()
+      src/net/net.go:129 +0x101
+  net.func·060()
+      src/net/timeout_test.go:603 +0xaf
+
+Previous write by goroutine 184:
+  net.setWriteDeadline()
+      src/net/sockopt_posix.go:135 +0xdf
+  net.setDeadline()
+      src/net/sockopt_posix.go:144 +0x9c
+  net.(*conn).SetDeadline()
+      src/net/net.go:161 +0xe3
+  net.func·061()
+      src/net/timeout_test.go:616 +0x3ed
+
+Goroutine 185 (running) created at:
+  net.func·061()
+      src/net/timeout_test.go:609 +0x288
+
+Goroutine 184 (running) created at:
+  net.TestProlongTimeout()
+      src/net/timeout_test.go:618 +0x298
+  testing.tRunner()
+      src/testing/testing.go:301 +0xe8
+</pre>
+
+<h2 id="Options">Tùy chọn</h2>
+
+<p>
+Biến môi trường <code>GORACE</code> đặt các tùy chọn cho bộ phát hiện race.
+Định dạng là:
+</p>
+
+<pre>
+GORACE="option1=val1 option2=val2"
+</pre>
+
+<p>
+Các tùy chọn gồm:
+</p>
+
+<ul>
+<li>
+<code>log_path</code> (mặc định <code>stderr</code>): Bộ phát hiện race ghi báo cáo
+vào một tệp tên <code>log_path.<em>pid</em></code>.
+Các tên đặc biệt <code>stdout</code> và <code>stderr</code> khiến báo cáo được ghi ra
+đầu ra chuẩn và lỗi chuẩn tương ứng.
+</li>
+
+<li>
+<code>exitcode</code> (mặc định <code>66</code>): Mã thoát dùng khi kết thúc sau khi
+phát hiện race.
+</li>
+
+<li>
+<code>strip_path_prefix</code> (mặc định <code>""</code>): Bỏ tiền tố này khỏi tất cả
+các đường dẫn tệp được báo cáo, để làm cho báo cáo ngắn gọn hơn.
+</li>
+
+<li>
+<code>history_size</code> (mặc định <code>1</code>): Lịch sử truy cập bộ nhớ theo từng
+goroutine là <code>32K * 2**history_size elements</code>.
+Tăng giá trị này có thể tránh lỗi "failed to restore the stack" trong báo cáo, với chi
+phí tăng mức dùng bộ nhớ.
+</li>
+
+<li>
+<code>halt_on_error</code> (mặc định <code>0</code>): Kiểm soát việc chương trình có
+thoát sau khi báo cáo data race đầu tiên hay không.
+</li>
+
+<li>
+<code>atexit_sleep_ms</code> (mặc định <code>1000</code>): Số mili giây để ngủ trong
+goroutine chính trước khi thoát.
+</li>
+</ul>
+
+<p>
+Ví dụ:
+</p>
+
+<pre>
+$ GORACE="log_path=/tmp/race/report strip_path_prefix=/my/go/sources/" go test -race
+</pre>
+
+<h2 id="Excluding_Tests">Loại trừ các bài kiểm thử</h2>
+
+<p>
+Khi bạn biên dịch với cờ <code>-race</code>, lệnh <code>go</code> định nghĩa thêm
+<a href="/pkg/go/build/#hdr-Build_Constraints">build tag</a> <code>race</code>.
+Bạn có thể dùng tag này để loại trừ một số mã và bài kiểm thử khi chạy bộ phát hiện race.
+Một số ví dụ:
+</p>
+
+<pre>
+// +build !race
+
+package foo
+
+// The test contains a data race. See issue 123.
+func TestFoo(t *testing.T) {
+	// ...
+}
+
+// The test fails under the race detector due to timeouts.
+func TestBar(t *testing.T) {
+	// ...
+}
+
+// The test takes too long under the race detector.
+func TestBaz(t *testing.T) {
+	// ...
+}
+</pre>
+
+<h2 id="How_To_Use">Cách sử dụng</h2>
+
+<p>
+Để bắt đầu, hãy chạy các bài kiểm thử của bạn bằng bộ phát hiện race (<code>go test -race</code>).
+Bộ phát hiện race chỉ tìm ra các race xảy ra tại thời điểm chạy, do đó nó không thể tìm
+thấy các race trong những đường dẫn mã không được thực thi.
+Nếu các bài kiểm thử của bạn có độ phủ chưa đầy đủ, bạn có thể tìm thêm các race bằng
+cách chạy một tệp nhị phân được biên dịch với <code>-race</code> dưới tải trọng thực tế.
+</p>
+
+<h2 id="Typical_Data_Races">Các data race điển hình</h2>
+
+<p>
+Dưới đây là một số data race điển hình. Tất cả đều có thể được phát hiện bằng bộ phát
+hiện race.
+</p>
+
+<h3 id="Race_on_loop_counter">Race trên biến đếm vòng lặp</h3>
+
+<pre>
+func main() {
+	var wg sync.WaitGroup
+	wg.Add(5)
+	var i int
+	for i = 0; i &lt; 5; i++ {
+		go func() {
+			fmt.Println(i) // Not the 'i' you are looking for.
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+</pre>
+
+<p>
+Biến <code>i</code> trong hàm literal là cùng biến được dùng bởi vòng lặp, do đó thao tác
+đọc trong goroutine bị race với phép tăng của vòng lặp.
+(Chương trình này thường in ra 55555, không phải 01234.)
+Chương trình có thể được sửa bằng cách tạo một bản sao của biến:
+</p>
+
+<pre>
+func main() {
+	var wg sync.WaitGroup
+	wg.Add(5)
+	var i int
+	for i = 0; i &lt; 5; i++ {
+		go func(j int) {
+			fmt.Println(j) // Good. Read local copy of the loop counter.
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}
+</pre>
+
+<h3 id="Accidentally_shared_variable">Biến bị chia sẻ ngoài ý muốn</h3>
+
+<pre>
+// ParallelWrite writes data to file1 and file2, returns the errors.
+func ParallelWrite(data []byte) chan error {
+	res := make(chan error, 2)
+	f1, err := os.Create("file1")
+	if err != nil {
+		res &lt;- err
+	} else {
+		go func() {
+			// This err is shared with the main goroutine,
+			// so the write races with the write below.
+			_, err = f1.Write(data)
+			res &lt;- err
+			f1.Close()
+		}()
+	}
+	f2, err := os.Create("file2") // The second conflicting write to err.
+	if err != nil {
+		res &lt;- err
+	} else {
+		go func() {
+			_, err = f2.Write(data)
+			res &lt;- err
+			f2.Close()
+		}()
+	}
+	return res
+}
+</pre>
+
+<p>
+Cách sửa là khai báo các biến mới trong các goroutine (lưu ý cách dùng <code>:=</code>):
+</p>
+
+<pre>
+			...
+			_, err := f1.Write(data)
+			...
+			_, err := f2.Write(data)
+			...
+</pre>
+
+<h3 id="Unprotected_global_variable">Biến toàn cục không được bảo vệ</h3>
+
+<p>
+Nếu đoạn mã sau được gọi từ nhiều goroutine, nó sẽ dẫn đến race trên map <code>service</code>.
+Đọc và ghi đồng thời vào cùng một map là không an toàn:
+</p>
+
+<pre>
+var service map[string]net.Addr
+
+func RegisterService(name string, addr net.Addr) {
+	service[name] = addr
+}
+
+func LookupService(name string) net.Addr {
+	return service[name]
+}
+</pre>
+
+<p>
+Để làm cho mã an toàn, hãy bảo vệ các lần truy cập bằng mutex:
+</p>
+
+<pre>
+var (
+	service   map[string]net.Addr
+	serviceMu sync.Mutex
+)
+
+func RegisterService(name string, addr net.Addr) {
+	serviceMu.Lock()
+	defer serviceMu.Unlock()
+	service[name] = addr
+}
+
+func LookupService(name string) net.Addr {
+	serviceMu.Lock()
+	defer serviceMu.Unlock()
+	return service[name]
+}
+</pre>
+
+<h3 id="Primitive_unprotected_variable">Biến kiểu nguyên thủy không được bảo vệ</h3>
+
+<p>
+Data race cũng có thể xảy ra trên các biến kiểu nguyên thủy (<code>bool</code>, <code>int</code>, <code>int64</code>, v.v.),
+như trong ví dụ này:
+</p>
+
+<pre>
+type Watchdog struct{ last int64 }
+
+func (w *Watchdog) KeepAlive() {
+	w.last = time.Now().UnixNano() // First conflicting access.
+}
+
+func (w *Watchdog) Start() {
+	go func() {
+		for {
+			time.Sleep(time.Second)
+			// Second conflicting access.
+			if w.last &lt; time.Now().Add(-10*time.Second).UnixNano() {
+				fmt.Println("No keepalives for 10 seconds. Dying.")
+				os.Exit(1)
+			}
+		}
+	}()
+}
+</pre>
+
+<p>
+Ngay cả những data race "vô hại" như vậy cũng có thể dẫn đến các vấn đề khó gỡ lỗi do
+tính không nguyên tử của các lần truy cập bộ nhớ, can thiệp từ các tối ưu hóa trình biên
+dịch, hoặc các vấn đề về sắp xếp lại thứ tự khi truy cập bộ nhớ bộ xử lý.
+</p>
+
+<p>
+Cách sửa điển hình cho race này là dùng channel hoặc mutex. Để giữ nguyên hành vi
+không khóa, có thể dùng gói
+<a href="/pkg/sync/atomic/"><code>sync/atomic</code></a>.
+</p>
+
+<pre>
+type Watchdog struct{ last int64 }
+
+func (w *Watchdog) KeepAlive() {
+	atomic.StoreInt64(&amp;w.last, time.Now().UnixNano())
+}
+
+func (w *Watchdog) Start() {
+	go func() {
+		for {
+			time.Sleep(time.Second)
+			if atomic.LoadInt64(&amp;w.last) &lt; time.Now().Add(-10*time.Second).UnixNano() {
+				fmt.Println("No keepalives for 10 seconds. Dying.")
+				os.Exit(1)
+			}
+		}
+	}()
+}
+</pre>
+
+<h3 id="Unsynchronized_send_and_close_operations">Thao tác gửi và đóng không đồng bộ</h3>
+
+<p>
+Như ví dụ này minh họa, các thao tác gửi và đóng không đồng bộ trên cùng một channel
+cũng có thể là một race condition:
+</p>
+
+<pre>
+c := make(chan struct{}) // or buffered channel
+
+// The race detector cannot derive the happens before relation
+// for the following send and close operations. These two operations
+// are unsynchronized and happen concurrently.
+go func() { c &lt;- struct{}{} }()
+close(c)
+</pre>
+
+<p>
+Theo mô hình bộ nhớ Go, một thao tác gửi trên channel xảy ra trước khi thao tác nhận
+tương ứng từ channel đó hoàn thành. Để đồng bộ hóa các thao tác gửi và đóng, hãy dùng
+một thao tác nhận đảm bảo rằng thao tác gửi hoàn thành trước khi đóng:
+</p>
+
+<pre>
+c := make(chan struct{}) // or buffered channel
+
+go func() { c &lt;- struct{}{} }()
+&lt;-c
+close(c)
+</pre>
+
+<h2 id="Requirements">Yêu cầu</h2>
+
+<p>
+  Bộ phát hiện race yêu cầu cgo phải được bật, và trên các hệ thống không phải Darwin
+  cần phải cài đặt trình biên dịch C.
+  Bộ phát hiện race hỗ trợ
+  <code>linux/amd64</code>, <code>linux/ppc64le</code>,
+  <code>linux/arm64</code>, <code>linux/s390x</code>,
+  <code>linux/loong64</code>, <code>freebsd/amd64</code>,
+  <code>netbsd/amd64</code>, <code>darwin/amd64</code>,
+  <code>darwin/arm64</code> và <code>windows/amd64</code>.
+</p>
+
+<p>
+  Trên Windows, runtime của bộ phát hiện race nhạy cảm với phiên bản trình biên dịch C
+  được cài đặt; từ Go 1.21, để biên dịch một chương trình với <code>-race</code> cần một
+  trình biên dịch C tích hợp phiên bản 8 trở lên của thư viện runtime <code>mingw-w64</code>.
+  Bạn có thể kiểm tra trình biên dịch C của mình bằng cách gọi nó với đối số
+  <code>--print-file-name libsynchronization.a</code>. Một trình biên dịch C mới hơn tuân
+  thủ sẽ in ra đường dẫn đầy đủ cho thư viện này, trong khi các trình biên dịch C cũ hơn
+  sẽ chỉ lặp lại đối số.
+</p>
+
+<h2 id="Runtime_Overheads">Chi phí runtime</h2>
+
+<p>
+Chi phí phát hiện race thay đổi tùy chương trình, nhưng đối với một chương trình điển hình,
+mức sử dụng bộ nhớ có thể tăng 5-10 lần và thời gian thực thi tăng 2-20 lần.
+</p>
+
+<p>
+Bộ phát hiện race hiện cấp phát thêm 8 byte cho mỗi câu lệnh <code>defer</code>
+và <code>recover</code>. Các cấp phát thêm đó <a
+href="/issue/26813">không được thu hồi cho đến khi goroutine kết thúc</a>.
+Điều này có nghĩa là nếu bạn có một goroutine chạy lâu dài liên tục phát ra các lời gọi
+<code>defer</code> và <code>recover</code>, mức sử dụng bộ nhớ của chương trình có thể
+tăng không giới hạn. Các cấp phát bộ nhớ này sẽ không xuất hiện trong đầu ra của
+<code>runtime.ReadMemStats</code> hay <code>runtime/pprof</code>.
+</p>

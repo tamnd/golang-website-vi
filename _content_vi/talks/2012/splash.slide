@@ -1,0 +1,829 @@
+Go tại Google
+SPLASH, Tucson, 25 tháng 10 năm 2012
+
+Rob Pike
+Google, Inc.
+https://go.dev
+
+* Phần mở đầu
+
+* Go là gì?
+
+Go là:
+
+- mã nguồn mở
+- hỗ trợ đồng thời
+- có bộ gom rác
+- hiệu quả
+- có khả năng mở rộng
+- đơn giản
+- thú vị
+- nhàm chán (theo một số người)
+
+.link / go.dev
+
+* Lịch sử
+
+Thiết kế bắt đầu vào cuối năm 2007.
+
+Những người chủ chốt:
+
+- Robert Griesemer, Rob Pike, Ken Thompson
+- Sau đó: Ian Lance Taylor, Russ Cox
+
+Trở thành mã nguồn mở vào tháng 11 năm 2009.
+
+Phát triển hoàn toàn công khai; cộng đồng rất tích cực.
+Ngôn ngữ ổn định từ Go 1, đầu năm 2012.
+
+* Go tại Google
+
+Go là ngôn ngữ lập trình được Google thiết kế để giải quyết các vấn đề của Google.
+
+Google có những vấn đề lớn.
+
+* Phần cứng lớn
+
+.image splash/datacenter.jpg
+
+* Phần mềm lớn
+
+- C++ (chủ yếu) cho máy chủ, cùng với nhiều Java và Python
+- hàng nghìn kỹ sư
+- hàng tỷ dòng mã
+- hệ thống build phân tán
+- một cây mã nguồn duy nhất
+
+Và tất nhiên:
+
+- hàng triệu máy chủ, mà chúng tôi coi là một số lượng khiêm tốn các cụm máy tính
+
+Quá trình phát triển tại Google có thể chậm, thường cồng kềnh.
+
+Nhưng nó _có hiệu quả_.
+
+* Lý do ra đời Go
+
+Mục tiêu:
+
+- loại bỏ sự chậm chạp
+- loại bỏ sự cồng kềnh
+- cải thiện hiệu quả
+- duy trì (thậm chí cải thiện) quy mô
+
+Go được thiết kế bởi và dành cho những người viết, đọc, debug và bảo trì các hệ thống phần mềm lớn.
+
+Mục đích của Go _không phải_ là nghiên cứu thiết kế ngôn ngữ lập trình.
+
+Mục đích của Go là làm cho cuộc sống lập trình của những người thiết kế nó tốt hơn.
+
+* Chủ đề hôm nay
+
+Một bài nói về kỹ thuật phần mềm hơn là thiết kế ngôn ngữ.
+
+Nói chính xác hơn:
+
+- Thiết kế ngôn ngữ phục vụ kỹ thuật phần mềm.
+
+Tóm lại:
+
+- Ngôn ngữ giúp ích cho kỹ thuật phần mềm như thế nào?
+
+* Tính năng?
+
+Phản ứng khi ra mắt:
+Tính năng yêu thích của tôi không có trong Go! Go thật tệ!
+
+Điều này bỏ lỡ điểm mấu chốt.
+
+* Những điểm đau
+
+Điều làm cho quá trình phát triển quy mô lớn khó khăn với C++ hoặc Java (ít nhất là):
+
+- build chậm
+- dependency không được kiểm soát
+- mỗi lập trình viên dùng một tập con khác nhau của ngôn ngữ
+- hiểu code kém (tài liệu, v.v.)
+- lặp lại công việc
+- chi phí cập nhật
+- lệch phiên bản
+- khó tự động hóa (auto rewriters, v.v.): hệ thống công cụ
+- build đa ngôn ngữ
+
+_Tính_năng_ ngôn ngữ thường không giải quyết được những vấn đề này.
+
+* Trọng tâm
+
+Trong quá trình thiết kế Go, chúng tôi cố gắng tập trung vào giải pháp cho _những_ vấn đề này.
+
+Ví dụ: thụt lề theo cấu trúc so với dấu ngoặc nhọn kiểu C
+
+* Dependency trong C và C++
+
+* Lịch sử cá nhân về dependency trong C
+
+`#ifdef`
+
+Guard `#ifndef`:
+
+	#ifndef _SYS_STAT_H_
+
+1984: `<sys/stat.h>` lặp 37 lần
+
+ANSI C và guard `#ifndef`:
+
+- dependency tích lũy dần
+- thêm các include vào chương trình cho đến khi biên dịch được
+- không có cách nào biết cái nào có thể bỏ
+
+* Lịch sử cá nhân về dependency trong C của Plan 9
+
+Plan 9, cách tiếp cận khác:
+
+- không có `#ifdefs` (hay `#ifndefs`)
+- tài liệu và sắp xếp topo
+- dễ dàng tìm ra cái nào có thể bỏ
+
+Cần tài liệu hóa dependency, nhưng biên dịch nhanh hơn nhiều.
+
+Tóm lại:
+
+- _ANSI_C_đã_mắc_sai_lầm_tốn_kém_ khi yêu cầu guard `#ifndef`.
+
+* Lịch sử cá nhân về dependency trong C++
+
+C++ làm trầm trọng thêm vấn đề:
+
+- một file `#include` cho mỗi class
+- mã (không chỉ khai báo) trong các file `#include`
+- guard `#ifndef` vẫn tồn tại
+
+2004: Mike Burrows và Chubby: `<xxx>` lặp 37.000 lần
+
+1984: Tom Cargill và pi
+
+* Lịch sử cá nhân về dependency tại Google
+
+Bản demo Plan 9: một câu chuyện
+
+Google thời đầu: một `Makefile`
+
+2003: `Makefile` được tạo từ các file `BUILD` theo thư mục
+
+- dependency tường minh
+- binary nhỏ hơn 40%
+
+Dependency vẫn không thể kiểm tra được!
+
+* Kết quả
+
+Việc build một binary Google lớn trên một máy tính đơn lẻ là không khả thi.
+
+Năm 2007, đo lường quá trình build của một binary Google lớn:
+
+- 2000 file
+- 4,2 megabyte
+- 8 gigabyte chuyển đến trình biên dịch
+- 2000 byte gửi đến trình biên dịch cho mỗi byte nguồn C++
+- đây là công việc thực sự: `<string>` chẳng hạn
+- mất nhiều giờ để build
+
+* Công cụ có thể hỗ trợ
+
+Hệ thống build phân tán mới:
+
+- không còn `Makefile` (vẫn dùng file `BUILD`)
+- nhiều buildbots
+- nhiều bộ đệm
+- phức tạp hơn nhiều (bản thân là một chương trình lớn)
+
+Ngay cả với hệ thống build phân tán khổng lồ của Google, một build lớn vẫn mất nhiều phút.
+(Năm 2007 binary đó mất 45 phút; ngày nay, 27 phút.)
+
+Chất lượng làm việc kém.
+
+* Sự ra đời của Go
+
+Trong khi build đang chạy, chúng tôi có thời gian suy nghĩ.
+
+Muốn có một ngôn ngữ để cải thiện chất lượng cuộc sống.
+
+Và dependency chỉ là một trong những vấn đề đó....
+
+* Các yêu cầu chính
+
+Phải hoạt động ở quy mô lớn:
+
+- chương trình lớn
+- nhóm lớn
+- số lượng dependency lớn
+
+Phải quen thuộc, gần giống C
+
+* Hiện đại hóa
+
+Các cách cũ thì _đã cũ_.
+
+Go nên:
+
+- phù hợp cho máy đa lõi
+- phù hợp cho máy có mạng
+- phù hợp cho các tác vụ web
+
+* Thiết kế của Go
+
+Từ góc độ kỹ thuật phần mềm.
+
+* Dependency trong Go
+
+* Dependency
+
+Dependency được định nghĩa (về mặt cú pháp) trong ngôn ngữ.
+
+Tường minh, rõ ràng, có thể tính toán được.
+
+	import "encoding/json"
+
+Dependency không dùng đến sẽ gây lỗi tại thời điểm biên dịch.
+
+Hiệu quả: dependency duyệt qua một lần cho mỗi file nguồn...
+
+* Nâng dependency lên trên
+
+Xét:
+`A` import `B` import `C` nhưng `A` không trực tiếp import `C`.
+
+Object code của `B` chứa tất cả thông tin về `C` cần thiết để import `B`.
+Vì vậy trong `A`, dòng
+
+	import "B"
+
+không yêu cầu trình biên dịch đọc `C` khi biên dịch `A`.
+
+Ngoài ra, các object file được thiết kế sao cho thông tin "export" đến trước; trình biên dịch khi import không cần đọc toàn bộ file.
+
+Lượng dữ liệu đọc ít hơn theo cấp số nhân so với các file `#include`.
+
+Với Go trong Google, khoảng 40 lần fanout (nhớ lại C++ là 2000 lần)
+Và trong C++ là mã nguồn chung cần phân tích cú pháp; trong Go chỉ là dữ liệu export.
+
+* Không có import vòng tròn
+
+Import vòng tròn là bất hợp lệ trong Go.
+
+Tổng quan trong một câu:
+
+- đôi khi gây khó chịu nhỏ,
+- nhưng giảm thiểu đáng kể những phiền toái tổng thể
+- kiểu typing cấu trúc làm cho nó ít quan trọng hơn so với phân cấp kiểu
+- giữ cho chúng ta trung thực!
+
+Buộc phải phân tách rõ ràng giữa các package.
+
+Đơn giản hóa biên dịch, liên kết, khởi tạo.
+
+* Thiết kế API
+
+Qua việc thiết kế thư viện chuẩn, nỗ lực lớn được bỏ ra để kiểm soát dependency.
+
+Đôi khi tốt hơn là copy một chút mã hơn là kéo vào một thư viện lớn cho một hàm.
+(Một bài kiểm tra trong system build sẽ phàn nàn nếu có dependency core mới phát sinh.)
+
+Vệ sinh dependency quan trọng hơn tái sử dụng mã.
+
+Ví dụ:
+Package `net` (cấp thấp) có hàm `itoa` riêng để tránh phụ thuộc vào package I/O có định dạng lớn.
+
+* Package
+
+* Package
+
+Mỗi file nguồn Go, ví dụ `"encoding/json/json.go"`, bắt đầu bằng
+
+	package json
+
+trong đó `json` là "tên package", một định danh.
+Tên package thường ngắn gọn.
+
+Để sử dụng một package, cần xác định nó qua đường dẫn:
+
+	import "encoding/json"
+
+Và sau đó tên package được dùng để xác định các mục từ package:
+
+	var dec = json.NewDecoder(reader)
+
+Rõ ràng: luôn có thể biết tên có thuộc nội bộ package hay không qua cú pháp: `Name` vs. `pkg.Name`.
+(Nói thêm về điều này sau.)
+
+Package kết hợp các thuộc tính của thư viện, không gian tên và module.
+
+* Đường dẫn package là duy nhất, không phải tên package
+
+Đường dẫn là `"encoding/json"` nhưng tên package là `json`.
+Đường dẫn xác định package và phải là duy nhất.
+Tên dự án hoặc công ty ở gốc không gian tên.
+
+		import "google/base/go/log"
+
+Tên package có thể không duy nhất; có thể được ghi đè. Đây đều là `package`log`:
+
+	import "log"                          // Package chuẩn
+	import googlelog "google/base/go/log" // Package riêng của Google
+
+Mỗi công ty có thể có package `log` riêng; không cần làm tên package duy nhất.
+
+Ví dụ khác: có nhiều package `server` trong codebase của Google.
+
+* Package từ xa
+
+Cú pháp đường dẫn package hoạt động với các kho lưu trữ từ xa.
+Đường dẫn import chỉ là một chuỗi.
+
+Có thể là một file, có thể là URL:
+
+	go get github.com/4ad/doozer   // Lệnh tải package
+
+	import "github.com/4ad/doozer" // Câu lệnh import của Doozer client
+
+	var client doozer.Conn         // Cách client dùng package
+
+* Cú pháp của Go
+
+* Cú pháp
+
+Cú pháp không quan trọng...
+
+- trừ khi bạn đang lập trình
+- hoặc viết công cụ
+
+Hệ thống công cụ là thiết yếu, vì vậy Go có cú pháp sạch.
+Không quá nhỏ, chỉ là sạch:
+
+- đều đặn (hầu hết)
+- chỉ 25 từ khóa
+- dễ phân tích cú pháp (không cần ngữ cảnh theo kiểu)
+- dễ dự đoán, suy luận
+
+* Khai báo
+
+Dùng cú pháp kiểu Pascal/Modula: tên trước kiểu, nhiều từ khóa kiểu hơn.
+
+	var fn func([]int) int
+	type T struct { a, b int }
+
+thay vì
+
+	int (*fn)(int[]);
+	struct T { int a, b; }
+
+Dễ phân tích hơn, không cần bảng ký hiệu. Công cụ dễ viết hơn.
+
+Một hiệu ứng tốt: có thể bỏ `var` và suy ra kiểu biến từ biểu thức:
+
+	var buf *bytes.Buffer = bytes.NewBuffer(x) // tường minh
+	buf := bytes.NewBuffer(x)                  // suy ra
+
+Để biết thêm thông tin:
+
+.link /s/decl-syntax go.dev/s/decl-syntax
+
+* Cú pháp hàm
+
+Hàm trên kiểu `T`:
+
+	func Abs(t T) float64
+
+Phương thức của kiểu `T`:
+
+	func (t T) Abs() float64
+
+Biến (closure) kiểu `T`:
+
+	negAbs := func(t T) float64 { return -Abs(t) }
+
+Trong Go, hàm có thể trả về nhiều giá trị. Trường hợp phổ biến: `error`.
+
+	func ReadByte() (c byte, err error)
+
+	c, err := ReadByte()
+	if err != nil { ... }
+
+Nói thêm về lỗi sau.
+
+* Không có tham số mặc định
+
+Go không hỗ trợ tham số hàm mặc định.
+
+Tại sao không?
+
+- quá dễ thêm tham số mặc định để vá các vấn đề thiết kế
+- khuyến khích quá nhiều tham số
+- khó hiểu tác dụng của hàm với các kết hợp tham số khác nhau
+
+Có thể phát sinh thêm phần rườm rà nhưng điều đó khuyến khích suy nghĩ thêm về tên gọi.
+
+Liên quan: Go có hỗ trợ an toàn kiểu, dễ dùng cho hàm variadic.
+
+* Đặt tên
+
+* Cú pháp export
+
+Quy tắc đơn giản:
+
+- chữ cái đầu viết hoa: `Name` hiển thị với các client của package
+- ngược lại: `name` (hoặc `_Name`) không hiển thị với các client của package
+
+Áp dụng cho biến, kiểu, hàm, phương thức, hằng số, trường....
+
+Vậy là xong.
+
+Không phải quyết định dễ dàng.
+Một trong những điều quan trọng nhất về ngôn ngữ.
+
+Có thể thấy khả năng hiển thị của một định danh mà không cần tìm khai báo.
+
+Rõ ràng.
+
+* Phạm vi
+
+Go có phân cấp phạm vi rất đơn giản:
+
+- universe
+- package
+- file (chỉ cho import)
+- hàm
+- block
+
+* Tính cục bộ của tên gọi
+
+Các sắc thái:
+
+- không có `this` ngầm định trong phương thức (receiver là tường minh); luôn thấy `rcvr.Field`
+- bộ định danh package luôn có mặt cho các tên được import
+- (thành phần đầu tiên của) mọi tên luôn được khai báo trong package hiện tại
+
+Không có bất ngờ khi import:
+
+- thêm tên được export vào package của tôi không thể phá vỡ package của bạn!
+
+Tên không rò rỉ qua ranh giới.
+
+Trong C, C++, Java, tên `y` có thể chỉ bất cứ thứ gì
+Trong Go, `y` (hoặc thậm chí `Y`) luôn được định nghĩa trong package.
+Trong Go, `x.Y` rõ ràng: tìm `x` cục bộ, `Y` thuộc về nó.
+
+* Tra cứu hàm và phương thức
+
+Tra cứu phương thức chỉ theo tên, không theo kiểu.
+Một kiểu không thể có hai phương thức cùng tên, bao giờ cũng vậy.
+Dễ dàng xác định hàm/phương thức nào đang được tham chiếu.
+Cài đặt đơn giản, chương trình đơn giản hơn, ít bất ngờ hơn.
+
+Với một phương thức `x.M`, chỉ có đúng một `M` liên kết với `x`.
+
+* Ngữ nghĩa
+
+* Cơ bản
+
+Nhìn chung giống C:
+
+- kiểu tĩnh
+- thủ tục
+- biên dịch
+- con trỏ, v.v.
+
+Nên cảm thấy quen thuộc với lập trình viên từ họ C.
+
+* Nhưng...
+
+Nhiều thay đổi nhỏ để tăng độ bền vững:
+
+- không có phép toán con trỏ
+- không có chuyển đổi số ngầm định
+- kiểm tra giới hạn mảng
+- không có bí danh kiểu
+- `++` và `--` là câu lệnh, không phải biểu thức
+- phép gán không phải biểu thức
+- hợp lệ (thậm chí được khuyến khích) khi lấy địa chỉ của biến stack
+- và nhiều hơn nữa
+
+Cộng thêm một số cái lớn hơn...
+
+* Những thứ lớn hơn
+
+Một số yếu tố của Go tiến xa hơn so với C, thậm chí C++ và Java:
+
+- đồng thời (concurrency)
+- bộ gom rác
+- kiểu interface
+- reflection
+- type switch
+
+* Đồng thời
+
+* Đồng thời
+
+Quan trọng trong môi trường máy tính hiện đại.
+Không được phục vụ tốt bởi C++ hoặc thậm chí Java.
+
+Go hiện thân một biến thể của CSP với các channel là giá trị hạng nhất.
+
+Tại sao CSP?
+
+- Phần còn lại của ngôn ngữ có thể bình thường và quen thuộc.
+
+Phải có khả năng kết hợp tính đồng thời với tính toán.
+
+Ví dụ: đồng thời và mã hóa.
+
+* CSP thực tế
+
+Đối với một web server, chương trình Go tiêu chuẩn, mô hình này rất phù hợp.
+
+Go _cho phép_ lập trình đồng thời đơn giản, an toàn.
+Nó không _ngăn cấm_ lập trình xấu.
+
+Tập trung vào _kết hợp_ của mã thông thường.
+
+Lưu ý: không hoàn toàn an toàn bộ nhớ; chia sẻ là hợp lệ.
+Truyền con trỏ qua channel là cách dùng thành ngữ.
+
+Kinh nghiệm cho thấy đây là thiết kế thực tế.
+
+* Bộ gom rác
+
+* Sự cần thiết của bộ gom rác
+
+Quá nhiều lập trình trong C và C++ là về cấp phát bộ nhớ.
+Và thiết kế cũng quá xoay quanh quản lý bộ nhớ.
+Trừu tượng rò rỉ, dependency rò rỉ.
+
+Go chỉ có bộ gom rác, không có gì khác.
+
+Cần thiết cho tính đồng thời: theo dõi quyền sở hữu quá khó nếu không có.
+Quan trọng cho trừu tượng: tách biệt hành vi khỏi quản lý tài nguyên.
+Yếu tố chính của khả năng mở rộng: API giữ tính cục bộ.
+
+Sử dụng ngôn ngữ đơn giản hơn nhiều nhờ GC.
+Thêm chi phí runtime, độ trễ, phức tạp cho việc cài đặt.
+
+Quyết định thiết kế từ ngày đầu.
+
+* Bộ gom rác trong Go
+
+Ngôn ngữ hệ thống với bộ gom rác là dị giáo!
+Kinh nghiệm với Java: Chi phí không kiểm soát được, cần điều chỉnh quá nhiều.
+
+Nhưng Go thì khác.
+Go cho phép giới hạn cấp phát bằng cách kiểm soát bố cục bộ nhớ.
+
+Ví dụ:
+
+	type X struct {
+		a, b, c int
+		buf [256]byte
+	}
+
+Ví dụ: Bộ cấp phát arena tùy chỉnh với danh sách rảnh.
+
+* Con trỏ nội
+
+Quyết định sớm: cho phép con trỏ nội như `X.buf` từ slide trước.
+
+Đánh đổi: Ảnh hưởng đến thuật toán GC nào có thể dùng, nhưng đổi lại giảm áp lực lên bộ thu gom.
+
+Cung cấp cho _lập trình viên_ công cụ kiểm soát overhead GC.
+
+Kinh nghiệm so với Java cho thấy nó có tác động đáng kể lên áp lực bộ nhớ.
+
+GC vẫn là chủ đề tích cực.
+Thiết kế hiện tại: mark-and-sweep song song.
+Nếu dùng bộ nhớ khôn ngoan, hoạt động tốt trong môi trường production.
+
+* Interface
+
+Kết hợp thay vì kế thừa
+
+* Hướng đối tượng và phần mềm lớn
+
+Go hướng đối tượng.
+Go không có class hay kế thừa subtype.
+
+Điều này có nghĩa là gì?
+
+* Không có phân cấp kiểu
+
+OO quan trọng vì nó cung cấp tính đồng nhất của interface.
+Ví dụ cực đoan: kernel Plan 9.
+
+Vấn đề: kế thừa subtype khuyến khích các interface _không đồng nhất_.
+
+* OO và tiến hóa chương trình
+
+Thiết kế theo kế thừa kiểu đã bị quảng bá thái quá.
+Tạo ra mã dễ vỡ.
+Các quyết định sớm khó thay đổi, thường chưa đủ thông tin.
+Khiến mọi lập trình viên phải trở thành nhà thiết kế interface.
+(Plan 9 được xây dựng xung quanh một interface duy nhất mà mọi thứ đều cần thỏa mãn.)
+
+Do đó khuyến khích thiết kế quá mức ngay từ đầu: dự đoán mọi trường hợp có thể xảy ra.
+Làm trầm trọng thêm vấn đề, làm phức tạp thiết kế.
+
+* Go: kết hợp interface
+
+Trong Go, một interface _chỉ là_ một tập hợp các phương thức:
+
+	type Hash interface {
+		Write(p []byte) (n int, err error)
+		Sum(b []byte) []byte
+		Reset()
+		Size() int
+		BlockSize() int
+	}
+
+Không có khai báo `implements`.
+Tất cả các cài đặt hash thỏa mãn interface này một cách ngầm định. (Kiểm tra tĩnh.)
+
+* Interface trong thực tế: kết hợp
+
+Thường nhỏ: một hoặc hai phương thức là phổ biến.
+
+Kết hợp xuất hiện tự nhiên. Ví dụ dễ từ package `io`:
+
+	type Reader interface {
+		Read(p []byte) (n int, err error)
+	}
+
+`Reader` (cùng với `Writer` bổ sung) giúp dễ dàng nối chuỗi:
+
+- file, buffer, mạng, bộ mã hóa, nén, GIF, JPEG, PNG, ...
+
+Cấu trúc dependency không phải phân cấp; những cái này còn cài đặt các interface khác.
+
+Phát triển qua kết hợp là _tự nhiên_, không cần khai báo trước.
+
+Và sự phát triển đó có thể _tùy hứng_ và tuyến tính.
+
+* Kết hợp với hàm, không phải phương thức
+
+Khó có thể nói quá về tác động của các interface Go đối với thiết kế chương trình.
+
+Một tác động lớn: các hàm với tham số interface.
+
+	func ReadAll(r io.Reader) ([]byte, error)
+
+Wrappers:
+
+	func LoggingReader(r io.Reader) io.Reader
+	func LimitingReader(r io.Reader, n int64) io.Reader
+	func ErrorInjector(r io.Reader) io.Reader
+
+Thiết kế hoàn toàn không giống phân cấp, phương thức kế thừa subtype.
+Lỏng lẻo hơn, hữu cơ, tách rời, độc lập.
+
+* Lỗi
+
+* Xử lý lỗi
+
+Nhiều giá trị trả về của hàm thông báo cho thiết kế xử lý lỗi.
+
+Go không có cấu trúc điều khiển `try-catch` cho exception.
+Thay vào đó trả về `error`: kiểu interface tích hợp có thể "stringify" chính nó:
+
+	type error interface { Error() string }
+
+Rõ ràng và đơn giản.
+
+Triết lý:
+
+Buộc bạn phải suy nghĩ về lỗi và xử lý chúng khi chúng xảy ra.
+Lỗi là _bình thường_. Lỗi _không phải là ngoại lệ_.
+Sử dụng ngôn ngữ hiện có để tính toán dựa trên chúng.
+Không cần ngôn ngữ con coi chúng là ngoại lệ.
+
+Kết quả là mã tốt hơn (dù dài dòng hơn).
+
+* (Được rồi, không phải tất cả lỗi đều bình thường. Nhưng hầu hết là vậy.)
+
+.image splash/fire.jpg
+
+* Công cụ
+
+* Công cụ
+
+Kỹ thuật phần mềm cần công cụ.
+
+Cú pháp, thiết kế package, đặt tên của Go, v.v. làm cho việc viết công cụ dễ dàng.
+
+Thư viện chuẩn bao gồm lexer và parser; type checker gần hoàn chỉnh.
+
+* Gofmt
+
+Luôn có ý định thực hiện định dạng mã tự động.
+Loại bỏ toàn bộ một lớp tranh luận.
+Chạy như một bước "presubmit" cho các kho mã nguồn.
+
+Đào tạo:
+
+- Cộng đồng luôn thấy output của `gofmt`.
+
+Chia sẻ:
+
+- Tính đồng nhất trong trình bày đơn giản hóa việc chia sẻ.
+
+Mở rộng quy mô:
+
+- Ít thời gian dành cho định dạng, nhiều hơn cho nội dung.
+
+Thường được nhắc đến là một trong những tính năng tốt nhất của Go.
+
+* Gofmt và các công cụ khác
+
+Bất ngờ: Sự tồn tại của `gofmt` đã kích hoạt các công cụ _ngữ nghĩa_:
+Có thể viết lại cây cú pháp; `gofmt` sẽ làm sạch output.
+
+Ví dụ:
+
+- `gofmt`-r`'a[b:len(a)]`->`a[b:]'`
+- `gofix`
+
+Và các thư viện front-end tốt cho phép các công cụ phụ trợ:
+
+- `godoc`
+- `go`get`, `go`build`, v.v.
+- `api`
+
+* Gofix
+
+Công cụ `gofix` cho phép chúng tôi thực hiện các thay đổi lớn đối với API và tính năng ngôn ngữ dẫn đến bản phát hành Go 1.
+
+- thay đổi cú pháp xóa map
+- API time mới
+- và nhiều hơn nữa
+
+Còn cho phép chúng tôi _cập nhật_ mã ngay cả khi mã cũ vẫn hoạt động.
+
+Ví dụ gần đây:
+
+Đã thay đổi cài đặt protocol buffer của Go để dùng các hàm getter; đã cập nhật _tất cả_ mã Go của Google để dùng chúng với `gofix`.
+
+* Kết luận
+
+* Go tại Google
+
+Việc sử dụng Go đang tăng lên bên trong Google.
+
+Một số dịch vụ lớn dùng nó:
+
+- golang.org
+- youtube.com
+- dl.google.com
+
+Nhiều dịch vụ nhỏ cũng vậy, nhiều cái dùng Google App Engine.
+
+* Go bên ngoài Google
+
+Nhiều công ty bên ngoài dùng nó, bao gồm:
+
+- BBC Worldwide
+- Canonical
+- Heroku
+- Nokia
+- SoundCloud
+
+* Có gì sai không?
+
+Chưa đủ kinh nghiệm để biết liệu Go có thực sự thành công không.
+Chưa đủ chương trình lớn.
+
+Một số chi tiết nhỏ chưa đúng. Ví dụ:
+
+- khai báo vẫn còn rườm rà
+- `nil` bị overload
+- nhiều chi tiết thư viện
+
+`Gofix` và `gofmt` cho chúng tôi cơ hội sửa nhiều vấn đề, từ loại bỏ dấu chấm phẩy đến thiết kế lại package `time`.
+Nhưng chúng tôi vẫn đang học (và ngôn ngữ hiện đã bị đóng băng).
+
+Cài đặt vẫn cần làm thêm, đặc biệt là hệ thống runtime.
+
+Nhưng tất cả các chỉ số đều tích cực.
+
+* Tóm tắt
+
+Kỹ thuật phần mềm hướng dẫn thiết kế.
+Nhưng một ngôn ngữ hiệu quả và thú vị đã ra đời vì thiết kế đó kích hoạt năng suất.
+
+Dependency rõ ràng
+Cú pháp rõ ràng
+Ngữ nghĩa rõ ràng
+Kết hợp thay vì kế thừa
+Đơn giản của mô hình (GC, đồng thời)
+Hệ thống công cụ dễ dùng (công cụ `go`, `gofmt`, `godoc`, `gofix`)
+
+* Hãy thử!
+
+.link / go.dev
+
+.image splash/appenginegophercolor.jpg

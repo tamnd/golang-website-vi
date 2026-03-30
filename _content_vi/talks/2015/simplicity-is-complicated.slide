@@ -1,0 +1,371 @@
+Sự đơn giản là phức tạp
+
+dotGo
+9 Nov 2015
+
+Rob Pike
+Google
+https://go.dev/
+
+* Bonjour mes Gophers!
+
+.image simplicity-is-complicated/gophers.jpg 512 _
+
+* Thành công
+
+Điều gì làm cho Go thành công?
+
+Nhiều lý do được nhắc đến:
+
+- tốc độ biên dịch
+- tốc độ thực thi
+- triển khai
+- công cụ
+- thư viện
+
+Đây không phải là các tính năng ngôn ngữ.
+Ít được nhắc đến hơn: các tính năng ngôn ngữ thực sự như interface hay concurrency.
+
+Tất cả đều quan trọng nhưng không thực sự là câu trả lời.
+
+* Sự đơn giản
+
+Câu trả lời của tôi: Sự đơn giản.
+
+Go đơn giản, ít nhất là so với các ngôn ngữ đã được thiết lập.
+
+Sự đơn giản có nhiều khía cạnh.
+
+Sự đơn giản là phức tạp.
+
+* Sự hội tụ
+
+[[http://channel9.msdn.com/Events/Lang-NEXT/Lang-NEXT-2014/From-Parallel-to-Concurrent?utm_content=bufferf1e11&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer][Tham dự]] hội nghị [[https://langnext2014.eventday.com/][Lang.Next]] năm ngoái (2014).
+
+Nghe các bài nói về phiên bản mới của Java, JavaScript (ECMAScript), Typescript, C#, C++, Hack (PHP) và nhiều hơn nữa.
+
+Các ngôn ngữ này chủ động mượn tính năng từ nhau.
+
+Chúng đang hội tụ thành một ngôn ngữ khổng lồ duy nhất.
+
+* Thuyết tương đối ngôn ngữ
+
+_Giả_thuyết_Sapir-Whorf_: Ngôn ngữ ảnh hưởng đến tư duy.
+
+Gây tranh cãi đối với ngôn ngữ của con người.
+
+Gần như là thực tế đối với ngôn ngữ máy tính. Xem xét:
+
+- lập trình logic
+- lập trình thủ tục
+- lập trình hàm
+- lập trình hướng đối tượng
+- lập trình đồng thời
+
+Giống như các lĩnh vực trong toán học.
+
+* Hội tụ và tương đối
+
+Nếu tất cả các ngôn ngữ đều hội tụ, chúng ta sẽ đều nghĩ giống nhau.
+
+Nhưng các cách suy nghĩ khác nhau là tốt.
+
+Cần các ngôn ngữ khác nhau cho các vấn đề khác nhau.
+
+Chúng ta không muốn chỉ một công cụ, chúng ta muốn một bộ công cụ, mỗi cái tốt nhất ở một nhiệm vụ.
+
+* Hội tụ và tính năng
+
+Các bài nói tại Lang.Next nói về các phiên bản ngôn ngữ mới (Java 8, ECMAScript 6, C#, C++14) và là danh sách các tính năng.
+
+Các ngôn ngữ này phát triển và cạnh tranh bằng cách thêm tính năng.
+
+Các ngôn ngữ ngày càng phức tạp trong khi trở nên giống nhau hơn.
+
+Phình to mà không khác biệt.
+
+* Tính năng trong Go
+
+Go khác biệt.
+
+Go không cố gắng giống như các ngôn ngữ khác.
+
+Go không cạnh tranh về tính năng.
+
+Kể từ Go 1, ngôn ngữ được cố định.
+
+Nhiều người mới đến với Go yêu cầu các tính năng từ các ngôn ngữ họ biết.
+Nhưng những tính năng đó không thuộc về Go—và ngôn ngữ đã được cố định.
+
+Thêm tính năng vào Go không làm nó tốt hơn, chỉ làm nó lớn hơn.
+
+Điều đó sẽ làm Go kém thú vị hơn vì kém khác biệt hơn.
+
+* Nhưng bạn cần tính năng!
+
+Tất nhiên, phải có _một số_ tính năng.
+
+Nhưng tính năng nào? Những cái phù hợp!
+
+Thiết kế bởi sự đồng thuận.
+
+* Khả năng đọc
+
+Nếu một ngôn ngữ có quá nhiều tính năng, bạn mất thời gian để chọn cái nào nên dùng.
+Sau đó triển khai, tinh chỉnh, có thể suy nghĩ lại và làm lại.
+
+Sau này, "Tại sao code lại hoạt động theo cách này?"
+
+_Code_khó_hiểu_hơn_đơn_giản_vì_nó_đang_sử_dụng_một_ngôn_ngữ_phức_tạp_hơn._
+
+Tốt hơn là chỉ có một cách, hoặc ít nhất là ít cách hơn và đơn giản hơn.
+
+Tính năng thêm vào độ phức tạp. Chúng ta muốn sự đơn giản.
+
+Tính năng gây hại cho khả năng đọc. Chúng ta muốn khả năng đọc.
+
+Khả năng đọc là tối quan trọng.
+
+* Có thể đọc nghĩa là Đáng tin cậy
+
+Code có thể đọc là code đáng tin cậy.
+
+Dễ hiểu hơn.
+
+Dễ làm việc hơn.
+
+Nếu nó bị hỏng, dễ sửa hơn.
+
+Nếu ngôn ngữ phức tạp:
+
+- Bạn phải hiểu nhiều thứ hơn để đọc và làm việc với code.
+- Bạn phải hiểu nhiều thứ hơn để gỡ lỗi và sửa chữa.
+
+Một sự đánh đổi quan trọng: Thú vị hơn khi viết, hay ít công sức hơn để bảo trì?
+
+* Tính biểu đạt
+
+Tính năng thường được đề xuất để hỗ trợ "tính biểu đạt".
+
+Tính súc tích có thể biểu đạt nhưng không phải lúc nào cũng dễ đọc.
+(Xem xét APL:  ⊃ 1 ω ∨ . ∧ 3 4 = +/ +⌿ 1 0 ‾1 ∘.θ 1 - ‾1 Φ″ ⊂ ω)
+
+Cũng có thể tốn kém, triển khai các ý tưởng đơn giản với các primitive quá mạnh.
+Hiệu suất cũng có thể không thể đoán trước được.
+
+Mặt khác, sự dài dòng có thể cản trở khả năng đọc bằng cách che giấu ý định.
+
+Xây dựng trên, nhưng không bị giới hạn bởi, các ý tưởng quen thuộc.
+
+Súc tích trong khi vẫn biểu đạt.
+
+* Bộ tính năng phù hợp
+
+Không phải tính năng vì tính năng.
+
+Các tính năng "bao phủ không gian", như một cơ sở vector bao phủ không gian giải pháp.
+
+Các tính năng trực giao tương tác có thể dự đoán được.
+
+Các tính năng đơn giản tương tác theo những cách đơn giản.
+
+Sự đơn giản đến từ tính trực giao và khả năng dự đoán.
+
+Giữ mục tiêu của ngôn ngữ trong tâm trí.
+
+* Mục tiêu của Go
+
+Ngôn ngữ thủ tục rõ ràng được thiết kế cho phần mềm đám mây có thể mở rộng.
+
+Các phần tử riêng biệt có thể kết hợp, bao gồm:
+
+- kiểu dữ liệu cụ thể
+- hàm và phương thức
+- interface
+- gói
+- concurrency
+
+Cộng thêm: Công cụ tốt, xây dựng nhanh.
+
+Tất cả các phần đều cảm thấy đơn giản trong thực tế.
+
+* Đơn giản có thể biểu đạt
+
+.image simplicity-is-complicated/gopherslide2smblue.jpg 512 _
+
+* Không cần tất cả những tính năng đó
+
+Chúng thêm vào độ phức tạp mà không rõ ràng.
+
+.image simplicity-is-complicated/gopherslide2sm.jpg 512 _
+
+* Sự đơn giản
+
+Go thực sự phức tạp, nhưng nó _cảm thấy_ đơn giản.
+
+Các phần tương tác phải kết hợp liền mạch, không có bất ngờ.
+
+Đòi hỏi rất nhiều công việc thiết kế, triển khai, tinh chỉnh.
+
+Sự đơn giản là nghệ thuật ẩn giấu độ phức tạp.
+
+* Một số điều đơn giản trong Go
+
+- garbage collection
+- goroutine
+- hằng số
+- interface
+- gói
+
+Mỗi cái ẩn giấu độ phức tạp đằng sau một bề mặt đơn giản.
+
+* Garbage collection
+
+Có lẽ là ví dụ tốt nhất về sự đơn giản ẩn giấu độ phức tạp.
+
+Rất khó để triển khai tốt, nhưng xứng đáng.
+Tuy nhiên rất đơn giản đến mức đặc tả ngôn ngữ chỉ đề cập đến nó trong phần giới thiệu.
+Tuy nhiên, các phần của ngôn ngữ bị ảnh hưởng mạnh mẽ bởi nó.
+
+Code đơn giản hơn vì GC ở đó.
+Thiết kế không cần bao gồm "quyền sở hữu".
+
+Go: không có `free`. Chỉ có garbage collection.
+Đơn giản nhất có thể. (Nhưng phức tạp đằng sau bề mặt.)
+
+* Concurrency
+
+Concurrency là khả năng viết chương trình của bạn như các phần thực thi độc lập.
+Trong Go, concurrency có ba phần tử:
+
+- goroutine (thực thi)
+- channel (giao tiếp)
+- `select` (phối hợp)
+
+Hãy nói về goroutine.
+
+* Goroutine
+
+Khởi động một goroutine bằng từ khóa `go`:
+
+	go function(args)
+
+Ba lần gõ thêm ('g', 'o', ' '). Khó có thể đơn giản hơn.
+
+Giống như garbage collection, loại bỏ các lo ngại khỏi mối quan tâm của lập trình viên:
+
+- không có kích thước stack
+- không có trạng thái trả về hay hoàn thành
+- không có cơ chế quản lý
+- không có "ID"
+
+Đây là những thứ mà các hệ thống khác sẽ cung cấp. Thay vào đó Go có thiết kế tối giản.
+
+Triển khai phức tạp, phụ thuộc vào garbage collection để quản lý stack.
+
+* Hằng số
+
+Trong Go, hằng số chỉ là số, mặc dù (vì) nó được định kiểu mạnh.
+
+	var nanosecond = time.Second/1e9
+
+Ý tưởng đơn giản mất khoảng một năm để giải quyết. Những khó khăn:
+
+- số nguyên độ chính xác "vô hạn"
+- dấu chấm động độ chính xác "vô hạn" (đã thử và thất bại với số hữu tỷ)
+- quy tắc thăng cấp (`i` `:=` `2;` `f` `:=` `2.0;`  `g` `:=` `1/2;` `h` `:=` `1/2.0`)
+- các trường hợp đặc biệt như dịch chuyển bit
+
+.play simplicity-is-complicated/shift.go /Printf/
+
+Vẫn chưa hoàn toàn hài lòng, nhưng hiệu ứng là hằng số cảm thấy như số, góp phần vào sự dễ sử dụng của Go. Nhưng phức tạp đằng sau hậu trường.
+
+Xem thêm tại [[/blog/constants][bài đăng blog này]].
+
+* Interface
+
+Chỉ là một tập hợp các phương thức. Không có dữ liệu. Ý tưởng đơn giản, nhưng phức tạp hơn mong đợi.
+
+	type Reader interface {
+		Read([]byte) (int, error)
+	}
+
+Cũng cần các biến của kiểu đó (`var` `reader` `io.Reader`).
+Các biến này thêm kiểu động vào một ngôn ngữ được định kiểu tĩnh.
+
+	var r Reader = os.Stdin // Được kiểm tra tĩnh.
+	var x interface{} = os.Stdin // Được kiểm tra tĩnh.
+	r = x.(Reader) // Được kiểm tra động. Phải rõ ràng ở đây - quyết định thiết kế.
+
+Yêu cầu thiết kế cẩn thận. Gán interface phải được triển khai tại thời gian chạy (không phải v-table). Nếu nó thất bại thì sao? Dẫn đến type assertions và thành ngữ "dấu phẩy, ok".
+
+Thêm độ phức tạp đã len lỏi vào. Type assertions và type switches không có trong kế hoạch ban đầu.
+
+* Interface
+
+Tính năng đặc biệt và mạnh mẽ nhất của Go.
+
+Ảnh hưởng sâu sắc đến thiết kế thư viện.
+
+Cho phép kiến trúc thành phần thực sự. Các ví dụ điển hình là `io.Reader` và `io.Writer`, các tổng quát hóa của ý tưởng pipe Unix.
+
+Cảm thấy đơn giản, xứng đáng với độ phức tạp.
+
+* Gói
+
+Một thiết kế để cấu trúc các chương trình và thư viện.
+
+	package big
+	...
+	import "math/big"
+
+Mất nhiều thời gian để thiết kế. Cho phép componentization, khả năng mở rộng, chia sẻ, ẩn dữ liệu và cách ly, ...
+
+Ảnh hưởng đến thiết kế chương trình, cú pháp, đặt tên, xây dựng, liên kết, kiểm thử, ...
+
+Tách đường dẫn gói (`"math/big"`) khỏi tên gói (`big`).
+Cho phép cơ chế `go` `get`.
+
+Phức tạp để triển khai nhưng tự nhiên để sử dụng.
+
+Sau garbage collection, có lẽ tỷ lệ cao nhất giữa độ phức tạp thực sự và sự đơn giản bề ngoài, và do đó của sức mạnh của sự đơn giản để ẩn giấu độ phức tạp.
+
+* Một ví dụ "đơn giản"
+
+.play simplicity-is-complicated/hello.go
+
+* Độ phức tạp ẩn giấu
+
+Unicode và UTF-8 được xử lý liền mạch.
+
+Các gói được import và sử dụng dễ dàng.
+
+`Fprintf` trực tiếp đến kết nối mạng.
+
+Hàm được thăng cấp thành phương thức (`HandleFunc`).
+
+Thực sự đồng thời—server sẽ không bị chặn.
+
+Sẵn sàng cho production.
+
+Tất cả rất đơn giản.
+
+* Tóm tắt
+
+Sự đơn giản phức tạp nhưng sự rõ ràng xứng đáng với cuộc chiến.
+
+.image simplicity-is-complicated/gopherslide2sm.jpg 512 _
+
+* Kết luận
+
+Sự đơn giản khó—để thiết kế.
+
+Sự đơn giản phức tạp—để xây dựng.
+
+Nhưng nếu bạn làm đúng...
+
+Sự đơn giản dễ dàng—để sử dụng.
+
+Thành công của Go chứng minh điều đó.
+
+.image simplicity-is-complicated/gopherslide2smblue.jpg 256 _

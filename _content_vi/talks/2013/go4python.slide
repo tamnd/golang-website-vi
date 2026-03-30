@@ -1,0 +1,452 @@
+Go dành cho lập trình viên Python
+
+Francesc Campoy Flores
+Gopher tại Google
+http://campoy.cat
+
+@francesc
+campoy@golang.com
+
+* Video
+
+Có bản ghi của bài nói chuyện này.
+
+.link http://youtu.be/elu0VpLzJL8
+
+* Mục tiêu của bài nói chuyện này
+
+Khơi dậy sự thèm muốn của bạn với Go
+
+.image go4python/img/gopher.jpg
+
+* Chiến thuật của tôi
+
+1. Cho bạn thấy Go giống Python như thế nào.
+
+2. Cho bạn thấy Go _không_ giống Python như thế nào.
+
+* Python, Go và tôi
+
+Kỹ sư phần mềm tại Google: _Feb_11-Aug_12_
+
+- Nhiều C++ và Python.
+
+- Trình biên dịch SQL sang C++ bằng Python.
+
+Go Developer Relations: _Aug_12_ - `datetime.now()`
+
+- Nhiều Go.
+
+* Những điều tôi không thích về Python (sẽ ngắn thôi)
+
+* Đẹp và đơn giản
+
+Kiểu động - hay vì nó ngắn gọn, như Python.
+
+	a = "hello"
+	b = 1
+	# but also
+	a = 2
+
+Kiểu tĩnh - có thể dài dòng, như Java hoặc C++.
+
+	Foo foo = new Foo();
+
+Kiểu tĩnh với kiểu suy luận, như Go.
+
+	a := "hello"
+	b := 1
+	// but no
+	a = 2
+
+Kiểu tĩnh Python? Hãy xem [[http://www.mypy-lang.org/][mypy]] và [[http://cython.org/][Cython]].
+
+* Pháo hoa tại runtime
+
+.play go4python/dyntyp.py /name/,
+
+Tôi không muốn bắt đầu một cuộc chiến ở đây nhưng ...
+
+*100%*code*coverage*là*triệu_chứng*
+
+- Code coverage nên chỉ ra các trường hợp chưa được kiểm thử.
+- Không phải là cách để tìm lỗi đánh máy!
+- 100% code coverage không có nghĩa là không có lỗi.
+
+* Những điều khác tôi không thích
+
+- Triển khai - quản lý phụ thuộc.
+
+- Hiệu suất - "không quá chậm" thường không đủ nhanh.
+
+- Ma thuật! (ví dụ: `__magic__`: `**kargs`, `__getattr__`)
+
+Danh sách các phương thức ma thuật trong Python:
+
+.link http://www.rafekettler.com/magicmethods.html
+
+* Và tôi *thích* đồng thời!
+
+Nhiều điều đã được nói về Global Interpreter Lock tai tiếng của Python.
+
+Bạn nên xem [[http://youtu.be/ph374fJqFPE][Mindblowing Python GIL]], bởi David Beazley.
+
+* Những điều tôi thích về Python
+
+* Những điều tôi thích về Python
+
+- Zen của Python. ([[/talks/2012/zen.slide#1][Go và Zen của Python]])
+
+- Hash và mảng là một phần của ngôn ngữ.
+
+- Thư viện chuẩn.
+
+- Ma thuật! Một ít code có thể làm nhiều thứ.
+
+* Một ít code
+
+* fib.py
+
+Bạn đã từng nghe về Fibonacci chưa?
+
+.play go4python/fib.py /fib/,
+
+* fib.go
+
+Có gì quen thuộc không?
+
+.play go4python/fib.go /func/,
+
+* Fibonacci không có generator? Sao lại thế?
+
+Các generator Python thật tuyệt vời.
+
+.code go4python/fib-gen.py /fib/,/^$/
+
+Phức tạp về mặt cơ học.
+
+.play go4python/fib-gen.py /f = fib/,/^$/
+
+Nhưng rất dễ sử dụng.
+
+.play go4python/fib-gen.py /for x/,/^$/
+
+* Generator Python
+
+.image go4python/img/fib-py.png 500 320
+
+Lưu ý generator thực thi đồng thời. Hmm... Tôi thích đồng thời.
+
+* Go concurrency
+
+Dựa trên *goroutine* và *channel*.
+
+- Goroutine: các tác nhân xử lý rất nhẹ (những chú gopher).
+
+- Channel: các pipe được đồng bộ hóa, an toàn luồng, có kiểu (những mũi tên).
+
+.image go4python/img/funnelin.jpg
+
+* Goroutine "Generator"
+
+.image go4python/img/fib-go.png 500 350
+
+* Goroutine "Generator"
+
+Sử dụng gửi qua channel thay vì `yield`.
+
+.code go4python/fib-gen.go /fib/,/^}/
+
+.play go4python/fib-gen.go /main\(/,
+
+* Goroutine "Generator"
+
+Một phong cách giống generator hơn:
+
+.play go4python/fib-gen2.go /func/,
+
+* Bài tập: tạo số nguyên tố
+
+Viết một hàm trả về một channel và gửi n số nguyên tố đầu tiên trên đó.
+
+Cho hàm `prime`:
+
+.code go4python/genex.go /prime/,/^}/
+
+Sử dụng Go playground:
+
+.link /s/go4py-ex1 go.dev/s/go4py-ex1
+
+* Giải pháp: tạo số nguyên tố
+
+.code go4python/genex.go /primes\(/,/^}/
+
+.play go4python/genex.go /main\(/,
+
+* Bài tập: Fibonacci nguyên tố
+
+Viết một hàm `filterPrimes` nhận một channel int làm
+tham số và trả về một channel int khác.
+
+Tất cả các số nguyên tố mà `filterPrimes` nhận từ channel đầu vào được
+gửi vào channel đầu ra.
+
+Hoàn thành đoạn code này:
+
+.link /s/go4py-ex2 go.dev/s/go4py-ex2
+
+* Giải pháp: Fibonacci nguyên tố
+
+.code go4python/genex2.go /filterPrimes\(/,/^}/
+
+.play go4python/genex2.go /main\(/,
+
+* Nhưng còn nhiều hơn nữa
+
+Goroutine và channel không chỉ dành cho generator. Chúng có thể được sử dụng để mô hình hóa
+tất cả các loại hệ thống đồng thời.
+
+Để tìm hiểu thêm:
+
+- [[/talks/2012/concurrency.slide#1][Các mẫu đồng thời]], bởi Rob Pike
+
+- [[/talks/2013/advconc.slide#1][Các mẫu đồng thời nâng cao]], bởi Sameer Ajmani
+
+* Hướng đối tượng trong Go
+
+* Hướng đối tượng trong Go
+
+Một khai báo kiểu.
+
+.code go4python/typesandmethods.go /Name/,/^}/
+
+Một khai báo phương thức.
+
+.code go4python/typesandmethods.go /String/,/^}/
+
+Khởi tạo `Name` và sử dụng nó.
+
+.play go4python/typesandmethods.go /William/,/Print/
+
+* Phương thức trên bất kỳ thứ gì
+
+Còn nhiều hơn struct.
+
+.code go4python/typesandmethods.go /SimpleName/
+
+Bạn có thể định nghĩa phương thức trên bất kỳ kiểu nào.
+
+.code go4python/typesandmethods.go /SimpleName\)/
+
+Hoặc hầu hết bất kỳ kiểu nào.
+
+	func (s string) NoWay()
+
+Bạn *chỉ có thể* định nghĩa phương thức trên các kiểu trong cùng gói.
+
+* Duck typing
+
+* Duck typing
+
+_Nếu_nó_đi_như_vịt_..._
+
+Điều gì định nghĩa một con vịt?
+
+- Có danh sách rõ ràng nào về các tính năng "vịt" không?
+
+- Sao nếu con vịt không hoàn toàn là vịt?
+
+s/duck/file-like object/g
+
+* Quack?
+
+.image go4python/img/duck.jpg 500 500
+
+* Giao diện Go
+
+Đơn giản là một tập hợp các phương thức.
+
+Từ gói `fmt`:
+
+	type Stringer interface {
+		String() string
+	}
+
+`fmt.Println` gọi phương thức String nếu tham số là `Stringer`.
+
+.play go4python/typesandmethods.go /second/,/Print/
+
+Một kiểu với tất cả các phương thức của giao diện triển khai giao diện đó.
+
+*Thỏa_mãn_ngầm_định*==*Không*"implements"*
+
+Kiểu cấu trúc: nó không chỉ nghe như vịt, nó *là* vịt.
+
+Và điều đó được kiểm tra tại thời điểm biên dịch.
+
+* Decorator
+
+* Decorator
+
+Một cách thuận tiện để bọc một hàm.
+
+.code go4python/deco.py /auth_required/,/^$/
+
+Một hàm có thể được trang trí bằng `@`.
+
+.code go4python/deco.py /myHandler/,/user/
+
+* Decorator
+
+Nếu chúng ta chạy nó.
+
+.play go4python/deco.py /try/,
+
+Đây là truy cập không được phép:
+
+.link http://localhost:8080/hi
+
+Đây là truy cập được phép:
+
+.link http://localhost:8080/hi?user=john
+
+* Decorator trong Go?
+
+Không hẳn, nhưng đủ gần.
+
+Go không cung cấp decorator trong ngôn ngữ, nhưng cú pháp hàm literal và các quy tắc phạm vi đơn giản của nó làm cho việc thực hiện điều gì đó tương tự trở nên dễ dàng.
+
+.code go4python/deco.go /hiHandler/,/^\)/
+
+Một hàm wrapper.
+
+.code go4python/deco.go /authRequired/,/^$/
+
+* Decorator trong Go?
+
+.play go4python/deco.go /func main/,/^}/
+
+Đây là truy cập không được phép:
+
+.link http://localhost:8080/hi
+
+Đây là truy cập được phép:
+
+.link http://localhost:8080/hi?user=john
+
+* Bài tập: lỗi trong HTTP handler
+
+Trong Go, các hàm có thể trả về lỗi để chỉ ra rằng có gì đó xấu xảy ra.
+
+Gói `net/http` từ thư viện chuẩn định nghĩa kiểu `HandlerFunc`.
+
+	type HandlerFunc func(ResponseWriter, *Request)
+
+Nhưng thường hữu ích khi hợp nhất xử lý lỗi vào một hàm duy nhất để tránh
+sự lặp lại.
+
+.code go4python/decoex.go /errorHandler/
+
+Viết một decorator nhận `errorHandler` và trả về `http.HandlerFunc`.
+Nếu xảy ra lỗi, nó ghi lại và trả về trang lỗi http.
+
+* Bài tập: lỗi trong HTTP handler (tiếp theo)
+
+Cho hàm `handler`.
+
+.code go4python/decoex.go /handler/,/^}/
+
+Chúng ta muốn sử dụng nó như sau.
+
+.code go4python/decoex.go /HandleFunc/
+
+Triển khai `handleError` bằng playground.
+
+.link /s/go4py-ex3 go.dev/s/go4py-ex3
+
+* Giải pháp: lỗi trong HTTP handler
+
+.code go4python/decoex.go /handleError/,/^}/
+
+.code go4python/decoex.go /Fake/,/^$/
+
+.play go4python/decoex.go /john/,/^$/
+
+* Monkey patching
+
+* Monkey patching
+
+"Monkey patch là cách để mở rộng hoặc sửa đổi code runtime của các ngôn ngữ động mà không thay đổi code nguồn gốc." - _Wikipedia_
+
+.image go4python/img/monkey.jpg 400 500
+
+* Monkey patching
+
+Còn được gọi là "duck punching" ... tội nghiệp con vịt.
+
+Thường được sử dụng cho mục đích kiểm thử.
+
+Ví dụ, giả sử chúng ta muốn kiểm thử hàm này:
+
+.code go4python/monkey.py /def say_hi/,/^$/
+
+Phụ thuộc vào một hàm tạo HTTP request:
+
+.code go4python/monkey.py /def auth/,/^$/
+
+* Monkey patching
+
+Chúng ta có thể kiểm thử `say_hi` mà không cần tạo HTTP request bằng cách stub `auth`:
+
+.play go4python/monkey.py /sayhitest/,/done/
+
+* Gopher punching!
+
+Tác dụng tương tự có thể đạt được trong Go.
+
+.code go4python/monkey.go /sayHi/,/^}/
+
+Phụ thuộc vào
+
+.code go4python/monkey.go /auth /,/^}/
+
+* Gopher punching!
+
+Code kiểm thử của chúng ta có thể thay đổi giá trị của auth dễ dàng.
+
+.play go4python/monkey.go /TestSayHi/,/^}/
+
+* Kết luận
+
+* Kết luận
+
+Go giống Python một chút
+
+- đơn giản
+- linh hoạt
+- thú vị
+
+nhưng cũng khác một chút
+
+- nhanh
+- đồng thời
+- kiểu tĩnh
+
+_Tuyên_bố_miễn_trách_nhiệm_:_
+
+- "Không có con trăn, vịt, khỉ hay gopher nào bị tổn thương trong quá trình viết bài nói chuyện này"
+
+* Hãy thử
+
+Các bước tiếp theo
+
+.link / go.dev
+
+Học Go từ trình duyệt của bạn
+
+.link /tour/ go.dev/tour
+
+Cộng đồng: golang-nuts
+
+.link https://groups.google.com/d/forum/golang-nuts
+

@@ -1,0 +1,149 @@
+Go trên Android
+
+GothamGo
+15 Nov 2014
+
+David Crawshaw
+Google
+@davidcrawshaw
+
+* Video
+
+Bài nói chuyện này được trình bày tại GothamGo ở thành phố New York, tháng 11 năm 2014.
+
+.link http://vimeo.com/115307069 Xem bài nói chuyện trên Vimeo
+
+* Go trên Mobile
+
+Mục tiêu là đưa Go đến Android và iOS,
+bắt đầu với Android.
+
+Đây là lãnh thổ mới cho Go và một
+hệ sinh thái đã được thiết lập tốt. Cần nhiều thử nghiệm.
+
+* Ngày hôm nay
+
+* Trạng thái Go 1.4
+
+Bản phát hành 1.4 sắp tới có thể build binary cho Android OS.
+
+Với kho con `mobile` và Android SDK/NDK, nó có thể:
+
+- Build các tệp `.so` để liên kết vào ứng dụng Android
+- Build ứng dụng dựa trên NativeActivity ("Toàn bộ Go")
+
+* Những gì có sẵn
+
+- Các bài kiểm thử thư viện chuẩn Go chạy trên Android OS
+
+- Hook JDK / runtime
+
+- Công cụ `gobind`, để gọi Go từ Java: [[/s/gobind]]
+
+Các gói cho ứng dụng đa thiết bị:
+
+- [[https://pkg.go.dev/golang.org/x/mobile/app][Điều khiển ứng dụng]]
+
+- [[https://pkg.go.dev/golang.org/x/mobile/gl][OpenGL ES 2]]
+
+- [[https://pkg.go.dev/golang.org/x/mobile/event][Sự kiện chạm]]
+
+- [[https://pkg.go.dev/golang.org/x/mobile/geom][Hình học màn hình]]
+
+* Những gì còn thiếu - một hệ thống build tốt
+
+Có nhiều cách để build một ứng dụng Android.
+
+Không cái nào
+
+- phù hợp tốt với những gì lập trình viên Go mong đợi (công cụ go)
+- hoạt động cho phát triển đa thiết bị
+
+Chúng tôi đang làm việc về điều này cho Go 1.5.
+
+Cho đến khi xong, dùng Go trên Android đòi hỏi một chút dũng cảm.
+
+* Dành cho loại ứng dụng nào - hai loại ứng dụng
+
+*Ứng dụng* *SDK*
+
+Viết giao diện Android bằng Java.
+Viết giao diện iOS bằng Objective-C/Swift.
+Viết logic bằng Go.
+
+Chia sẻ mã Go bằng các interface được tạo bởi `gobind`.
+
+*Ứng dụng* *NDK*
+
+Trò chơi.
+
+Dùng OpenGL hoặc gói [[https://pkg.go.dev/golang.org/x/mobile/sprite][sprite]] 2D sắp tới để vẽ lên màn hình.
+Tất cả được viết bằng Go.
+
+* Hello, World!
+
+API di động, thuần Go. Đây là ứng dụng hoàn chỉnh:
+
+.play gothamgo-android/red.go
+
+* Viết ở bất kỳ đâu
+
+Phát triển với API di động có nghĩa là bắt đầu từ rất ít.
+Cần nhiều công sức để bắt đầu và hạn chế quyền truy cập vào các tính năng thiết bị.
+
+Nhưng nó cũng giải phóng chúng ta khỏi các hệ thống build đặc trưng của thiết bị.
+
+Gói app bao gồm shim Mac/X11 để khởi động như các chương trình thông thường.
+Chúng ta có thể viết ứng dụng ở bất kỳ đâu có thể viết Go.
+
+(Windows sắp ra mắt.)
+
+* Sự kiện chạm
+
+.play gothamgo-android/touch.go
+
+* Gói sprite
+
+Chúng tôi đang xây dựng một gói kết xuất và kết hợp 2D.
+
+Nó kết xuất một scene graph. Một scene bắt đầu với node gốc
+`*sprite.Node`, có thể có các node con.
+
+Mỗi node có thể có một phép biến đổi affine và texture.
+
+Việc kết xuất được thực hiện theo duyệt theo chiều sâu của scene,
+với các phép biến đổi được áp dụng tương đối so với node cha.
+
+Kết hợp được thực hiện trong OpenGL.
+
+* Sprite - phép biến đổi affine
+
+.image gothamgo-android/sprite_affine.svg
+
+* Sprite - duyệt theo chiều sâu, áp dụng phép biến đổi của cha
+
+.image gothamgo-android/sprite_subtex.svg
+
+* Demo Sprite
+
+* Sprite - tiếp theo là gì
+
+- Rasterizer, hiện tại dựa trên CPU
+
+- Văn bản, dựa trên freetype-go
+
+- Các phần tử giao diện đơn giản, tập trung vào nhu cầu menu game
+
+- Công cụ gỡ lỗi
+
+- Hiệu năng
+
+* Kế hoạch Go 1.5 (tháng 7 năm 2015)
+
+- Hệ thống build
+
+- Ràng buộc OpenAL cho âm thanh
+
+- Các khối xây dựng giao diện cơ bản cho ứng dụng dạng game
+
+- Hỗ trợ thử nghiệm iOS
