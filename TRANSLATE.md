@@ -258,10 +258,10 @@ This checklist tracks files that likely require localization work. It excludes s
 - [x] `blog/json-rpc-tale-of-interfaces.md`
 - [x] `blog/json-rpc.md`
 - [x] `blog/json.md`
-- [ ] `blog/jsonv2-exp.md`
-- [ ] `blog/laws-of-reflection.md`
+- [x] `blog/jsonv2-exp.md`
+- [x] `blog/laws-of-reflection.md`
 - [x] `blog/learn-go-from-your-browser.md`
-- [ ] `blog/llmpowered.md`
+- [x] `blog/llmpowered.md`
 - [x] `blog/loopvar-preview.md`
 - [x] `blog/maps.md`
 - [x] `blog/matchlang.md`
