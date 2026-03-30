@@ -501,21 +501,21 @@ This checklist tracks files that likely require localization work. It excludes s
 - [ ] `doc/play/index-dev.txt`
 - [ ] `doc/play/multi.txt`
 - [ ] `doc/root.md`
-- [ ] `doc/security/best-practices.md`
-- [ ] `doc/security/fips140.md`
-- [ ] `doc/security/fuzz/index.md`
-- [ ] `doc/security/fuzz/technical.md`
-- [ ] `doc/security/index.md`
-- [ ] `doc/security/policy.md`
-- [ ] `doc/security/vuln/cna.md`
-- [ ] `doc/security/vuln/database.md`
-- [ ] `doc/security/vuln/editor.md`
-- [ ] `doc/security/vuln/index.md`
-- [ ] `doc/security/vuln/vulncheck.md`
-- [ ] `doc/security/vulncheck.md`
-- [ ] `doc/security/vulndb/api.md`
-- [ ] `doc/security/vulndb/index.md`
-- [ ] `doc/security/vulndb/policy.md`
+- [x] `doc/security/best-practices.md`
+- [x] `doc/security/fips140.md`
+- [x] `doc/security/fuzz/index.md`
+- [x] `doc/security/fuzz/technical.md`
+- [x] `doc/security/index.md`
+- [x] `doc/security/policy.md`
+- [x] `doc/security/vuln/cna.md`
+- [x] `doc/security/vuln/database.md`
+- [x] `doc/security/vuln/editor.md`
+- [x] `doc/security/vuln/index.md`
+- [x] `doc/security/vuln/vulncheck.md`
+- [x] `doc/security/vulncheck.md`
+- [x] `doc/security/vulndb/api.md`
+- [x] `doc/security/vulndb/index.md`
+- [x] `doc/security/vulndb/policy.md`
 - [ ] `doc/telemetry.md`
 - [ ] `doc/toolchain.md`
 - [ ] `doc/tos.html`
