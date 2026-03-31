@@ -9,7 +9,7 @@ tags:
 - technical
 - tracing
 - flight recorder
-summary: Go 1.25 giới thiệu một công cụ mới trong bộ công cụ chẩn đoán: flight recording.
+summary: "Go 1.25 giới thiệu một công cụ mới trong bộ công cụ chẩn đoán: flight recording."
 template: true
 ---
 
