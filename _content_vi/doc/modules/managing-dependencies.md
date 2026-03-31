@@ -356,7 +356,8 @@ $ go mod tidy
 
 Các yêu cầu cần thiết để thỏa mãn tool dependencies hoạt động như bất kỳ yêu cầu nào khác trong [đồ thị module](/ref/mod#glos-module-graph) của bạn. Chúng tham gia [lựa chọn phiên bản tối thiểu](/ref/mod#minimal-version-selection) và tôn trọng các chỉ thị `require`, `replace` và `exclude`. Do module pruning, khi bạn phụ thuộc vào một module bản thân nó có tool dependency, các yêu cầu chỉ tồn tại để thỏa mãn tool dependency đó thường không trở thành yêu cầu của module bạn.
 
-[Meta-pattern](/cmd/go#hdr-Package_lists_and_patterns) `tool` cung cấp cách thực hiện các thao tác trên tất cả tool cùng lúc. Ví dụ bạn có thể nâng cấp tất cả tool với `go get -u tool`, hoặc cài đặt tất cả vào $GOBIN với `go install tool`.
+[Meta-pattern](/cmd/go#hdr-Package_lists_and_patterns) `tool` cung cấp cách thực hiện các thao tác trên tất cả tool cùng lúc. Ví dụ bạn có thể nâng cấp tất cả tool với `go get tool`,
+tương đương với `go get tool@upgrade`, hoặc cài đặt tất cả vào $GOBIN với `go install tool`.
 
 Trong các phiên bản Go trước 1.24, bạn có thể đạt được điều gì đó tương tự với chỉ thị `tool` bằng cách thêm một blank import vào một tệp go trong module được loại trừ khỏi bản build sử dụng [build constraints](/pkg/go/build/#hdr-Build_Constraints). Nếu bạn làm vậy, bạn có thể dùng `go run` với đường dẫn package đầy đủ để chạy tool.
 

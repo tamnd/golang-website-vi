@@ -387,7 +387,7 @@ require (
 
 ### Chỉ thị `tool` {#go-mod-file-tool}
 
-Chỉ thị `tool` thêm một package làm dependency của module hiện tại. Nó cũng làm cho package đó có thể chạy bằng `go tool` khi thư mục làm việc hiện tại nằm trong module này, hoặc trong một workspace chứa module này.
+Kể từ Go 1.24, chỉ thị `tool` thêm một package làm dependency của module hiện tại. Nó cũng làm cho package đó có thể chạy bằng `go tool` khi thư mục làm việc hiện tại nằm trong module này, hoặc trong một workspace chứa module này.
 
 Nếu package tool không nằm trong module hiện tại, phải có một chỉ thị `require` chỉ định phiên bản của tool cần sử dụng.
 
@@ -1339,7 +1339,7 @@ sử dụng, lệnh `go` không đưa vào các thư mục vendor khi build [cá
 Cách dùng:
 
 ```
-go get [-d] [-t] [-u] [build flags] [packages]
+go get [-d] [-t] [-u] [-tool] [build flags] [packages]
 ```
 
 Ví dụ:
@@ -1466,6 +1466,8 @@ biến môi trường `GOBIN`, mặc định là `$GOPATH/bin` hoặc
   các giao thức không an toàn như HTTP. Biến [môi trường](#environment-variables) `GOINSECURE`
   cung cấp kiểm soát chi tiết hơn và
   nên được sử dụng thay thế.
+* Cờ `-tool` hướng dẫn go thêm một dòng tool tương ứng vào `go.mod` cho mỗi
+  package được liệt kê. Nếu `-tool` được sử dụng với `@none`, dòng đó sẽ bị xóa.
 
 Kể từ Go 1.16, [`go install`](#go-install) là lệnh được khuyến nghị cho
 việc build và cài đặt chương trình. Khi được sử dụng với hậu tố phiên bản (như
@@ -1474,7 +1476,7 @@ bỏ qua file `go.mod` trong thư mục hiện tại hoặc bất kỳ thư mụ
 nếu có.
 
 `go get` tập trung hơn vào quản lý các yêu cầu trong `go.mod`. Cờ `-d`
-đã bị deprecated, và trong Go 1.18, nó sẽ luôn được bật.
+đã bị deprecated, và kể từ Go 1.18, nó luôn được bật.
 
 ### `go install` {#go-install}
 
@@ -1514,12 +1516,13 @@ Kể từ Go 1.16, nếu các đối số có hậu tố phiên bản (như `@la
 một. Điều này hữu ích để cài đặt các file thực thi mà không ảnh hưởng đến
 các dependency của module chính.
 
-Để loại bỏ sự mơ hồ về phiên bản module nào được sử dụng trong build, các
-đối số phải đáp ứng các ràng buộc sau:
+Để loại bỏ sự mơ hồ về phiên bản module nào được sử dụng trong build, nếu bất kỳ
+đối số nào có hậu tố phiên bản, các đối số phải đáp ứng các ràng buộc sau:
 
 * Các đối số phải là đường dẫn package hoặc pattern package (với ký tự đại diện "`...`").
   Chúng không được là các package chuẩn (như `fmt`), meta-pattern (`std`, `cmd`,
-  `all`, `work`, `tool`), hoặc các đường dẫn file tương đối hoặc tuyệt đối.
+  `all`, `work`, `tool`), hoặc các đường dẫn file tương đối hoặc tuyệt đối. Lưu ý rằng
+  `go install tool` có thể được sử dụng mà không cần hậu tố phiên bản: xem bên dưới.
 * Tất cả các đối số phải có cùng hậu tố phiên bản. Các truy vấn khác nhau không
   được phép, ngay cả khi chúng tham chiếu đến cùng một phiên bản.
 * Tất cả các đối số phải tham chiếu đến các package trong cùng một module ở cùng một phiên bản.
@@ -1542,7 +1545,30 @@ chế độ nhận biết module hoặc chế độ `GOPATH`, tùy thuộc vào 
 và sự hiện diện của file `go.mod`. Xem [Các lệnh
 nhận biết module](#mod-commands) để biết chi tiết. Nếu chế độ nhận biết module được bật, `go
 install` chạy trong ngữ cảnh của module chính, có thể khác với
-module chứa package đang được cài đặt.
+module chứa package đang được cài đặt. Trong chế độ nhận biết module,
+`go install tool` có thể được dùng từ một module để cài đặt tất cả các tool trong module đó.
+
+### `go tool` {#go-tool}
+
+Cách dùng:
+
+```
+go tool [-n] command [args...]
+```
+
+Ví dụ:
+
+```
+$ go tool golang.org/x/tools/cmd/stringer
+$ go tool stringer
+```
+
+Trong chế độ module, lệnh `go tool` có thể được dùng để build và chạy các tool
+được khai báo trong file `go.mod` sử dụng [chỉ thị `tool`](#go-mod-file-tool).
+Lệnh có thể được chỉ định bằng đường dẫn package đầy đủ đến một tool được khai báo
+bằng chỉ thị tool. Tên nhị phân mặc định của tool, là thành phần cuối của đường dẫn
+package (không bao gồm hậu tố phiên bản chính), cũng có thể được dùng nếu nó là duy nhất
+trong số các tool đã cài đặt.
 
 ### `go list -m` {#go-list-m}
 
