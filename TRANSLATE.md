@@ -9,6 +9,7 @@ This checklist tracks files that likely require localization work. It excludes s
 - Included file types: `.md`, `.html`, `.tmpl`, `.yaml`, `.article`, `.slide`, `.txt`
 - Total files to track: 697
 - Status convention: mark an item complete only after the corresponding file exists under `_content_vi/` and is reviewed.
+- Glossary review: in progress — enforcing consistent GLOSSARY.md terms across all 480 translated files (branch: `glossary-review`).
 
 ## Coverage Summary
 
