@@ -78,7 +78,11 @@ func main() {
 	// On App Engine, leave contentDir empty, so we use the embedded copy,
 	// which is much faster to access than the simulated file system.
 	if *contentDir == "" && !runningOnAppEngine {
-		if fi, err := os.Stat(filepath.Join("..", "..", "_content")); err == nil && fi.IsDir() {
+		if fi, err := os.Stat(filepath.Join("..", "..", "_content_vi")); err == nil && fi.IsDir() {
+			*contentDir = filepath.Join("..", "..", "_content_vi")
+		} else if fi, err := os.Stat("_content_vi"); err == nil && fi.IsDir() {
+			*contentDir = "_content_vi"
+		} else if fi, err := os.Stat(filepath.Join("..", "..", "_content")); err == nil && fi.IsDir() {
 			*contentDir = filepath.Join("..", "..", "_content")
 		} else if fi, err := os.Stat("_content"); err == nil && fi.IsDir() {
 			*contentDir = "_content"
@@ -159,6 +163,13 @@ func NewHandler(contentDir, goroot string) http.Handler {
 	var contentFS fs.FS
 	if contentDir != "" {
 		contentFS = os.DirFS(contentDir)
+		// If serving _content_vi, overlay it on _content for missing assets (css, js, images, etc).
+		if strings.HasSuffix(filepath.ToSlash(contentDir), "_content_vi") {
+			enDir := filepath.Join(filepath.Dir(contentDir), "_content")
+			if fi, err := os.Stat(enDir); err == nil && fi.IsDir() {
+				contentFS = website.NewOverlayFS(contentFS, os.DirFS(enDir))
+			}
+		}
 	} else {
 		contentFS = website.Content()
 	}

@@ -10,18 +10,46 @@ import (
 	"io/fs"
 )
 
-// Content returns the go.dev website's static content.
+// Content returns the go.dev website's static content,
+// overlaying Vietnamese translations from _content_vi on top of _content.
 func Content() fs.FS {
-	return subdir(embedded, "_content")
+	vi := subdir(embeddedVI, "_content_vi")
+	en := subdir(embedded, "_content")
+	return NewOverlayFS(vi, en)
 }
 
-// TourOnly returns the content needed only for the standalone tour.
+// TourOnly returns the content needed only for the standalone tour,
+// overlaying Vietnamese translations from _content_vi/tour on top of _content/tour.
 func TourOnly() fs.FS {
-	return subdir(tourOnly, "_content")
+	vi := subdir(tourOnlyVI, "_content_vi")
+	en := subdir(tourOnly, "_content")
+	return NewOverlayFS(vi, en)
+}
+
+// NewOverlayFS returns a filesystem that tries overlay first, falling back to base
+// for files not present in overlay.
+func NewOverlayFS(overlay, base fs.FS) fs.FS {
+	return &overlayFS{overlay, base}
+}
+
+type overlayFS struct {
+	overlay fs.FS
+	base    fs.FS
+}
+
+func (o *overlayFS) Open(name string) (fs.File, error) {
+	f, err := o.overlay.Open(name)
+	if err == nil {
+		return f, nil
+	}
+	return o.base.Open(name)
 }
 
 //go:embed _content
 var embedded embed.FS
+
+//go:embed _content_vi
+var embeddedVI embed.FS
 
 //go:embed _content/favicon.ico
 //go:embed _content/images/go-logo-white.svg
@@ -29,6 +57,9 @@ var embedded embed.FS
 //go:embed _content/js/playground.js
 //go:embed _content/tour
 var tourOnly embed.FS
+
+//go:embed _content_vi/tour
+var tourOnlyVI embed.FS
 
 func subdir(fsys fs.FS, path string) fs.FS {
 	s, err := fs.Sub(fsys, path)
