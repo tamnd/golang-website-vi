@@ -16,9 +16,9 @@ template: true
 
 by [Steve](https://twitter.com/spf13)
 
-Trong ngày cộng đồng tại GopherCon, đội Go đã tổ chức hai workshop nơi chúng tôi làm việc cùng mọi người để giúp họ thực hiện đóng góp đầu tiên cho dự án Go. Đây là lần đầu tiên dự án Go từng thử điều gì như thế này. Chúng tôi có khoảng 140 người tham gia và khoảng 35 người tình nguyện làm mentor. Mentor không chỉ nhận được cảm giác ấm áp vui vẻ khi giúp đỡ người khác, mà còn nhận được một chiếc mũ lưới Go Mentor cực kỳ sành điệu. Chúng tôi có contributor ở đủ mọi độ tuổi và mức kinh nghiệm từ Bắc và Nam Mỹ, châu Phi, châu Âu, châu Á và Úc. Đó thực sự là một nỗ lực toàn cầu của các Gopher cùng nhau hội tụ tại GopherCon.
+Trong ngày cộng đồng tại GopherCon, đội Go đã tổ chức hai workshop nơi chúng tôi làm việc cùng mọi người để giúp họ thực hiện đóng góp đầu tiên cho dự án Go. Đây là lần đầu tiên dự án Go từng thử điều gì như thế này. Chúng tôi có khoảng 140 người tham gia và khoảng 35 người tình nguyện làm mentor. Mentor không chỉ nhận được cảm giác ấm áp vui vẻ khi giúp đỡ người khác, mà còn nhận được một chiếc mũ lưới Go Mentor cực kỳ sành điệu. Chúng tôi có người đóng góp ở đủ mọi độ tuổi và mức kinh nghiệm từ Bắc và Nam Mỹ, châu Phi, châu Âu, châu Á và Úc. Đó thực sự là một nỗ lực toàn cầu của các Gopher cùng nhau hội tụ tại GopherCon.
 
-Một trong những lý do chúng tôi tổ chức workshop là để nó đóng vai trò như một “forcing function”, buộc chúng tôi phải cải thiện trải nghiệm contributor. Để chuẩn bị cho workshop, chúng tôi đã viết lại hướng dẫn contributor, bao gồm thêm mục “troubleshooting” và xây dựng công cụ `go-contrib-init`, công cụ tự động hóa quá trình thiết lập môi trường phát triển để có thể đóng góp cho Go.
+Một trong những lý do chúng tôi tổ chức workshop là để nó đóng vai trò như một “forcing function”, buộc chúng tôi phải cải thiện trải nghiệm người đóng góp. Để chuẩn bị cho workshop, chúng tôi đã viết lại hướng dẫn người đóng góp, bao gồm thêm mục “troubleshooting” và xây dựng công cụ `go-contrib-init`, công cụ tự động hóa quá trình thiết lập môi trường phát triển để có thể đóng góp cho Go.
 
 Đối với chính workshop, chúng tôi đã phát triển bài trình bày _“Contributing to Go,”_ và một bảng dashboard / scoreboard được trình chiếu trong sự kiện. Scoreboard được thiết kế để khuyến khích tất cả chúng tôi cùng làm việc hướng tới mục tiêu chung là thấy tổng điểm tập thể tăng lên. Người tham gia cộng thêm 1, 2 hoặc 3 điểm vào tổng điểm khi họ thực hiện các hành động như đăng ký tài khoản, tạo change list (còn gọi là CL, tương tự pull request), sửa đổi một CL, hoặc gửi một CL.
 
@@ -31,7 +31,7 @@ Brad Fitzpatrick, người năm nay ở nhà thay vì tới GopherCon, đã sẵ
 
 ### Tác động
 
-Chúng tôi có tổng cộng 65 CL được gửi từ những người tham gia workshop (trong vòng một tuần kể từ workshop). Trong số đó, 44 CL đến từ các contributor trước đó chưa từng đóng góp cho bất kỳ repo nào trong dự án Go. Một nửa (22) của các đóng góp này đã được merge. Nhiều cái còn lại đang chờ codebase tan băng vì chúng tôi đang ở giữa giai đoạn đóng băng cho bản phát hành 1.9 sắp tới. Ngoài CL, nhiều người còn đóng góp cho dự án dưới dạng báo lỗi, [gardening task](/wiki/Gardening), và các kiểu đóng góp khác.
+Chúng tôi có tổng cộng 65 CL được gửi từ những người tham gia workshop (trong vòng một tuần kể từ workshop). Trong số đó, 44 CL đến từ các người đóng góp trước đó chưa từng đóng góp cho bất kỳ repo nào trong dự án Go. Một nửa (22) của các đóng góp này đã được merge. Nhiều cái còn lại đang chờ codebase tan băng vì chúng tôi đang ở giữa giai đoạn đóng băng cho bản phát hành 1.9 sắp tới. Ngoài CL, nhiều người còn đóng góp cho dự án dưới dạng báo lỗi, [gardening task](/wiki/Gardening), và các kiểu đóng góp khác.
 
 Loại đóng góp phổ biến nhất là các hàm ví dụ để dùng trong tài liệu. [Khảo sát người dùng Go](/blog/survey2016-results) xác định rằng tài liệu của chúng tôi thiếu ví dụ nghiêm trọng. Trong bài trình bày, chúng tôi đề nghị người dùng tìm một package mà họ yêu thích và thêm một ví dụ. Trong dự án Go, ví dụ được viết dưới dạng mã trong các tệp Go (theo quy ước đặt tên cụ thể) và công cụ `go doc` hiển thị chúng cùng với tài liệu. Đây là một đóng góp đầu tiên hoàn hảo vì nó là thứ có thể được merge trong lúc đóng băng, có tầm quan trọng lớn với người dùng, và là một bổ sung có phạm vi tương đối hẹp.
 
@@ -81,7 +81,7 @@ Những tiếng xì xào từ nền thấp dần biến thành một bản hòa 
 
 {{image "contributor-workshop/image10.png"}}
 
-Được rồi, giờ là lúc trở thành một **Go contributor đúng nghĩa**.
+Được rồi, giờ là lúc trở thành một **người đóng góp Go đúng nghĩa**.
 
 Để khiến chuyện này còn hào hứng hơn mức vốn dĩ của nó, đội Go đã dựng một trò chơi nơi chúng tôi có thể theo dõi cả nhóm kiếm được bao nhiêu điểm dựa trên hệ thống điểm Gerrit.
 
@@ -132,7 +132,7 @@ VÀ BÙM. Bạn ổn rồi (để bắt đầu)! Nhưng đóng góp ở đâu?
 
 ### Đóng góp
 
-Trong workshop, họ đưa chúng tôi vào repository `scratch`, một nơi an toàn để nghịch ngợm nhằm thành thạo quy trình:
+Trong workshop, họ đưa chúng tôi vào kho lưu trữ `scratch`, một nơi an toàn để nghịch ngợm nhằm thành thạo quy trình:
 
 	cd $(go env GOPATH)/src/golang.org/x
 	git clone --depth 1 [[https://go.googlesource.com/scratch][go.googlesource.com/scratch]]

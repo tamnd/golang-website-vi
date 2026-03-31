@@ -118,24 +118,24 @@ Chế độ xem đồ thị trước đây vẫn có sẵn trong menu "View -> G
 
 ## Runtime {#runtime}
 
-### Garbage collector mới
+### Bộ gom rác mới
 
-Garbage collector Green Tea, trước đây có sẵn như một thử nghiệm trong
+Bộ gom rác Green Tea, trước đây có sẵn như một thử nghiệm trong
 Go 1.25, hiện được bật mặc định sau khi tiếp nhận phản hồi.
 
-Thiết kế của garbage collector này cải thiện hiệu suất của việc marking và
+Thiết kế của bộ gom rác này cải thiện hiệu suất của việc marking và
 scanning các đối tượng nhỏ thông qua cải thiện locality và khả năng mở rộng CPU.
 Kết quả benchmark thay đổi, nhưng chúng tôi kỳ vọng giảm từ 10 đến 40% chi phí
-garbage collection trong các chương trình thực tế sử dụng nhiều garbage collector.
+garbage collection trong các chương trình thực tế sử dụng nhiều bộ gom rác.
 Cải thiện thêm, khoảng 10% chi phí garbage collection,
 được kỳ vọng khi chạy trên các nền tảng CPU dựa trên amd64 mới hơn (Intel Ice
-Lake hoặc AMD Zen 4 trở lên), vì garbage collector hiện tận dụng
+Lake hoặc AMD Zen 4 trở lên), vì bộ gom rác hiện tận dụng
 các lệnh vector để scanning các đối tượng nhỏ khi có thể.
 
-Garbage collector mới có thể bị tắt bằng cách đặt
+Bộ gom rác mới có thể bị tắt bằng cách đặt
 `GOEXPERIMENT=nogreenteagc` tại thời điểm build.
 Cài đặt opt-out này dự kiến sẽ bị loại bỏ trong Go 1.27.
-Nếu bạn tắt garbage collector mới vì bất kỳ lý do nào liên quan đến
+Nếu bạn tắt bộ gom rác mới vì bất kỳ lý do nào liên quan đến
 hiệu suất hoặc hành vi của nó, vui lòng [gửi issue](/issue/new).
 
 ### Lệnh gọi cgo nhanh hơn
@@ -172,7 +172,7 @@ endpoint của [`net/http/pprof`](/pkg/net/http/pprof),
 Một goroutine *bị rò rỉ* là goroutine bị chặn trên một nguyên thủy đồng thời
 (channel, [`sync.Mutex`](/pkg/sync#Mutex), [`sync.Cond`](/pkg/sync#Cond), v.v.) mà
 không thể bị bỏ chặn.
-Runtime phát hiện goroutine bị rò rỉ bằng garbage collector: nếu
+Runtime phát hiện goroutine bị rò rỉ bằng bộ gom rác: nếu
 goroutine G bị chặn trên nguyên thủy đồng thời P, và P không thể được truy cập từ
 bất kỳ goroutine có thể chạy nào hoặc bất kỳ goroutine nào mà *những goroutine đó* có thể bỏ chặn, thì P
 không thể bị bỏ chặn, vì vậy goroutine G không bao giờ có thể thức dậy.

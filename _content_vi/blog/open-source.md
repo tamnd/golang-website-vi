@@ -31,7 +31,7 @@ dự án mã nguồn mở Go tổng thể,
 đặc biệt là cách nó vận hành,
 ý nghĩa của việc là mã nguồn mở là gì,
 và sự tương tác giữa
-các contributor bên trong và bên ngoài Google.
+các người đóng góp bên trong và bên ngoài Google.
 Hôm nay tôi muốn chia sẻ với bạn
 cách tôi nhìn nhận dự án Go như một tổng thể
 và sau đó dựa vào đó giải thích
@@ -476,7 +476,7 @@ Tôi là người tiếp theo tham gia nhóm,
 rồi Ian Taylor,
 và rồi, từng người một,
 chúng tôi đã kết thúc ở đây ngày hôm nay,
-với hàng trăm contributor.
+với hàng trăm người đóng góp.
 
 Cảm ơn
 nhiều người đã đóng góp
@@ -491,7 +491,7 @@ tôi xin lỗi,
 nhưng cảm ơn bạn.
 
 Tôi tin rằng
-hàng trăm contributor cho đến nay
+hàng trăm người đóng góp cho đến nay
 đang làm việc hướng tới tầm nhìn chung
 về những gì Go có thể trở thành.
 Thật khó để diễn đạt những điều này bằng lời,
@@ -504,7 +504,7 @@ Làm Ít Hơn, Cho Phép Nhiều Hơn.
 
 Một câu hỏi tự nhiên là:
 Vai trò của nhóm Go tại Google là gì,
-so với các contributor khác?
+so với các người đóng góp khác?
 Tôi tin rằng vai trò đó
 đã thay đổi theo thời gian,
 và nó tiếp tục thay đổi.
@@ -616,7 +616,7 @@ lấy đó làm cơ hội
 Tất nhiên, không phải tất cả đều là phối hợp và tầm nhìn.
 Google vẫn tài trợ cho công việc phát triển Go.
 Rick Hudson sẽ nói sau hôm nay
-về công việc của anh ấy trong việc giảm độ trễ garbage collector,
+về công việc của anh ấy trong việc giảm độ trễ bộ gom rác,
 và Hana Kim sẽ nói vào ngày mai
 về công việc của cô ấy trong việc đưa Go đến các thiết bị di động.
 Nhưng tôi muốn làm rõ rằng,
@@ -646,7 +646,7 @@ rõ ràng Google đã trả cho tất cả phát triển Go.
 Sau khi phát hành mã nguồn mở,
 nhiều cá nhân bắt đầu đóng góp thời gian của họ,
 và chúng tôi đã từ từ nhưng ổn định
-tăng số lượng contributor
+tăng số lượng người đóng góp
 được hỗ trợ bởi các công ty khác
 để làm việc trên Go ít nhất bán thời gian,
 đặc biệt là liên quan đến
@@ -669,9 +669,9 @@ một trong những đóng góp lớn đầu tiên
 là port sang Microsoft Windows,
 được bắt đầu bởi Hector Chu
 và hoàn thành bởi Alex Brainman và những người khác.
-Nhiều contributor đã port Go
+Nhiều người đóng góp đã port Go
 sang các hệ điều hành khác.
-Thậm chí nhiều contributor hơn
+Thậm chí nhiều người đóng góp hơn
 đã viết lại hầu hết code số học của chúng tôi
 để nhanh hơn hoặc chính xác hơn hoặc cả hai.
 Đây là tất cả những đóng góp quan trọng,
@@ -681,10 +681,10 @@ hầu hết chúng
 không liên quan đến các thiết kế mới.
 
 Gần đây hơn,
-một nhóm contributor do Aram Hăvărneanu dẫn dắt
+một nhóm người đóng góp do Aram Hăvărneanu dẫn dắt
 đã port Go sang kiến trúc ARM 64,
 Đây là port kiến trúc đầu tiên
-bởi các contributor bên ngoài Google.
+bởi các người đóng góp bên ngoài Google.
 Điều này có ý nghĩa, vì
 nói chung
 hỗ trợ cho một kiến trúc mới
@@ -703,7 +703,7 @@ vì chúng tôi triển khai các binary tĩnh.
 Chúng tôi đã giúp hướng dẫn chiến lược tổng thể,
 nhưng hầu hết thiết kế
 và gần như tất cả triển khai
-đã được thực hiện bởi các contributor bên ngoài Google,
+đã được thực hiện bởi các người đóng góp bên ngoài Google,
 đặc biệt là Michael Hudson-Doyle.
 
 Ví dụ cuối cùng của tôi là cách tiếp cận của lệnh go
@@ -819,7 +819,7 @@ là tại Gophercon tiếp theo
 chúng ta nên có khả năng tương tác rộng rãi
 giữa các công cụ vendoring và lệnh go,
 và thiết kế để điều đó xảy ra
-đã được thực hiện hoàn toàn bởi các contributor
+đã được thực hiện hoàn toàn bởi các người đóng góp
 bên ngoài nhóm Go gốc.
 
 Không chỉ vậy,
@@ -963,7 +963,7 @@ và ấn tượng đó có thể đủ
 về việc sử dụng hoặc đóng góp
 cho Go.
 Tôi nhận ra rằng mình đang làm điều này
-khi một số contributor Go
+khi một số người đóng góp Go
 đã gửi cho tôi email riêng để cho tôi biết.
 Bây giờ, khi tôi bị thiếu thời gian,
 tôi chú ý thêm đến những gì tôi đang viết,
@@ -975,7 +975,7 @@ Tôi tin rằng
 việc sửa chữa những phần
 trong các tương tác hàng ngày của chúng ta,
 dù có chủ ý hay không,
-khiến người dùng và contributor tiềm năng rời đi
+khiến người dùng và người đóng góp tiềm năng rời đi
 là một trong những điều quan trọng nhất
 tất cả chúng ta có thể làm
 để đảm bảo cộng đồng Go
@@ -1001,7 +1001,7 @@ Khi chúng ta không đồng ý, hãy cố gắng hiểu tại sao."
 Tôi tin rằng điều này nắm bắt được giai điệu chúng ta muốn thiết lập,
 thông điệp chúng ta muốn gửi đi,
 môi trường chúng ta muốn tạo ra
-cho các contributor mới.
+cho các người đóng góp mới.
 Tôi chắc chắn muốn trở thành
 thân thiện,
 kiên nhẫn,

@@ -136,7 +136,7 @@ goroutine đầu tiên. Xem [#64590](/issue/64590) để thảo luận.
 
 ## Trình biên dịch {#compiler}
 
-Chi phí thời gian build khi build với [Profile Guided Optimization](/doc/pgo) đã giảm đáng kể.
+Chi phí thời gian build khi build với [tối ưu hóa dựa trên hồ sơ thực thi](/doc/pgo) đã giảm đáng kể.
 Trước đây, các build lớn có thể thấy tăng thời gian build hơn 100% khi bật PGO.
 Trong Go 1.23, chi phí chỉ còn ở mức phần trăm đơn.
 

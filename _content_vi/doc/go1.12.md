@@ -280,7 +280,7 @@ sẽ hiển thị mã nguồn của đích.
 <!-- CL 60790 -->
 Công cụ trace hiện hỗ trợ vẽ đồ thị mutator utilization curves,
 bao gồm tham chiếu chéo đến execution trace. Chúng hữu ích
-để phân tích tác động của garbage collector đến độ trễ và
+để phân tích tác động của bộ gom rác đến độ trễ và
 thông lượng của ứng dụng.
 
 ### Assembler {#assembler}

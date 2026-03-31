@@ -8,7 +8,7 @@ template: true
 ---
 
 Gói [slices](/pkg/slices) cung cấp các hàm hoạt động với slice của bất kỳ kiểu nào.
-Trong bài viết này, chúng ta sẽ thảo luận cách bạn có thể dùng các hàm đó hiệu quả hơn bằng cách hiểu cách slice được biểu diễn trong bộ nhớ và điều đó ảnh hưởng đến garbage collector ra sao; đồng thời, chúng ta cũng sẽ xem cách gần đây chúng tôi điều chỉnh các hàm này để làm chúng bớt gây ngạc nhiên hơn.
+Trong bài viết này, chúng ta sẽ thảo luận cách bạn có thể dùng các hàm đó hiệu quả hơn bằng cách hiểu cách slice được biểu diễn trong bộ nhớ và điều đó ảnh hưởng đến bộ gom rác ra sao; đồng thời, chúng ta cũng sẽ xem cách gần đây chúng tôi điều chỉnh các hàm này để làm chúng bớt gây ngạc nhiên hơn.
 
 Với [Type parameters](/blog/deconstructing-type-parameters), chúng ta có thể viết các hàm như [slices.Index](/pkg/slices#Index) một lần cho mọi loại slice có phần tử comparable:
 
@@ -88,7 +88,7 @@ Khi gọi các hàm này, ta phải xem slice gốc là không còn hợp lệ, 
 
 ## Vấn đề về sự sống còn không mong muốn
 
-Trước Go 1.22, `slices.Delete` không sửa các phần tử nằm giữa độ dài mới và độ dài cũ của slice. Dù slice trả về sẽ không bao gồm các phần tử này, “khoảng trống” tạo ra ở cuối slice gốc đã bị mất hiệu lực vẫn tiếp tục giữ chúng. Những phần tử đó có thể chứa các con trỏ tới những đối tượng lớn (một ảnh 20MB), và garbage collector sẽ không giải phóng bộ nhớ gắn với các đối tượng này. Điều đó dẫn tới rò rỉ bộ nhớ và có thể gây ra các vấn đề hiệu năng đáng kể.
+Trước Go 1.22, `slices.Delete` không sửa các phần tử nằm giữa độ dài mới và độ dài cũ của slice. Dù slice trả về sẽ không bao gồm các phần tử này, “khoảng trống” tạo ra ở cuối slice gốc đã bị mất hiệu lực vẫn tiếp tục giữ chúng. Những phần tử đó có thể chứa các con trỏ tới những đối tượng lớn (một ảnh 20MB), và bộ gom rác sẽ không giải phóng bộ nhớ gắn với các đối tượng này. Điều đó dẫn tới rò rỉ bộ nhớ và có thể gây ra các vấn đề hiệu năng đáng kể.
 
 Trong ví dụ trên, ta đã xóa thành công các con trỏ `p2`, `p3`, `p4` khỏi `s[2:5]` bằng cách dời một phần tử sang trái. Nhưng `p3` và `p4` vẫn còn hiện diện trong mảng nền, nằm ngoài độ dài mới của `s`. Garbage collector sẽ không thu hồi chúng. Khó thấy hơn là `p5` không phải một trong các phần tử bị xóa, nhưng bộ nhớ của nó vẫn có thể bị rò vì con trỏ `p5` còn nằm ở phần màu xám của mảng.
 
@@ -97,7 +97,7 @@ Trong ví dụ trên, ta đã xóa thành công các con trỏ `p2`, `p3`, `p4` 
 Vì thế chúng ta có hai lựa chọn:
 
 * Hoặc giữ nguyên hiện thực hiệu quả của `Delete`. Người dùng sẽ tự đặt các con trỏ lỗi thời về `nil` nếu họ muốn chắc rằng các giá trị được trỏ tới có thể được giải phóng.
-* Hoặc thay đổi `Delete` để luôn đặt các phần tử lỗi thời về giá trị zero. Điều này là thêm việc làm, khiến `Delete` hơi kém hiệu quả hơn. Việc zero hóa con trỏ (đặt chúng về `nil`) cho phép garbage collector thu hồi các đối tượng, khi chúng không còn reachable bởi cách nào khác.
+* Hoặc thay đổi `Delete` để luôn đặt các phần tử lỗi thời về giá trị zero. Điều này là thêm việc làm, khiến `Delete` hơi kém hiệu quả hơn. Việc zero hóa con trỏ (đặt chúng về `nil`) cho phép bộ gom rác thu hồi các đối tượng, khi chúng không còn reachable bởi cách nào khác.
 
 Không dễ thấy lựa chọn nào là tốt hơn. Cách thứ nhất cho hiệu năng theo mặc định, còn cách thứ hai cho sự tiết kiệm bộ nhớ theo mặc định.
 
