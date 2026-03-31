@@ -145,8 +145,8 @@ Khi hoàn thành, dừng bộ tạo tải và server.
 Chúng ta có thể yêu cầu Go toolchain build với PGO bằng cờ `-pgo` cho `go build`.
 `-pgo` nhận đường dẫn đến profile cần sử dụng, hoặc `auto`, sẽ sử dụng tệp `default.pgo` trong thư mục package chính.
 
-Chúng tôi khuyến nghị commit các profile `default.pgo` vào kho lưu trữ của bạn.
-Lưu trữ các profile cùng với source code đảm bảo người dùng tự động có quyền truy cập vào profile chỉ bằng cách lấy kho lưu trữ (qua hệ thống kiểm soát phiên bản, hoặc qua `go get`) và các build vẫn có thể tái tạo.
+Chúng tôi khuyến nghị commit các profile `default.pgo` vào repository của bạn.
+Lưu trữ các profile cùng với source code đảm bảo người dùng tự động có quyền truy cập vào profile chỉ bằng cách lấy repository (qua hệ thống kiểm soát phiên bản, hoặc qua `go get`) và các build vẫn có thể tái tạo.
 Trong Go 1.20, `-pgo=off` là mặc định, vì vậy người dùng vẫn cần thêm `-pgo=auto`, nhưng phiên bản tương lai của Go dự kiến sẽ thay đổi mặc định thành `-pgo=auto`, tự động cấp cho bất kỳ ai build binary lợi ích của PGO.
 
 Hãy build:
