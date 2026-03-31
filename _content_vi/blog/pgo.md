@@ -148,8 +148,8 @@ Khi hoàn thành, dừng bộ tạo tải và server.
 Go toolchain sẽ tự động bật PGO khi tìm thấy một profile có tên `default.pgo` trong thư mục package chính.
 Ngoài ra, cờ `-pgo` cho `go build` nhận đường dẫn đến profile để sử dụng cho PGO.
 
-Chúng tôi khuyến nghị commit các tệp `default.pgo` vào kho lưu trữ của bạn.
-Lưu trữ các profile cùng với source code đảm bảo người dùng tự động có quyền truy cập vào profile chỉ bằng cách lấy kho lưu trữ (qua hệ thống kiểm soát phiên bản, hoặc qua `go get`) và các build vẫn có thể tái tạo.
+Chúng tôi khuyến nghị commit các tệp `default.pgo` vào repository của bạn.
+Lưu trữ các profile cùng với source code đảm bảo người dùng tự động có quyền truy cập vào profile chỉ bằng cách lấy repository (qua hệ thống kiểm soát phiên bản, hoặc qua `go get`) và các build vẫn có thể tái tạo.
 
 Hãy build:
 

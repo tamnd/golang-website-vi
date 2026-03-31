@@ -16,10 +16,8 @@ Cập nhật bảng thuật ngữ này trong quá trình dịch:
 - Văn phong: rõ ràng, kỹ thuật, trung tính.
 - Tên sản phẩm: `Go`
 - Tên dự án: `dự án Go`
-- Kho lưu trữ: `kho lưu trữ`
 - Lịch sử quản lý mã nguồn: `lịch sử quản lý mã nguồn`
 - Tác giả: `tác giả`
-- Người đóng góp: `người đóng góp`
 - Commit: `commit`
 - Thay đổi: `thay đổi`
 - Tìm kiếm: `tìm kiếm`
@@ -36,9 +34,9 @@ Cập nhật bảng thuật ngữ này trong quá trình dịch:
 | AUTHORS | AUTHORS | Filename, do not translate. |
 | CONTRIBUTORS | CONTRIBUTORS | Filename, do not translate. |
 | author | tác giả | Use for people credited for commits or changes. |
-| contributor | người đóng góp | Use when the source explicitly says contributor. |
+| contributor | contributor | Keep unchanged — do not translate. |
 | commit | commit | Keep the Git term unchanged. |
-| repository | kho lưu trữ | Use in general prose. |
+| repository | repository | Keep unchanged — do not translate. |
 | source control history | lịch sử quản lý mã nguồn | Prefer this over shorter paraphrases. |
 | authoritative source | nguồn thông tin chính xác nhất | Matches current translation. |
 | Go's Gerrit instance | máy chủ Gerrit của Go | Keep `Gerrit` as a product name. |
