@@ -93,7 +93,7 @@ Chúng tôi nghĩ cách tiếp cận này có một số ưu điểm:
     import các dependency bạn cần,
     vì vậy binary của bạn sẽ không có các import không dùng.
     Các dependency injector tại thời điểm chạy không thể xác định các dependency không dùng cho đến khi chạy.
-  - Đồ thị dependency của Wire có thể biết được tĩnh, điều này tạo ra cơ hội cho tooling và trực quan hóa.
+  - Đồ thị dependency của Wire có thể biết được tĩnh, điều này tạo ra cơ hội cho hệ thống công cụ và trực quan hóa.
 
 ## Nó hoạt động như thế nào?
 

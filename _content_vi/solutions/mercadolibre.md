@@ -52,13 +52,13 @@ Chuyển đổi kiến trúc kế thừa đó sang Go như framework mới rất
 
 Dùng **Go cho phép MercadoLibre giảm số server** họ sử dụng cho dịch vụ này xuống còn một phần tám so với ban đầu (từ 32 server xuống còn bốn), cộng với mỗi server có thể hoạt động với ít năng lượng hơn (ban đầu bốn nhân CPU, giờ xuống còn hai nhân CPU). Với Go, công ty **loại bỏ 88% server và giảm CPU trên các server còn lại xuống một nửa**, tạo ra tiết kiệm chi phí khổng lồ.
 
-Nằm giữa lập trình viên và nhà cung cấp đám mây, MercadoLibre sử dụng nền tảng gọi là Fury, công cụ platform-as-a-service để build, triển khai, giám sát và quản lý dịch vụ theo cách cloud-agnostic. Kết quả là, bất kỳ nhóm nào muốn tạo dịch vụ mới trong Go đều có quyền truy cập vào các template đã được chứng minh cho nhiều loại dịch vụ, và có thể nhanh chóng tạo repository trong GitHub với code khởi đầu, Docker image cho dịch vụ và pipeline triển khai. Kết quả cuối cùng là hệ thống cho phép kỹ sư tập trung vào xây dựng dịch vụ sáng tạo trong khi tránh được các giai đoạn tẻ nhạt khi thiết lập dự án mới, đồng thời chuẩn hóa hiệu quả các pipeline build và triển khai.
+Nằm giữa lập trình viên và nhà cung cấp đám mây, MercadoLibre sử dụng nền tảng gọi là Fury, công cụ platform-as-a-service để build, triển khai, giám sát và quản lý dịch vụ theo cách cloud-agnostic. Kết quả là, bất kỳ nhóm nào muốn tạo dịch vụ mới trong Go đều có quyền truy cập vào các template đã được chứng minh cho nhiều loại dịch vụ, và có thể nhanh chóng tạo kho lưu trữ trong GitHub với code khởi đầu, Docker image cho dịch vụ và pipeline triển khai. Kết quả cuối cùng là hệ thống cho phép kỹ sư tập trung vào xây dựng dịch vụ sáng tạo trong khi tránh được các giai đoạn tẻ nhạt khi thiết lập dự án mới, đồng thời chuẩn hóa hiệu quả các pipeline build và triển khai.
 
 Ngày nay, **khoảng một nửa lưu lượng truy cập của Mercadolibre được xử lý bởi ứng dụng Go.**
 
 ### MercadoLibre dùng Go cho lập trình viên
 
-Lingua franca lập trình cho cơ sở hạ tầng của MercadoLibre hiện là Go và Java. Mọi ứng dụng, mọi chương trình, mọi microservice đều được lưu trữ trong repository GitHub riêng, và công ty sử dụng thêm repository GitHub chứa bộ công cụ để giải quyết vấn đề mới và cho phép client tương tác với dịch vụ.
+Lingua franca lập trình cho cơ sở hạ tầng của MercadoLibre hiện là Go và Java. Mọi ứng dụng, mọi chương trình, mọi microservice đều được lưu trữ trong kho lưu trữ GitHub riêng, và công ty sử dụng thêm kho lưu trữ GitHub chứa bộ công cụ để giải quyết vấn đề mới và cho phép client tương tác với dịch vụ.
 
 Các bộ công cụ Go và Java phong phú và được quản lý tốt này cho phép lập trình viên phát triển ứng dụng mới nhanh chóng với hỗ trợ tuyệt vời. Ngoài ra, trong cộng đồng hơn 2.800 lập trình viên, MercadoLibre có nhiều nhóm nội bộ có sẵn để chat và hướng dẫn về triển khai Go, dù ở các trung tâm phát triển khác nhau hay các quốc gia khác nhau. Công ty cũng thúc đẩy các nhóm làm việc nội bộ để cung cấp các buổi đào tạo cho lập trình viên Go mới của MercadoLibre, và tổ chức Go meetup cho các lập trình viên bên ngoài để giúp xây dựng cộng đồng lập trình viên Go Mỹ Latinh rộng hơn.
 

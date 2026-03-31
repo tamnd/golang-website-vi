@@ -107,7 +107,7 @@ và đôi khi lên đến 40%.
 Nó sử dụng một thuật toán mới, được thiết kế cho khả năng và ràng buộc của phần cứng ngày nay,
 đồng thời mở ra một không gian thiết kế mới mà chúng tôi đang rất hào hứng khám phá.
 Ví dụ, trong bản phát hành Go 1.26 sắp tới,
-Green Tea sẽ đạt thêm 10% giảm overhead của garbage collector
+Green Tea sẽ đạt thêm 10% giảm overhead của bộ gom rác
 trên phần cứng hỗ trợ các lệnh vector AVX-512,
 điều gần như không thể tận dụng được với thuật toán cũ.
 Green Tea sẽ được bật mặc định trong Go 1.26;
@@ -178,7 +178,7 @@ Go còn một năm rất đáng mong đợi phía trước.
 Chúng tôi đang thúc đẩy năng suất của nhà phát triển thông qua lệnh `go fix` hoàn toàn mới,
 hỗ trợ sâu hơn cho các trợ lý lập trình AI,
 và các cải tiến liên tục cho gopls cũng như VS Code Go.
-Việc đưa Green Tea garbage collector vào trạng thái phát hành chính thức,
+Việc đưa bộ gom rác Green Tea vào trạng thái phát hành chính thức,
 hỗ trợ gốc cho các tính năng phần cứng Single Instruction Multiple Data (SIMD),
 và hỗ trợ trong runtime cùng thư viện chuẩn để viết mã mở rộng tốt hơn nữa
 trên phần cứng đa lõi quy mô lớn sẽ tiếp tục giúp Go đồng bộ với phần cứng hiện đại

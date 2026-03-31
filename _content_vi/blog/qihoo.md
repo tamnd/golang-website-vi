@@ -36,7 +36,7 @@ gian thực. Nó hiện gửi hơn 10 tỷ tin nhắn hàng ngày.
 
 Với sự mở rộng kinh doanh nhanh chóng và nhu cầu ứng dụng ngày càng tăng cho
 dịch vụ push của chúng tôi, hệ thống Go ban đầu nhanh chóng đạt đến điểm tắc
-nghẽn: kích thước heap lên đến 69G, với thời gian dừng garbage collection (GC)
+nghẽn: kích thước heap lên đến 69G, với thời gian dừng bộ gom rác (GC)
 tối đa là 3-6 giây. Tệ hơn nữa, chúng tôi phải khởi động lại hệ thống mỗi
 tuần để giải phóng bộ nhớ. Sẽ không trung thực nếu chúng tôi không thừa nhận
 đã xem xét từ bỏ Go và thay vào đó viết lại toàn bộ thành phần cốt lõi bằng C.
