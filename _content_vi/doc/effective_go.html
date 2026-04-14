@@ -4,10 +4,21 @@
 	"Breadcrumb": true
 }-->
 
+<div class="Note">
+<strong>Lưu ý:</strong> Tài liệu này được viết vào thời điểm Go ra mắt năm 2009 và
+không được cập nhật thường xuyên. Mặc dù đây vẫn là hướng dẫn tốt về cách sử dụng cốt lõi ngôn ngữ,
+tài liệu này không đề cập đến những thay đổi quan trọng của ngôn ngữ (generics), hệ sinh thái (modules),
+hay các thư viện được bổ sung kể từ đó. Xem <a href="/issue/28782">issue 28782</a> để biết thêm bối cảnh.
+Để xem danh sách đầy đủ các thay đổi,
+hãy tham khảo <a href="/doc/devel/release">ghi chú bản phát hành</a>.
+</div>
+
 <h2 id="introduction">Giới thiệu</h2>
 
 <p>
-Go là một ngôn ngữ mới. Mặc dù nó vay mượn ý tưởng từ các ngôn ngữ hiện có,
+Go là một ngôn ngữ lập trình mã nguồn mở tập trung vào sự đơn giản, độ tin cậy
+và hiệu quả, được thiết kế đặc biệt để giúp việc xây dựng phần mềm quy mô lớn trở nên dễ dàng.
+Mặc dù nó vay mượn ý tưởng từ các ngôn ngữ hiện có,
 Go có những đặc điểm khác biệt khiến các chương trình Go hiệu quả mang
 bản sắc riêng, khác hẳn với các chương trình viết bằng những ngôn ngữ họ hàng.
 Việc dịch thẳng một chương trình C++ hay Java sang Go khó có thể cho kết quả tốt&mdash;chương trình Java
@@ -29,19 +40,8 @@ và <a href="/doc/code.html">Cách viết code Go</a>,
 tất cả những tài liệu mà bạn nên đọc trước.
 </p>
 
-<p>
-Ghi chú thêm vào tháng 1 năm 2022:
-Tài liệu này được viết vào thời điểm Go ra mắt năm 2009 và chưa được cập nhật đáng kể kể từ đó.
-Mặc dù đây là tài liệu hướng dẫn tốt để hiểu cách sử dụng bản thân ngôn ngữ,
-nhờ tính ổn định của Go, tài liệu này nói rất ít về các thư viện và không đề cập
-đến những thay đổi quan trọng trong hệ sinh thái Go kể từ khi được viết, chẳng hạn như
-hệ thống build, testing, modules và polymorphism.
-Hiện không có kế hoạch cập nhật tài liệu này, vì đã có rất nhiều thay đổi và một tập hợp
-tài liệu, bài blog và sách ngày càng phong phú đang mô tả cách sử dụng Go hiện đại một cách rất tốt.
-Effective Go vẫn hữu ích, nhưng người đọc cần hiểu rằng đây chưa phải là một hướng dẫn đầy đủ.
-Xem <a href="/issue/28782">issue
-28782</a> để biết thêm bối cảnh.
-</p>
+
+
 
 <h3 id="examples">Ví dụ</h3>
 
@@ -969,10 +969,17 @@ Hãy nói về <code>new</code> trước.
 trong một số ngôn ngữ khác, nó không <em>khởi tạo</em> bộ nhớ,
 nó chỉ <em>zeroed</em> (đặt về không) nó.
 Tức là,
-<code>new(T)</code> cấp phát bộ nhớ zeroed cho một item mới kiểu
+<code>new(T)</code> cấp phát bộ nhớ zeroed cho một biến mới kiểu
 <code>T</code> và trả về địa chỉ của nó, một giá trị kiểu <code>*T</code>.
 Theo thuật ngữ Go, nó trả về một con trỏ đến giá trị zero mới được cấp phát của kiểu
 <code>T</code>.
+</p>
+
+<p>
+Kể từ Go 1.26, <code>new</code> cũng chấp nhận một biểu thức (giá trị) làm đối số,
+chỉ định giá trị khởi tạo của biến.
+Ví dụ, <code>new(int64(300))</code> cấp phát một biến mới kiểu <code>int64</code>,
+khởi tạo với giá trị 300, và trả về địa chỉ của nó.
 </p>
 
 <p>
