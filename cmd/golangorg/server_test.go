@@ -27,7 +27,11 @@ import (
 func TestWeb(t *testing.T) {
 	needsGorootDocDir(t)
 
-	h := NewHandler("../../_content", runtime.GOROOT())
+	goroot := *goroot
+	if forceGorootZip {
+		goroot = "../../_goroot.zip"
+	}
+	h := NewHandler("../../_content", goroot)
 
 	files, err := filepath.Glob("testdata/*.txt")
 	if err != nil {
@@ -81,7 +85,11 @@ Lines:
 func TestAll(t *testing.T) {
 	needsGorootDocDir(t)
 
-	h := NewHandler("../../_content", runtime.GOROOT())
+	goroot := *goroot
+	if forceGorootZip {
+		goroot = "../../_goroot.zip"
+	}
+	h := NewHandler("../../_content", goroot)
 
 	get := func(url string) (code int, body string, err error) {
 		if url == "https://go.dev/rebuild" {
